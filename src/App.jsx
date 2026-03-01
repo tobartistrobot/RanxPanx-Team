@@ -5,11 +5,11 @@ import {
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
-// --- CONFIGURACIÓN DE FIREBASE ---
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+// --- CONFIGURACIÓN DE FIREBASE (Extraída de tu imagen image_6b922c.jpg) ---
+const firebaseConfig = {
   apiKey: "AIzaSyBYQOEis6RmfbnLOhFJTleC5MCs401Jf5E",
   authDomain: "ranxpanx-team.firebaseapp.com",
   projectId: "ranxpanx-team",
@@ -22,35 +22,8 @@ const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__f
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const appId = 'ranxpanx-team-prod';
 
-// FIX: Limpiamos el appId para evitar que Firebase cuente las barras (/) como segmentos extra
-const rawAppId = typeof __app_id !== 'undefined' ? String(__app_id) : 'ranxpanx-team-prod';
-const safeAppId = rawAppId.replace(/\//g, '_');
-
-// --- UTILIDADES ---
-const formatTime = (seconds) => {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-};
-
-const formatTimeDetailed = (seconds) => {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) return `${h}h ${m}m ${s}s`;
-  return `${m}m ${s}s`;
-};
-
-const formatTimeDigital = (seconds) => {
-  const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-  const s = (seconds % 60).toString().padStart(2, '0');
-  return `${h}:${m}:${s}`;
-};
-
-// --- COMPONENTE PRINCIPAL ---
 export default function App() {
   const [user, setUser] = useState(null);
   const [chores, setChores] = useState([]);
@@ -89,11 +62,7 @@ export default function App() {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
+        await signInAnonymously(auth);
       } catch (error) { console.error("Auth error:", error); }
     };
     initAuth();
@@ -103,9 +72,7 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-    // FIX: Volvemos a la ruta pública porque ambos usuarios tendrán diferentes IDs anónimos. 
-    // Para que los datos se sincronicen entre la pareja, deben estar en un espacio público del entorno.
-    const choresRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores');
+    const choresRef = collection(db, 'artifacts', appId, 'public', 'data', 'chores');
     const q = query(choresRef);
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -139,12 +106,34 @@ export default function App() {
     return [...new Set(names)].slice(0, 6);
   }, [chores]);
 
+  const formatTime = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  };
+
+  const formatTimeDetailed = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    return `${m}m ${s}s`;
+  };
+
+  const formatTimeDigital = (seconds) => {
+    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  };
+
   const toggleTimer = async () => {
     if (!userName) { setShowProfileModal(true); return; }
     if (activeTask) {
       const durationSeconds = elapsed;
       if (durationSeconds > 5) {
-        await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chores'), {
           taskName: activeTask.name || 'Tarea sin nombre',
           durationSeconds,
           timestamp: Date.now(),
@@ -172,17 +161,17 @@ export default function App() {
       userId: user.uid
     };
     if (modalMode === 'edit' && editingItem) {
-      await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', editingItem.id), payload);
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chores', editingItem.id), payload);
     } else {
-      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), payload);
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chores'), payload);
     }
     setModalMode(null);
     setEditingItem(null);
   };
 
   const deleteChore = async (id) => {
-    if (window.confirm('¿Eliminar este registro?')) {
-      await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', id));
+    if (confirm('¿Eliminar este registro?')) {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chores', id));
     }
   };
 
@@ -321,8 +310,8 @@ export default function App() {
                                 <div><p className="font-bold text-sm">{chore.taskName}</p><p className="text-[10px] text-slate-500 uppercase tracking-wider">{chore.userName} • {formatTimeDetailed(chore.durationSeconds)}</p></div>
                             </div>
                             <div className="flex gap-1">
-                                <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500 active:text-indigo-500"><Edit2 size={16} /></button>
-                                <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500 active:text-red-500"><Trash2 size={16} /></button>
+                                <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
+                                <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
                             </div>
                         </div>
                     ))}
@@ -381,17 +370,6 @@ export default function App() {
                     </div>
                 )}
             </div>
-            <div className="space-y-3">
-                {getChoresForDate(selectedDate).length > 0 && getChoresForDate(selectedDate).map(chore => (
-                    <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between`}>
-                        <div><p className="font-bold text-sm">{chore.taskName}</p><p className="text-xs text-slate-500">{chore.userName} • {formatTimeDetailed(chore.durationSeconds)}</p></div>
-                        <div className="flex gap-1">
-                            <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
-                            <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
-                        </div>
-                    </div>
-                ))}
-            </div>
           </div>
         )}
         {activeTab === 'dashboard' && (
@@ -449,13 +427,13 @@ export default function App() {
             { id: 'calendar', icon: CalendarIcon, label: 'Agenda' },
             { id: 'dashboard', icon: BarChart3, label: 'Equipo' }
         ].map(item => {
-            const Icon = item.icon; // FIX: Extraemos la constante para usar JSX de forma explícitamente correcta.
-            return (
-                <button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex flex-col items-center gap-1 transition-all ${activeTab === item.id ? 'text-indigo-500 scale-110' : 'text-slate-500'}`}>
-                    <Icon size={22} className={activeTab === item.id ? 'fill-indigo-50/10' : ''} />
-                    <span className="text-[10px] font-bold uppercase tracking-tight">{item.label}</span>
-                </button>
-            );
+          const Icon = item.icon;
+          return (
+            <button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex flex-col items-center gap-1 transition-all ${activeTab === item.id ? 'text-indigo-500 scale-110' : 'text-slate-500'}`}>
+                <Icon size={22} className={activeTab === item.id ? 'fill-indigo-50/10' : ''} />
+                <span className="text-[10px] font-bold uppercase tracking-tight">{item.label}</span>
+            </button>
+          )
         })}
       </nav>
 
@@ -475,7 +453,7 @@ export default function App() {
                             <div className="mt-3">
                                 <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {suggestions.map(s => <button key={s} onClick={() => setManualData({...manualData, name: s})} className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 border-slate-200 hover:bg-slate-200'}`}>{s}</button>)}
+                                    {suggestions.map(s => <button key={s} onClick={() => setManualData({...manualData, name: s})} className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>{s}</button>)}
                                 </div>
                             </div>
                         )}
