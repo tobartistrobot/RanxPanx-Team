@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createRoot } from 'react-dom/client'; // ¡Esta es la pieza clave que faltaba!
 import { 
   Play, Square, Calendar as CalendarIcon, BarChart3, Clock, 
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
@@ -8,7 +9,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
-// --- CONFIGURACIÓN DE FIREBASE (Extraída de tu imagen image_6b922c.jpg) ---
+// --- CONFIGURACIÓN DE FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyBYQOEis6RmfbnLOhFJTleC5MCs401Jf5E",
   authDomain: "ranxpanx-team.firebaseapp.com",
@@ -22,8 +23,34 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = 'ranxpanx-team-prod';
 
+const rawAppId = 'ranxpanx-team-prod';
+const safeAppId = rawAppId.replace(/\//g, '_');
+
+// --- UTILIDADES ---
+const formatTime = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+};
+
+const formatTimeDetailed = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  return `${m}m ${s}s`;
+};
+
+const formatTimeDigital = (seconds) => {
+  const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+};
+
+// --- COMPONENTE PRINCIPAL ---
 export default function App() {
   const [user, setUser] = useState(null);
   const [chores, setChores] = useState([]);
@@ -72,7 +99,7 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-    const choresRef = collection(db, 'artifacts', appId, 'public', 'data', 'chores');
+    const choresRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores');
     const q = query(choresRef);
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -106,34 +133,12 @@ export default function App() {
     return [...new Set(names)].slice(0, 6);
   }, [chores]);
 
-  const formatTime = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m}m`;
-  };
-
-  const formatTimeDetailed = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    if (h > 0) return `${h}h ${m}m ${s}s`;
-    return `${m}m ${s}s`;
-  };
-
-  const formatTimeDigital = (seconds) => {
-    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${h}:${m}:${s}`;
-  };
-
   const toggleTimer = async () => {
     if (!userName) { setShowProfileModal(true); return; }
     if (activeTask) {
       const durationSeconds = elapsed;
       if (durationSeconds > 5) {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chores'), {
+        await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
           taskName: activeTask.name || 'Tarea sin nombre',
           durationSeconds,
           timestamp: Date.now(),
@@ -161,17 +166,17 @@ export default function App() {
       userId: user.uid
     };
     if (modalMode === 'edit' && editingItem) {
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chores', editingItem.id), payload);
+      await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', editingItem.id), payload);
     } else {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chores'), payload);
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), payload);
     }
     setModalMode(null);
     setEditingItem(null);
   };
 
   const deleteChore = async (id) => {
-    if (confirm('¿Eliminar este registro?')) {
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chores', id));
+    if (window.confirm('¿Eliminar este registro?')) {
+      await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', id));
     }
   };
 
@@ -310,8 +315,8 @@ export default function App() {
                                 <div><p className="font-bold text-sm">{chore.taskName}</p><p className="text-[10px] text-slate-500 uppercase tracking-wider">{chore.userName} • {formatTimeDetailed(chore.durationSeconds)}</p></div>
                             </div>
                             <div className="flex gap-1">
-                                <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
-                                <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                                <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500 active:text-indigo-500"><Edit2 size={16} /></button>
+                                <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500 active:text-red-500"><Trash2 size={16} /></button>
                             </div>
                         </div>
                     ))}
@@ -369,6 +374,17 @@ export default function App() {
                         ))}
                     </div>
                 )}
+            </div>
+            <div className="space-y-3">
+                {getChoresForDate(selectedDate).length > 0 && getChoresForDate(selectedDate).map(chore => (
+                    <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between`}>
+                        <div><p className="font-bold text-sm">{chore.taskName}</p><p className="text-xs text-slate-500">{chore.userName} • {formatTimeDetailed(chore.durationSeconds)}</p></div>
+                        <div className="flex gap-1">
+                            <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
+                            <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                        </div>
+                    </div>
+                ))}
             </div>
           </div>
         )}
@@ -489,4 +505,11 @@ export default function App() {
       `}</style>
     </div>
   );
+}
+
+// --- ARRANQUE DE LA APP (Gira la llave) ---
+const container = document.getElementById('root');
+if (container) {
+  const root = createRoot(container);
+  root.render(<App />);
 }
