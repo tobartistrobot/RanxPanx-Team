@@ -5,11 +5,11 @@ import {
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
-// --- CONFIGURACIÓN DE FIREBASE (ACTUALIZADA CON TUS DATOS) ---
-const firebaseConfig = {
+// --- CONFIGURACIÓN DE FIREBASE ---
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
   apiKey: "AIzaSyBYQOEis6RmfbnLOhFJTleC5MCs401Jf5E",
   authDomain: "ranxpanx-team.firebaseapp.com",
   projectId: "ranxpanx-team",
@@ -22,8 +22,35 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = 'ranxpanx-team-prod';
 
+// FIX: Limpiamos el appId para evitar que Firebase cuente las barras (/) como segmentos extra
+const rawAppId = typeof __app_id !== 'undefined' ? String(__app_id) : 'ranxpanx-team-prod';
+const safeAppId = rawAppId.replace(/\//g, '_');
+
+// --- UTILIDADES ---
+const formatTime = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+};
+
+const formatTimeDetailed = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  return `${m}m ${s}s`;
+};
+
+const formatTimeDigital = (seconds) => {
+  const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+};
+
+// --- COMPONENTE PRINCIPAL ---
 export default function App() {
   const [user, setUser] = useState(null);
   const [chores, setChores] = useState([]);
@@ -62,7 +89,11 @@ export default function App() {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        await signInAnonymously(auth);
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
       } catch (error) { console.error("Auth error:", error); }
     };
     initAuth();
@@ -72,7 +103,9 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-    const choresRef = collection(db, 'artifacts', appId, 'public', 'data', 'chores');
+    // FIX: Volvemos a la ruta pública porque ambos usuarios tendrán diferentes IDs anónimos. 
+    // Para que los datos se sincronicen entre la pareja, deben estar en un espacio público del entorno.
+    const choresRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores');
     const q = query(choresRef);
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -106,34 +139,12 @@ export default function App() {
     return [...new Set(names)].slice(0, 6);
   }, [chores]);
 
-  const formatTime = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m}m`;
-  };
-
-  const formatTimeDetailed = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    if (h > 0) return `${h}h ${m}m ${s}s`;
-    return `${m}m ${s}s`;
-  };
-
-  const formatTimeDigital = (seconds) => {
-    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${h}:${m}:${s}`;
-  };
-
   const toggleTimer = async () => {
     if (!userName) { setShowProfileModal(true); return; }
     if (activeTask) {
       const durationSeconds = elapsed;
       if (durationSeconds > 5) {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chores'), {
+        await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
           taskName: activeTask.name || 'Tarea sin nombre',
           durationSeconds,
           timestamp: Date.now(),
@@ -161,17 +172,17 @@ export default function App() {
       userId: user.uid
     };
     if (modalMode === 'edit' && editingItem) {
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chores', editingItem.id), payload);
+      await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', editingItem.id), payload);
     } else {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chores'), payload);
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), payload);
     }
     setModalMode(null);
     setEditingItem(null);
   };
 
   const deleteChore = async (id) => {
-    if (confirm('¿Eliminar este registro?')) {
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chores', id));
+    if (window.confirm('¿Eliminar este registro?')) {
+      await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', id));
     }
   };
 
@@ -310,8 +321,8 @@ export default function App() {
                                 <div><p className="font-bold text-sm">{chore.taskName}</p><p className="text-[10px] text-slate-500 uppercase tracking-wider">{chore.userName} • {formatTimeDetailed(chore.durationSeconds)}</p></div>
                             </div>
                             <div className="flex gap-1">
-                                <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
-                                <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                                <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500 active:text-indigo-500"><Edit2 size={16} /></button>
+                                <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500 active:text-red-500"><Trash2 size={16} /></button>
                             </div>
                         </div>
                     ))}
@@ -331,14 +342,14 @@ export default function App() {
                     {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} className="text-[10px] font-bold text-slate-500">{d}</div>)}
                 </div>
                 <div className="grid grid-cols-7 gap-1">
-                    {Array.from({ length: startingDay }).map((_, i) => <div key={i} className="aspect-square"></div>)}
+                    {Array.from({ length: startingDay }).map((_, i) => <div key={`empty-${i}`} className="aspect-square"></div>)}
                     {Array.from({ length: daysInMonth }).map((_, i) => {
                         const day = i + 1;
                         const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
                         const isSelected = selectedDate.toDateString() === dateObj.toDateString();
                         const hasChores = getChoresForDate(dateObj).length > 0;
                         return (
-                            <button key={day} onClick={() => setSelectedDate(dateObj)} className={`aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all ${isSelected ? 'bg-indigo-600 text-white font-bold' : hasChores ? (isDarkMode ? 'bg-slate-800 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : 'hover:bg-slate-100'}`}>
+                            <button key={`day-${day}`} onClick={() => setSelectedDate(dateObj)} className={`aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all ${isSelected ? 'bg-indigo-600 text-white font-bold' : hasChores ? (isDarkMode ? 'bg-slate-800 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : 'hover:bg-slate-100'}`}>
                                 {day}
                                 {hasChores && !isSelected && <div className="w-1 h-1 bg-indigo-500 rounded-full mt-1"></div>}
                             </button>
@@ -370,6 +381,17 @@ export default function App() {
                     </div>
                 )}
             </div>
+            <div className="space-y-3">
+                {getChoresForDate(selectedDate).length > 0 && getChoresForDate(selectedDate).map(chore => (
+                    <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between`}>
+                        <div><p className="font-bold text-sm">{chore.taskName}</p><p className="text-xs text-slate-500">{chore.userName} • {formatTimeDetailed(chore.durationSeconds)}</p></div>
+                        <div className="flex gap-1">
+                            <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
+                            <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                        </div>
+                    </div>
+                ))}
+            </div>
           </div>
         )}
         {activeTab === 'dashboard' && (
@@ -381,18 +403,18 @@ export default function App() {
                 <div className="space-y-5 relative z-10">
                     {stats.personData.map((p) => (
                         <div key={p.name} className="cursor-pointer" onClick={() => setExpandedUser(expandedUser === p.name ? null : p.name)}>
-                            <div className="flex justify-between text-xs mb-2 font-bold">
-                                <span>{p.name}</span>
+                            <div className="flex justify-between text-xs mb-2 font-bold uppercase tracking-tight">
+                                <span className="flex items-center gap-1">{p.name} {expandedUser === p.name ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
                                 <span>{formatTime(p.seconds)} ({p.percentage}%)</span>
                             </div>
                             <div className="h-2.5 bg-white/20 rounded-full overflow-hidden mb-1">
-                                <div className="h-full bg-white transition-all duration-1000" style={{ width: `${p.percentage}%` }}></div>
+                                <div className="h-full bg-white transition-all duration-1000 shadow-sm" style={{ width: `${p.percentage}%` }}></div>
                             </div>
                             {expandedUser === p.name && (
-                                <div className="mt-4 bg-black/20 rounded-2xl p-4 space-y-3">
+                                <div className="mt-4 bg-black/20 rounded-2xl p-4 space-y-3 animate-in slide-in-from-top-2">
                                     {p.tasks.map(t => (
-                                        <div key={t.name} className="flex justify-between text-[10px] uppercase font-bold">
-                                            <span className="text-white/80">{t.name}</span>
+                                        <div key={t.name} className="flex justify-between text-[10px] items-center uppercase font-bold tracking-tight">
+                                            <span className="text-white/80 truncate w-32">{t.name}</span>
                                             <span className="font-mono">{formatTime(t.seconds)}</span>
                                         </div>
                                     ))}
@@ -402,12 +424,13 @@ export default function App() {
                     ))}
                 </div>
             </div>
+            
             <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-3xl border shadow-sm`}>
-                <h3 className="text-sm font-bold mb-6 uppercase tracking-widest">Distribución Global</h3>
+                <h3 className="text-sm font-bold mb-6 flex items-center gap-2 uppercase tracking-widest"><BarChart3 size={18} className="text-indigo-500" /> Distribución Global</h3>
                 <div className="space-y-6">
-                    {stats.taskDistribution.map(task => (
+                    {stats.taskDistribution.length === 0 ? <p className="text-center text-xs text-slate-500 italic py-4">Sin datos.</p> : stats.taskDistribution.map(task => (
                         <div key={task.name} className="flex items-center gap-4">
-                            <div className="w-24 shrink-0"><p className="text-xs font-bold truncate mb-1">{task.name}</p><p className="text-[10px] text-slate-500">{formatTime(task.seconds)}</p></div>
+                            <div className="w-24 shrink-0"><p className="text-xs font-bold truncate leading-none mb-1">{task.name}</p><p className="text-[10px] text-slate-500">{formatTime(task.seconds)}</p></div>
                             <div className="flex-1 h-4 bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden flex">
                                 <div className="h-full bg-indigo-500/80 transition-all duration-1000" style={{ width: `${task.percentage}%` }}></div>
                             </div>
@@ -425,35 +448,44 @@ export default function App() {
             { id: 'timer', icon: Clock, label: 'Registro' },
             { id: 'calendar', icon: CalendarIcon, label: 'Agenda' },
             { id: 'dashboard', icon: BarChart3, label: 'Equipo' }
-        ].map(item => (
-            <button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex flex-col items-center gap-1 transition-all ${activeTab === item.id ? 'text-indigo-500 scale-110' : 'text-slate-500'}`}>
-                <item.icon size={22} />
-                <span className="text-[10px] font-bold uppercase tracking-tight">{item.label}</span>
-            </button>
-        ))}
+        ].map(item => {
+            const Icon = item.icon; // FIX: Extraemos la constante para usar JSX de forma explícitamente correcta.
+            return (
+                <button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex flex-col items-center gap-1 transition-all ${activeTab === item.id ? 'text-indigo-500 scale-110' : 'text-slate-500'}`}>
+                    <Icon size={22} className={activeTab === item.id ? 'fill-indigo-50/10' : ''} />
+                    <span className="text-[10px] font-bold uppercase tracking-tight">{item.label}</span>
+                </button>
+            );
+        })}
       </nav>
 
+      {/* MODALS */}
       {modalMode && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border max-h-[90vh] overflow-y-auto pb-safe`}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8 max-h-[90vh] overflow-y-auto pb-safe`}>
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="font-bold text-xl">{modalMode === 'edit' ? 'Editar' : 'Manual'}</h2>
+                    <h2 className="font-bold text-xl">{modalMode === 'edit' ? 'Editar Registro' : 'Entrada Manual'}</h2>
                     <button onClick={() => setModalMode(null)} className="p-2 text-slate-400"><X size={20} /></button>
                 </div>
                 <div className="space-y-4">
                     <div>
                         <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tarea</label>
                         <input type="text" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.name} onChange={(e) => setManualData({...manualData, name: e.target.value})}/>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                            {suggestions.map(s => <button key={s} onClick={() => setManualData({...manualData, name: s})} className={`text-[11px] px-2.5 py-1.5 rounded-lg border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>{s}</button>)}
-                        </div>
+                        {suggestions.length > 0 && (
+                            <div className="mt-3">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {suggestions.map(s => <button key={s} onClick={() => setManualData({...manualData, name: s})} className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 border-slate-200 hover:bg-slate-200'}`}>{s}</button>)}
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Horas</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.hours} onChange={(e) => setManualData({...manualData, hours: e.target.value})}/></div>
                         <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Minutos</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.minutes} onChange={(e) => setManualData({...manualData, minutes: e.target.value})}/></div>
                     </div>
                     <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha</label><input type="date" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.date} onChange={(e) => setManualData({...manualData, date: e.target.value})}/></div>
-                    <button onClick={handleSaveManual} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl mt-4">Guardar</button>
+                    <button onClick={handleSaveManual} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl mt-4 hover:bg-indigo-700 active:scale-95 transition-all">Guardar</button>
                 </div>
             </div>
         </div>
@@ -462,10 +494,12 @@ export default function App() {
       {showProfileModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[60] flex items-center justify-center p-6">
             <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl`}>
-                <h2 className="text-2xl font-black mb-4 uppercase">Bienvenid@s</h2>
-                <p className={`text-sm mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Para sincronizar RanxPanx Team con tu maravillosa esposa, dinos quién eres.</p>
-                <input type="text" placeholder="Tu nombre..." className={`w-full text-lg p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} onKeyDown={(e) => e.key === 'Enter' && e.target.value && (setUserName(e.target.value), localStorage.setItem('hometeam_username', e.target.value), setShowProfileModal(false))}/>
-                <p className="text-[10px] text-center text-slate-500 font-bold uppercase mt-4">Pulsa Enter para comenzar</p>
+                <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter">Bienvenid@s</h2>
+                <p className={`text-sm mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Sincroniza el RanxPanx Team con tu maravillosa esposa. ¿Quién eres?</p>
+                <div className="space-y-3">
+                    <input type="text" placeholder="Tu nombre..." className={`w-full text-lg p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} onKeyDown={(e) => e.key === 'Enter' && e.target.value && (setUserName(e.target.value), localStorage.setItem('hometeam_username', e.target.value), setShowProfileModal(false))}/>
+                    <p className="text-[10px] text-center text-slate-500 font-bold uppercase tracking-widest mt-4">Pulsa Enter para entrar</p>
+                </div>
             </div>
         </div>
       )}
