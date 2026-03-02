@@ -4,7 +4,7 @@ import {
   Play, Square, Calendar as CalendarIcon, BarChart3, Clock,
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
-  Sparkles, Coffee, Briefcase, Activity
+  Sparkles, Coffee, Briefcase, Activity, CheckSquare
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
@@ -48,14 +48,33 @@ const DAILY_QUOTES = [
   "El progreso lento es mejor que ningún progreso."
 ];
 
-// --- DATOS: CATEGORÍAS ---
-const CATEGORIAS = {
-  limpieza: { id: 'limpieza', label: 'Limpiar', icon: Sparkles, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-  cocina: { id: 'cocina', label: 'Cocinar', icon: Coffee, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-  trabajo: { id: 'trabajo', label: 'Trabajo', icon: Briefcase, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-  ejercicio: { id: 'ejercicio', label: 'Ejercicio', icon: Activity, color: 'text-red-500', bg: 'bg-red-500/10' },
-  general: { id: 'general', label: 'General', icon: CheckCircle2, color: 'text-slate-500', bg: 'bg-slate-500/10' }
+// --- DATOS: ESTILOS AUTOMÁTICOS DE TAREAS ---
+const TASK_STYLES = [
+  { icon: Sparkles, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  { icon: Coffee, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+  { icon: Briefcase, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+  { icon: Activity, color: 'text-red-500', bg: 'bg-red-500/10' },
+  { icon: CheckSquare, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { icon: CheckCircle2, color: 'text-pink-500', bg: 'bg-pink-500/10' }
+];
+
+const getTaskStyle = (taskName) => {
+  if (!taskName) return TASK_STYLES[0];
+  let hash = 0;
+  for (let i = 0; i < taskName.length; i++) {
+    hash = taskName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return TASK_STYLES[Math.abs(hash) % TASK_STYLES.length];
 };
+
+// --- COLORES DE USUARIO ---
+const USER_COLORS = [
+  { id: 'indigo', css: 'text-indigo-500', bg: 'bg-indigo-500', ring: 'ring-indigo-500' },
+  { id: 'rose', css: 'text-rose-500', bg: 'bg-rose-500', ring: 'ring-rose-500' },
+  { id: 'emerald', css: 'text-emerald-500', bg: 'bg-emerald-500', ring: 'ring-emerald-500' },
+  { id: 'amber', css: 'text-amber-500', bg: 'bg-amber-500', ring: 'ring-amber-500' },
+  { id: 'cyan', css: 'text-cyan-500', bg: 'bg-cyan-500', ring: 'ring-cyan-500' }
+];
 
 // --- UTILIDADES ---
 const formatTime = (seconds) => {
@@ -94,16 +113,16 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const [userName, setUserName] = useState(() => localStorage.getItem('hometeam_username') || '');
+  const [userColor, setUserColor] = useState(() => localStorage.getItem('hometeam_usercolor') || 'indigo');
   const [showProfileModal, setShowProfileModal] = useState(!localStorage.getItem('hometeam_username'));
 
   const [activeTask, setActiveTask] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('general');
   const [elapsed, setElapsed] = useState(0);
   const [taskInput, setTaskInput] = useState('');
 
   const [modalMode, setModalMode] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  const [manualData, setManualData] = useState({ name: '', category: 'general', hours: 0, minutes: 0, date: getLocalYYYYMMDD() });
+  const [manualData, setManualData] = useState({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() });
 
   const [toast, setToast] = useState({ msg: '', visible: false, type: 'success' });
 
@@ -184,11 +203,11 @@ export default function App() {
         try {
           await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
             taskName: activeTask.name || 'Tarea sin nombre',
-            categoryId: activeTask.category || 'general',
             durationSeconds,
             timestamp: Date.now(),
             dateString: getLocalYYYYMMDD(),
             userName: userName,
+            userColor: userColor,
             userId: user?.uid || 'anonymous'
           });
           showToast('¡Tarea guardada con éxito!', 'success');
@@ -200,7 +219,7 @@ export default function App() {
       setActiveTask(null);
       setTaskInput('');
     } else {
-      setActiveTask({ name: taskInput, category: activeCategory, startTime: Date.now() });
+      setActiveTask({ name: taskInput, startTime: Date.now() });
     }
   };
 
@@ -209,11 +228,11 @@ export default function App() {
     const totalSeconds = (parseInt(manualData.hours || 0) * 3600) + (parseInt(manualData.minutes || 0) * 60);
     const payload = {
       taskName: manualData.name,
-      categoryId: manualData.category || 'general',
       durationSeconds: totalSeconds,
       dateString: manualData.date,
       timestamp: new Date(manualData.date).getTime(),
       userName: userName,
+      userColor: userColor,
       userId: user?.uid || 'anonymous'
     };
     try {
@@ -241,7 +260,6 @@ export default function App() {
     setEditingItem(chore);
     setManualData({
       name: chore.taskName,
-      category: chore.categoryId || 'general',
       hours: Math.floor(chore.durationSeconds / 3600),
       minutes: Math.floor((chore.durationSeconds % 3600) / 60),
       date: chore.dateString
@@ -301,22 +319,6 @@ export default function App() {
 
   const dailyQuote = useMemo(() => getDailyQuote(), [getLocalYYYYMMDD()]);
 
-  // Gamificación (Usuario actual)
-  const userGamification = useMemo(() => {
-    if (!userName) return { xp: 0, level: 1, currentLevelXP: 0, nextLevelXP: 100, progress: 0 };
-    const userChores = chores.filter(c => c.userName === userName);
-    const totalSeconds = userChores.reduce((s, c) => s + c.durationSeconds, 0);
-    const totalXP = Math.floor(totalSeconds / 60) * 10;
-    const level = Math.floor(Math.sqrt(totalXP / 100)) + 1;
-    const currentLevelBaseXP = Math.pow(level - 1, 2) * 100;
-    const nextLevelBaseXP = Math.pow(level, 2) * 100;
-    const currentLevelXP = totalXP - currentLevelBaseXP;
-    const xpNeeded = nextLevelBaseXP - currentLevelBaseXP;
-    const progress = Math.min(100, Math.round((currentLevelXP / xpNeeded) * 100));
-
-    return { xp: totalXP, level, progress, currentLevelXP, xpNeeded };
-  }, [chores, userName]);
-
   const stats = useMemo(() => {
     const currentMonthStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
     const monthly = chores.filter(c => c.dateString.startsWith(currentMonthStr));
@@ -358,11 +360,6 @@ export default function App() {
           <h1 className="text-xl font-bold tracking-tight">RanxPanx Team</h1>
         </div>
         <div className="flex items-center gap-2">
-          {userName && (
-            <div className="flex items-center gap-1.5 mr-2 px-2 py-1 rounded-lg bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 font-bold text-xs ring-1 ring-indigo-500/20">
-              <Award size={14} /> Nvl {userGamification.level}
-            </div>
-          )}
           <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full ${isDarkMode ? 'bg-slate-800 text-yellow-400' : 'bg-slate-100 text-slate-600'}`}>
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -388,23 +385,13 @@ export default function App() {
                   <Plus size={14} /> Registro manual
                 </button>
               </div>
-              <input type="text" placeholder="¿Qué vas a hacer?" value={taskInput} onChange={(e) => setTaskInput(e.target.value)} disabled={!!activeTask} className={`w-full text-lg font-medium p-4 rounded-2xl border mb-4 transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
+              <input type="text" placeholder="¿Qué vas a hacer?" value={taskInput} onChange={(e) => setTaskInput(e.target.value)} disabled={!!activeTask} className={`w-full text-lg font-medium p-4 rounded-2xl border mb-6 transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
 
-              {!activeTask && (
+              {!activeTask && suggestions.length > 0 && (
                 <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2 px-1">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase">Categoría</p>
-                  </div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
                   <div className="flex flex-wrap gap-2">
-                    {Object.values(CATEGORIAS).map(cat => {
-                      const CatIcon = cat.icon;
-                      const isSel = activeCategory === cat.id;
-                      return (
-                        <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-all ${isSel ? `border-transparent ${cat.bg} ${cat.color} font-bold ring-2 ring-offset-1 ${isDarkMode ? 'ring-offset-slate-900' : 'ring-offset-white'} ring-${cat.color.split('-')[1]}-500/50` : isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
-                          <CatIcon size={14} /> {cat.label}
-                        </button>
-                      )
-                    })}
+                    {suggestions.map(s => <button key={s} onClick={() => setTaskInput(s)} className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>{s}</button>)}
                   </div>
                 </div>
               )}
@@ -420,17 +407,18 @@ export default function App() {
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 px-2">Actividad de hoy</h3>
               <div className="space-y-3">
                 {chores.filter(c => c.dateString === getLocalYYYYMMDD()).slice(0, 5).map(chore => {
-                  const cat = CATEGORIAS[chore.categoryId] || CATEGORIAS.general;
-                  const Icon = cat.icon;
+                  const style = getTaskStyle(chore.taskName);
+                  const Icon = style.icon;
+                  const uColorClass = USER_COLORS.find(c => c.id === chore.userColor)?.css || 'text-slate-500';
                   return (
                     <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.bg}`}><Icon size={18} className={cat.color} /></div>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.bg}`}><Icon size={18} className={style.color} /></div>
                         <div>
                           <p className="font-bold text-sm tracking-tight">{chore.taskName}</p>
                           <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                            <span className={`${cat.color} font-bold`}>{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                            • {chore.userName} • {formatTimeDetailed(chore.durationSeconds)}
+                            <span className={`${style.color} font-bold`}>{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                            • <span className={`font-bold ${uColorClass}`}>{chore.userName}</span> • {formatTimeDetailed(chore.durationSeconds)}
                           </p>
                         </div>
                       </div>
@@ -498,17 +486,18 @@ export default function App() {
             </div>
             <div className="space-y-3">
               {getChoresForDate(selectedDate).length > 0 && getChoresForDate(selectedDate).map(chore => {
-                const cat = CATEGORIAS[chore.categoryId] || CATEGORIAS.general;
-                const Icon = cat.icon;
+                const style = getTaskStyle(chore.taskName);
+                const Icon = style.icon;
+                const uColorClass = USER_COLORS.find(c => c.id === chore.userColor)?.css || 'text-slate-500';
                 return (
                   <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between`}>
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.bg}`}><Icon size={14} className={cat.color} /></div>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.bg}`}><Icon size={14} className={style.color} /></div>
                       <div>
                         <p className="font-bold text-sm">{chore.taskName}</p>
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                          <span className={cat.color}>{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                          • {chore.userName} • <span className="text-slate-500 font-medium">{formatTimeDetailed(chore.durationSeconds)}</span>
+                          <span className={style.color}>{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                          • <span className={`font-bold ${uColorClass}`}>{chore.userName}</span> • <span className="text-slate-500 font-medium">{formatTimeDetailed(chore.durationSeconds)}</span>
                         </p>
                       </div>
                     </div>
@@ -526,22 +515,6 @@ export default function App() {
           <div className="space-y-6 animate-in fade-in">
             <div className="bg-gradient-to-br from-indigo-600 to-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
               <Award className="absolute -top-4 -right-4 text-white/10" size={120} />
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-1">Tu Progreso 🏆</p>
-                  <p className="text-sm font-bold opacity-80 mb-2">XP Total: {userGamification.xp}</p>
-                  <div className="w-full h-1.5 bg-black/30 rounded-full mt-2">
-                    <div className="h-full bg-yellow-400 rounded-full shadow-[0_0_10px_rgba(250,204,21,0.5)] transition-all duration-1000" style={{ width: `${userGamification.progress}%` }}></div>
-                  </div>
-                  <p className="text-[10px] font-bold text-indigo-200 mt-1 uppercase tracking-widest">{userGamification.currentLevelXP} / {userGamification.xpNeeded} XP para Nvl {userGamification.level + 1}</p>
-                </div>
-                <div className="bg-yellow-400 text-slate-900 w-16 h-16 rounded-full flex flex-col items-center justify-center font-black shadow-lg ring-4 ring-yellow-400/20 transform rotate-3">
-                  <span className="text-[10px] uppercase leading-none opacity-80">Nivel</span>
-                  <span className="text-2xl leading-none -mt-1">{userGamification.level}</span>
-                </div>
-              </div>
-
-              <div className="w-full h-px bg-white/10 my-6"></div>
 
               <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-2">Esfuerzo del Mes (Equipo)</p>
               <h2 className="text-4xl font-bold mb-6">{formatTime(stats.total)}</h2>
@@ -617,20 +590,14 @@ export default function App() {
                 <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tarea</label>
                 <input type="text" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all`} value={manualData.name} onChange={(e) => setManualData({ ...manualData, name: e.target.value })} />
 
-                <div className="mt-4">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Categoría</p>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.values(CATEGORIAS).map(cat => {
-                      const CatIcon = cat.icon;
-                      const isSel = manualData.category === cat.id;
-                      return (
-                        <button key={cat.id} onClick={() => setManualData({ ...manualData, category: cat.id })} className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-all ${isSel ? `border-transparent ${cat.bg} ${cat.color} font-bold ring-2 ring-offset-1 ${isDarkMode ? 'ring-offset-slate-900' : 'ring-offset-white'} ring-${cat.color.split('-')[1]}-500/50` : isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-500'}`}>
-                          <CatIcon size={14} /> {cat.label}
-                        </button>
-                      )
-                    })}
+                {suggestions.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestions.map(s => <button key={s} onClick={() => setManualData({ ...manualData, name: s })} className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>{s}</button>)}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Horas</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.hours} onChange={(e) => setManualData({ ...manualData, hours: e.target.value })} /></div>
@@ -648,9 +615,21 @@ export default function App() {
           <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl`}>
             <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter">Bienvenid@s</h2>
             <p className={`text-sm mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Sincroniza el RanxPanx Team con tu maravillosa esposa. ¿Quién eres?</p>
-            <div className="space-y-3">
-              <input type="text" placeholder="Tu nombre..." className={`w-full text-lg p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} onKeyDown={(e) => e.key === 'Enter' && e.target.value && (setUserName(e.target.value), localStorage.setItem('hometeam_username', e.target.value), setShowProfileModal(false))} />
-              <p className="text-[10px] text-center text-slate-500 font-bold uppercase tracking-widest mt-4">Pulsa Enter para entrar</p>
+            <div className="space-y-4">
+              <input type="text" placeholder="Tu nombre..." className={`w-full text-xl font-bold p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={userName} onChange={(e) => setUserName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && userName) { localStorage.setItem('hometeam_username', userName); localStorage.setItem('hometeam_usercolor', userColor); setShowProfileModal(false); } }} />
+
+              <div>
+                <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Elige un color visual</p>
+                <div className="flex justify-between px-2">
+                  {USER_COLORS.map(c => (
+                    <button key={c.id} onClick={() => setUserColor(c.id)} className={`w-10 h-10 rounded-full ${c.bg} transition-all ${userColor === c.id ? `ring-4 ring-offset-2 ${c.ring} ${isDarkMode ? 'ring-offset-slate-900' : 'ring-offset-white'} scale-110` : 'opacity-40 hover:opacity-100 scale-90'}`} />
+                  ))}
+                </div>
+              </div>
+
+              <button onClick={() => { if (userName) { localStorage.setItem('hometeam_username', userName); localStorage.setItem('hometeam_usercolor', userColor); setShowProfileModal(false); } }} className={`w-full text-white font-bold py-4 rounded-2xl mt-4 transition-all ${userName ? USER_COLORS.find(c => c.id === userColor)?.bg + ' hover:opacity-90 active:scale-95' : 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed text-slate-400'}`}>
+                Entrar al Equipo
+              </button>
             </div>
           </div>
         </div>
