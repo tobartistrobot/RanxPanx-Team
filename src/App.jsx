@@ -4,7 +4,7 @@ import {
   Play, Square, Calendar as CalendarIcon, BarChart3, Clock,
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
-  Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause
+  Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause, ShoppingCart
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
@@ -108,6 +108,7 @@ const getLocalYYYYMMDD = (d = new Date()) => {
 export default function App() {
   const [user, setUser] = useState(null);
   const [chores, setChores] = useState([]);
+  const [groceries, setGroceries] = useState([]);
   const [activeTab, setActiveTab] = useState('timer');
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('hometeam_dark') === 'true');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -119,6 +120,7 @@ export default function App() {
   const [activeTask, setActiveTask] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [taskInput, setTaskInput] = useState('');
+  const [groceryInput, setGroceryInput] = useState('');
 
   const [modalMode, setModalMode] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
@@ -158,13 +160,23 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     const choresRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores');
-    const q = query(choresRef);
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeChores = onSnapshot(query(choresRef), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       data.sort((a, b) => b.timestamp - a.timestamp);
       setChores(data);
-    }, (error) => { console.error("Firestore error:", error); });
-    return () => unsubscribe();
+    }, (error) => console.error("Firestore chores error:", error));
+
+    const groceriesRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'groceries');
+    const unsubscribeGroceries = onSnapshot(query(groceriesRef), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => b.timestamp - a.timestamp);
+      setGroceries(data);
+    }, (error) => console.error("Firestore groceries error:", error));
+
+    return () => {
+      unsubscribeChores();
+      unsubscribeGroceries();
+    };
   }, [user]);
 
   useEffect(() => {
@@ -194,6 +206,11 @@ export default function App() {
     const names = chores.map(c => c.taskName);
     return [...new Set(names)].slice(0, 6);
   }, [chores]);
+
+  const grocerySuggestions = useMemo(() => {
+    const names = groceries.map(g => g.name);
+    return [...new Set(names)].slice(0, 6);
+  }, [groceries]);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type, visible: true });
@@ -265,6 +282,47 @@ export default function App() {
     }
     setActiveTask(null);
     setTaskInput('');
+  };
+
+  const addGrocery = async (name) => {
+    if (!name.trim()) return;
+    if (!userName) { setShowProfileModal(true); return; }
+    try {
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'groceries'), {
+        name: name.trim(),
+        completed: false,
+        timestamp: Date.now(),
+        userName: userName,
+        userColor: userColor,
+      });
+      setGroceryInput('');
+    } catch (error) {
+      console.error("Error adding grocery:", error);
+      showToast('Error al añadir producto', 'error');
+    }
+  };
+
+  const toggleGrocery = async (id, currentStatus) => {
+    try {
+      await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'groceries', id), {
+        completed: !currentStatus
+      });
+      if (!currentStatus) {
+        import('canvas-confetti').then((confetti) => {
+          confetti.default({ particleCount: 30, spread: 40, origin: { y: 0.8 }, colors: ['#10b981', '#ffffff'] });
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling grocery:", error);
+    }
+  };
+
+  const deleteGrocery = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'groceries', id));
+    } catch (error) {
+      console.error("Error deleting grocery:", error);
+    }
   };
 
   const handleSaveManual = async () => {
@@ -580,6 +638,67 @@ export default function App() {
             </div>
           </div>
         )}
+        {activeTab === 'groceries' && (
+          <div className="flex flex-col gap-6 animate-in fade-in">
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-[2.5rem] shadow-xl border relative overflow-hidden`}>
+              <div className="flex gap-2 mb-4">
+                <input type="text" placeholder="Añadir a la lista..." value={groceryInput} onChange={(e) => setGroceryInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addGrocery(groceryInput); }} className={`flex-1 text-lg font-medium p-4 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
+                <button onClick={() => addGrocery(groceryInput)} className="w-16 flex items-center justify-center bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30">
+                  <Plus size={24} />
+                </button>
+              </div>
+
+              {grocerySuggestions.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
+                  <div className="flex flex-wrap gap-2">
+                    {grocerySuggestions.map(s => <button key={s} onClick={() => addGrocery(s)} className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>{s}</button>)}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Pendientes</h3>
+                <div className="space-y-2">
+                  {groceries.filter(g => !g.completed).length === 0 ? <p className="text-center text-xs text-slate-400 italic py-6">Lista de la compra vacía.</p> : groceries.filter(g => !g.completed).map(item => (
+                    <div key={item.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group transition-all`}>
+                      <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleGrocery(item.id, item.completed)}>
+                        <button className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${isDarkMode ? 'border-slate-700' : 'border-slate-300'}`}>
+                          <div className="w-0 h-0 transition-all"></div>
+                        </button>
+                        <p className="font-bold text-base flex-1">{item.name}</p>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase ml-2 ${USER_COLORS.find(c => c.id === item.userColor)?.bg || 'bg-slate-500'}`}>
+                        {item.userName ? item.userName.charAt(0) : '?'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {groceries.filter(g => g.completed).length > 0 && (
+                <div>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">En el Carrito</h3>
+                  <div className="space-y-2 opacity-60">
+                    {groceries.filter(g => g.completed).map(item => (
+                      <div key={item.id} className={`${isDarkMode ? 'bg-slate-900/50 border-slate-800/50' : 'bg-slate-50 border-slate-200'} p-4 rounded-2xl border flex items-center justify-between group`}>
+                        <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleGrocery(item.id, item.completed)}>
+                          <button className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center transition-all">
+                            <Check size={16} strokeWidth={3} />
+                          </button>
+                          <p className="font-bold text-base flex-1 line-through text-slate-400">{item.name}</p>
+                        </div>
+                        <button onClick={() => deleteGrocery(item.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors ml-2"><Trash2 size={16} /></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {activeTab === 'dashboard' && (
           <div className="space-y-6 animate-in fade-in">
             <div className="bg-gradient-to-br from-indigo-600 to-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
@@ -634,6 +753,7 @@ export default function App() {
         {[
           { id: 'timer', icon: Clock, label: 'Registro' },
           { id: 'calendar', icon: CalendarIcon, label: 'Agenda' },
+          { id: 'groceries', icon: ShoppingCart, label: 'Compra' },
           { id: 'dashboard', icon: BarChart3, label: 'Equipo' }
         ].map(item => {
           const Icon = item.icon;
