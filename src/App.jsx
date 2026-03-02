@@ -5,12 +5,12 @@ import {
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
   Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause, ShoppingCart,
-  GripVertical, Store
+  GripVertical, Store, Gift, Flame, Zap, Star, Tag, ShoppingBag
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 
 // --- CONFIGURACIÓN DE FIREBASE ---
 const firebaseConfig = {
@@ -222,6 +222,15 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [calendarUserFilter, setCalendarUserFilter] = useState(null);
 
+  // GAMIFICATION SYSTEM STATE
+  const [usersData, setUsersData] = useState({});
+  const [storeItems, setStoreItems] = useState([]);
+  const [coupons, setCoupons] = useState([]);
+  const [moments, setMoments] = useState([]);
+  const [rewardsView, setRewardsView] = useState('store');
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [newItem, setNewItem] = useState({ name: '', cost: 10, icon: '🎁' });
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -270,10 +279,42 @@ export default function App() {
       setSupermarkets(data);
     }, (error) => console.error("Firestore supermarkets error:", error));
 
+    const usersRef = collection(db, 'artifacts', safeAppId, 'public', 'users');
+    const unsubscribeUsers = onSnapshot(query(usersRef), (snapshot) => {
+      const data = {};
+      snapshot.docs.forEach(doc => { data[doc.id] = doc.data(); });
+      setUsersData(data);
+    }, (error) => console.error("Firestore users error:", error));
+
+    const storeRef = collection(db, 'artifacts', safeAppId, 'public', 'store_items');
+    const unsubscribeStore = onSnapshot(query(storeRef), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => b.timestamp - a.timestamp);
+      setStoreItems(data);
+    });
+
+    const couponsRef = collection(db, 'artifacts', safeAppId, 'public', 'coupons');
+    const unsubscribeCoupons = onSnapshot(query(couponsRef), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => b.timestamp - a.timestamp);
+      setCoupons(data);
+    });
+
+    const momentsRef = collection(db, 'artifacts', safeAppId, 'public', 'moments');
+    const unsubscribeMoments = onSnapshot(query(momentsRef), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => b.timestamp - a.timestamp);
+      setMoments(data);
+    });
+
     return () => {
       unsubscribeChores();
       unsubscribeGroceries();
       unsubscribeSupermarkets();
+      unsubscribeUsers();
+      unsubscribeStore();
+      unsubscribeCoupons();
+      unsubscribeMoments();
     };
   }, [user]);
 
@@ -356,11 +397,81 @@ export default function App() {
     }
   };
 
+  const playCashSound = () => {
+    try {
+      const audio = new Audio('https://cdn.freesound.org/previews/332/332629_5065845-lq.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(e => console.log('Audio play error:', e));
+    } catch (e) { }
+  };
+
+  const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false) => {
+    if (!userName || durationSeconds < 60) return; // Menos de 1 min no da RPC
+
+    // 1. Calcular Base (1 RPC por cada 15 mins)
+    let rpcEarned = durationSeconds / 900;
+
+    // 2. Interés Compuesto (solo para nueva actividad o si no es edicion - el manual pasa isManual=true pero es tratado igual si es nuevo)
+    const taskHistory = chores.filter(c => c.taskName === taskName && c.timestamp < Date.now() - 60000);
+    let targetChore = taskHistory.length > 0 ? taskHistory[0] : null; // is sorted descending
+
+    if (targetChore) {
+      const daysSince = (Date.now() - targetChore.timestamp) / (1000 * 3600 * 24);
+      if (daysSince > 1) {
+        rpcEarned = rpcEarned * Math.pow(1.10, Math.floor(daysSince));
+      }
+    }
+
+    // 3. Revisar Frenesí Mode
+    const userData = usersData[userName] || { rpcBalance: 0, frenzyExpiresAt: 0 };
+    const now = Date.now();
+    let inFrenzy = false;
+
+    if (userData.frenzyExpiresAt > now) {
+      rpcEarned *= 1.5;
+      inFrenzy = true;
+    }
+
+    // Redondear a 2 decimales
+    rpcEarned = Math.round(rpcEarned * 100) / 100;
+
+    // 4. Activar MODO FRENESÍ (3 tareas *distintas* en 45 min)
+    const last45Mins = chores.filter(c => c.userName === userName && c.timestamp > (now - 45 * 60000));
+    const taskNamesIn45m = new Set(last45Mins.map(c => c.taskName));
+    taskNamesIn45m.add(taskName);
+
+    let newFrenzyExpiresAt = userData.frenzyExpiresAt;
+    let justTriggeredFrenzy = false;
+
+    if (taskNamesIn45m.size >= 3 && userData.frenzyExpiresAt < now) {
+      newFrenzyExpiresAt = now + 3600000; // 1 hora
+      justTriggeredFrenzy = true;
+      showToast('🔥 ¡MODO FRENESÍ ACTIVADO! (x1.5 RPC por 1 Hora)', 'success');
+    }
+
+    // 5. Guardar
+    try {
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'users', userName), {
+        rpcBalance: (userData.rpcBalance || 0) + rpcEarned,
+        frenzyExpiresAt: newFrenzyExpiresAt
+      }, { merge: true });
+
+      playCashSound();
+      if (!justTriggeredFrenzy && rpcEarned >= 0.1) {
+        showToast(`+${rpcEarned.toFixed(2)} RPC Añadidos ${inFrenzy ? '🔥' : ''}`, 'success');
+      }
+    } catch (err) {
+      console.error("Error updating RPC", err);
+    }
+  };
+
   const stopAndSaveTimer = async () => {
     if (!activeTask) return;
     const durationSeconds = elapsed;
     if (durationSeconds > 5) {
       try {
+        await processRPCAndFrenzy(activeTask.name || 'Tarea sin nombre', durationSeconds);
+
         await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
           taskName: activeTask.name || 'Tarea sin nombre',
           durationSeconds,
@@ -484,6 +595,78 @@ export default function App() {
     }
   };
 
+  const buyItem = async (item) => {
+    const userData = usersData[userName];
+    if (!userData || userData.rpcBalance < item.costRPC) {
+      showToast('No tienes suficientes RPC copiados de energía', 'error');
+      return;
+    }
+
+    if (!window.confirm(`¿Comprar ${item.name} por ${item.costRPC} RPC?`)) return;
+
+    try {
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'users', userName), {
+        rpcBalance: userData.rpcBalance - item.costRPC
+      }, { merge: true });
+
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'coupons'), {
+        itemName: item.name,
+        icon: item.icon,
+        owner: userName,
+        timestamp: Date.now()
+      });
+
+      showToast('¡Compra realizada con éxito!', 'success');
+      setRewardsView('inventory');
+    } catch (err) {
+      console.error(err);
+      showToast('Error en la compra', 'error');
+    }
+  };
+
+  const redeemCoupon = async (coupon) => {
+    if (!window.confirm(`¿Seguro que quieres canjear y gastar: ${coupon.itemName}?`)) return;
+
+    try {
+      await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'coupons', coupon.id));
+
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'moments'), {
+        itemName: coupon.itemName,
+        icon: coupon.icon,
+        owner: coupon.owner,
+        redeemedAt: Date.now(),
+        timestamp: Date.now()
+      });
+
+      const confetti = (await import('canvas-confetti')).default;
+      confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#fffc00', '#ff008d', '#00e5ff', '#ff5100', '#56ff00'] });
+      playCashSound();
+
+      showToast('¡Premio canjeado! Disfruta tu momento.', 'success');
+      setRewardsView('history');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSaveStoreItem = async () => {
+    if (!newItem.name || newItem.cost <= 0) return;
+    try {
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'store_items'), {
+        name: newItem.name,
+        costRPC: parseFloat(newItem.cost),
+        icon: newItem.icon || '🎁',
+        createdBy: userName,
+        timestamp: Date.now()
+      });
+      setShowItemModal(false);
+      setNewItem({ name: '', cost: 10, icon: '🎁' });
+      showToast('Premio añadido a la tienda', 'success');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleSaveManual = async () => {
     if (!manualData.name || (manualData.hours === 0 && manualData.minutes === 0)) return;
     const totalSeconds = (parseInt(manualData.hours || 0) * 3600) + (parseInt(manualData.minutes || 0) * 60);
@@ -500,6 +683,7 @@ export default function App() {
       if (modalMode === 'edit' && editingItem) {
         await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', editingItem.id), payload);
       } else {
+        await processRPCAndFrenzy(payload.taskName, payload.durationSeconds, true);
         await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), payload);
       }
       setModalMode(null);
@@ -888,6 +1072,117 @@ export default function App() {
             </div>
           </div>
         )}
+        {activeTab === 'rewards' && (
+          <div className="flex flex-col gap-6 animate-in fade-in">
+            {/* Cabecera de RPC y Frenesí */}
+            <div className="bg-gradient-to-br from-amber-400 to-orange-600 p-8 rounded-[2.5rem] text-white shadow-xl shadow-orange-500/20 relative overflow-hidden">
+              <Gift className="absolute -top-4 -right-4 text-white/10" size={120} />
+
+              <div className="flex justify-between items-start relative z-10 mb-4">
+                <div>
+                  <p className="text-orange-100 text-xs font-bold uppercase tracking-widest mb-1">Tu Balance RPC</p>
+                  <h2 className="text-5xl font-black tracking-tighter flex items-center gap-2">
+                    {usersData[userName]?.rpcBalance?.toFixed(2) || '0.00'} <span className="text-2xl text-orange-200">RPC</span>
+                  </h2>
+                </div>
+              </div>
+
+              {usersData[userName]?.frenzyExpiresAt > Date.now() && (
+                <div className="mt-4 bg-white/20 backdrop-blur-md rounded-2xl p-4 flex items-center gap-3 animate-pulse border border-white/30">
+                  <Flame className="text-yellow-300 animate-bounce" size={24} />
+                  <div>
+                    <p className="text-sm font-bold leading-tight">¡MODO FRENESÍ ACTIVADO!</p>
+                    <p className="text-[10px] text-orange-100 uppercase tracking-widest font-bold">x1.5 RPC en cada tarea</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Navegación de sección */}
+            <div className={`flex rounded-xl p-1.5 ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-white shadow-sm border border-slate-100'}`}>
+              {[
+                { id: 'store', label: 'Tienda', icon: Store },
+                { id: 'inventory', label: 'Mis Cupones', icon: Tag },
+                { id: 'history', label: 'Momentos', icon: History }
+              ].map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button key={tab.id} onClick={() => setRewardsView(tab.id)} className={`flex-1 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider py-2.5 rounded-lg transition-all ${rewardsView === tab.id ? 'bg-orange-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                    <Icon size={14} /> {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {rewardsView === 'store' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center px-1">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Catálogo de Premios</h3>
+                  <button onClick={() => setShowItemModal(true)} className="text-orange-500 text-xs font-bold flex items-center gap-1 hover:underline">
+                    <Plus size={14} /> Crear Artículo
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {storeItems.map(item => (
+                    <div key={item.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-5 rounded-3xl border flex flex-col items-center text-center relative overflow-hidden group`}>
+                      <div className="text-5xl mb-3 transform group-hover:scale-110 transition-transform">{item.icon}</div>
+                      <h4 className="font-bold text-sm leading-tight mb-3">{item.name}</h4>
+                      <button onClick={() => buyItem(item)} className="w-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1 hover:bg-orange-500 hover:text-white transition-colors">
+                        {item.costRPC} RPC
+                      </button>
+                    </div>
+                  ))}
+                  {storeItems.length === 0 && (
+                    <div className="col-span-2 text-center py-8 text-slate-400 text-xs italic">La tienda está vacía. ¡Añade premios!</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {rewardsView === 'inventory' && (
+              <div className="space-y-3">
+                {coupons.filter(c => c.owner === userName).map(coupon => (
+                  <div key={coupon.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-5 rounded-3xl border flex items-center justify-between shadow-sm relative overflow-hidden`}>
+                    <div className="absolute -left-4 -top-4 text-8xl opacity-5">{coupon.icon}</div>
+                    <div className="flex items-center gap-4 relative z-10 w-full">
+                      <div className="text-4xl">{coupon.icon}</div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-base leading-tight mb-1">{coupon.itemName}</h4>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Comprado el {new Date(coupon.timestamp).toLocaleDateString()}</p>
+                      </div>
+                      <button onClick={() => redeemCoupon(coupon)} className="bg-emerald-500 text-white font-bold py-2 px-4 rounded-xl text-xs shadow-lg shadow-emerald-500/30 hover:bg-emerald-600 transition-colors transform active:scale-95 flex items-center gap-1">
+                        <Star size={14} /> Canjear
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {coupons.filter(c => c.owner === userName).length === 0 && (
+                  <div className="text-center py-8 text-slate-400 text-xs italic">No tienes cupones. ¡Compra algo en la tienda!</div>
+                )}
+              </div>
+            )}
+
+            {rewardsView === 'history' && (
+              <div className="space-y-4">
+                {moments.map(moment => (
+                  <div key={moment.id} className="bg-white dark:bg-slate-900 border-[8px] border-white dark:border-slate-800 shadow-xl rounded-sm transform rotate-1 hover:rotate-0 transition-transform max-w-[280px] mx-auto">
+                    <div className="bg-slate-100 dark:bg-slate-800 aspect-square flex items-center justify-center text-8xl border border-slate-200 dark:border-slate-700">
+                      {moment.icon}
+                    </div>
+                    <div className="p-4 text-center">
+                      <h4 className="font-bold font-serif text-lg text-slate-800 dark:text-slate-100 mb-1">{moment.itemName}</h4>
+                      <p className="text-xs text-slate-500 font-medium font-serif italic">Por {moment.owner} • {new Date(moment.redeemedAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                ))}
+                {moments.length === 0 && (
+                  <div className="text-center py-8 text-slate-400 text-xs italic">Aún no hay grandes momentos registrados.</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         {activeTab === 'dashboard' && (
           <div className="space-y-6 animate-in fade-in">
             <div className="bg-gradient-to-br from-indigo-600 to-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
@@ -943,6 +1238,7 @@ export default function App() {
           { id: 'timer', icon: Clock, label: 'Registro' },
           { id: 'calendar', icon: CalendarIcon, label: 'Agenda' },
           { id: 'groceries', icon: ShoppingCart, label: 'Compra' },
+          { id: 'rewards', icon: Gift, label: 'Premios' },
           { id: 'dashboard', icon: BarChart3, label: 'Equipo' }
         ].map(item => {
           const Icon = item.icon;
@@ -983,6 +1279,38 @@ export default function App() {
               </div>
               <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha</label><input type="date" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.date} onChange={(e) => setManualData({ ...manualData, date: e.target.value })} /></div>
               <button onClick={handleSaveManual} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl mt-4 hover:bg-indigo-700 active:scale-95 transition-all">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showItemModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8`}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-bold text-xl flex items-center gap-2"><Plus size={20} className="text-orange-500" /> Añadir a la Tienda</h2>
+              <button onClick={() => setShowItemModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Nombre del Favor / Premio</label>
+                <input type="text" placeholder="Ej: Especial Desayuno" className={`w-full p-4 rounded-2xl border mt-1 text-base font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Coste (RPC)</label>
+                  <input type="number" min="1" className={`w-full p-4 rounded-2xl border mt-1 text-base font-bold text-orange-500 ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={newItem.cost} onChange={(e) => setNewItem({ ...newItem, cost: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Emoji / Icono</label>
+                  <input type="text" maxLength="2" placeholder="🎁" className={`w-full p-4 rounded-2xl border mt-1 text-center text-2xl ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={newItem.icon} onChange={(e) => setNewItem({ ...newItem, icon: e.target.value })} />
+                </div>
+              </div>
+
+              <button onClick={handleSaveStoreItem} className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl mt-6 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-[1.02] active:scale-95 transition-all">
+                Publicar en Tienda
+              </button>
             </div>
           </div>
         </div>
