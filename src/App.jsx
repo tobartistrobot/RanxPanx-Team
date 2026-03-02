@@ -50,6 +50,11 @@ const formatTimeDigital = (seconds) => {
   return `${h}:${m}:${s}`;
 };
 
+const getLocalYYYYMMDD = (d = new Date()) => {
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().split('T')[0];
+};
+
 // --- COMPONENTE PRINCIPAL ---
 export default function App() {
   const [user, setUser] = useState(null);
@@ -67,7 +72,7 @@ export default function App() {
 
   const [modalMode, setModalMode] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  const [manualData, setManualData] = useState({ name: '', hours: 0, minutes: 0, date: new Date().toISOString().split('T')[0] });
+  const [manualData, setManualData] = useState({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() });
 
   const [expandedUser, setExpandedUser] = useState(null);
   const [radiographyView, setRadiographyView] = useState('day');
@@ -143,7 +148,7 @@ export default function App() {
             taskName: activeTask.name || 'Tarea sin nombre',
             durationSeconds,
             timestamp: Date.now(),
-            dateString: new Date().toISOString().split('T')[0],
+            dateString: getLocalYYYYMMDD(),
             userName: userName,
             userId: user?.uid || 'anonymous'
           });
@@ -201,7 +206,7 @@ export default function App() {
   };
 
   const getChoresForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalYYYYMMDD(date);
     return chores.filter(c => c.dateString === dateStr);
   };
 
@@ -294,7 +299,7 @@ export default function App() {
             <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-[2.5rem] shadow-xl border relative overflow-hidden`}>
               <div className="flex justify-between items-center mb-6">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sesión en vivo</span>
-                <button onClick={() => { setModalMode('manual'); setManualData({ name: '', hours: 0, minutes: 0, date: new Date().toISOString().split('T')[0] }); }} className="text-indigo-500 text-xs font-bold flex items-center gap-1 hover:underline">
+                <button onClick={() => { setModalMode('manual'); setManualData({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() }); }} className="text-indigo-500 text-xs font-bold flex items-center gap-1 hover:underline">
                   <Plus size={14} /> Registro manual
                 </button>
               </div>
@@ -317,11 +322,17 @@ export default function App() {
             <div className="mt-2">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 px-2">Actividad de hoy</h3>
               <div className="space-y-3">
-                {chores.filter(c => c.dateString === new Date().toISOString().split('T')[0]).slice(0, 5).map(chore => (
+                {chores.filter(c => c.dateString === getLocalYYYYMMDD()).slice(0, 5).map(chore => (
                   <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group`}>
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}><History size={18} className="text-indigo-500" /></div>
-                      <div><p className="font-bold text-sm">{chore.taskName}</p><p className="text-[10px] text-slate-500 uppercase tracking-wider">{chore.userName} • {formatTimeDetailed(chore.durationSeconds)}</p></div>
+                      <div>
+                        <p className="font-bold text-sm tracking-tight">{chore.taskName}</p>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                          <span className="text-indigo-400 font-bold">{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                          • {chore.userName} • {formatTimeDetailed(chore.durationSeconds)}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex gap-1">
                       <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500 active:text-indigo-500"><Edit2 size={16} /></button>
@@ -387,7 +398,13 @@ export default function App() {
             <div className="space-y-3">
               {getChoresForDate(selectedDate).length > 0 && getChoresForDate(selectedDate).map(chore => (
                 <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between`}>
-                  <div><p className="font-bold text-sm">{chore.taskName}</p><p className="text-xs text-slate-500">{chore.userName} • {formatTimeDetailed(chore.durationSeconds)}</p></div>
+                  <div>
+                    <p className="font-bold text-sm">{chore.taskName}</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                      <span className="text-indigo-400">{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                      • {chore.userName} • <span className="text-slate-500 font-medium">{formatTimeDetailed(chore.durationSeconds)}</span>
+                    </p>
+                  </div>
                   <div className="flex gap-1">
                     <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
                     <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
