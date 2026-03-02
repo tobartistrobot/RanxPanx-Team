@@ -5,7 +5,7 @@ import {
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
   Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause, ShoppingCart,
-  GripVertical, Store, Gift, Flame, Zap, Star, Tag, ShoppingBag
+  GripVertical, Store, Gift, Flame, Zap, Star, Tag, ShoppingBag, Settings, Shield
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { initializeApp } from 'firebase/app';
@@ -208,6 +208,7 @@ export default function App() {
   const [taskInput, setTaskInput] = useState('');
   const [groceryInput, setGroceryInput] = useState('');
   const [selectedSupermarket, setSelectedSupermarket] = useState('');
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   const [modalMode, setModalMode] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
@@ -351,6 +352,24 @@ export default function App() {
     return [...new Set(names)].slice(0, 6);
   }, [groceries]);
 
+  const hotTasks = useMemo(() => {
+    const uniqueTasks = [...new Set(chores.map(c => c.taskName))];
+    return uniqueTasks.map(t => {
+      const taskChores = chores.filter(c => c.taskName === t);
+      return taskChores.sort((a, b) => b.timestamp - a.timestamp)[0];
+    }).filter(c => c && c.timestamp < Date.now() - 60000).map(c => {
+      const daysSince = (Date.now() - c.timestamp) / (1000 * 3600 * 24);
+      return { name: c.taskName, multiplier: Math.pow(1.10, Math.floor(daysSince)) };
+    }).filter(t => t.multiplier > 1.0).sort((a, b) => b.multiplier - a.multiplier).slice(0, 3);
+  }, [chores]);
+
+  const userTotalToday = useMemo(() => {
+    const todayStr = getLocalYYYYMMDD();
+    return chores.filter(c => c.userName === userName && c.dateString === todayStr).reduce((s, c) => s + c.durationSeconds, 0);
+  }, [chores, userName]);
+  const frenzyProgress = Math.min((userTotalToday / 3600) * 100, 100);
+  const inFrenzyMode = userTotalToday >= 3600;
+
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type, visible: true });
     setTimeout(() => setToast({ msg: '', type: 'success', visible: false }), 3000);
@@ -411,9 +430,9 @@ export default function App() {
     // 1. Calcular Base (1 RPC por cada 15 mins)
     let rpcEarned = durationSeconds / 900;
 
-    // 2. Interés Compuesto (solo para nueva actividad o si no es edicion - el manual pasa isManual=true pero es tratado igual si es nuevo)
+    // 2. Interés Compuesto
     const taskHistory = chores.filter(c => c.taskName === taskName && c.timestamp < Date.now() - 60000);
-    let targetChore = taskHistory.length > 0 ? taskHistory[0] : null; // is sorted descending
+    let targetChore = taskHistory.length > 0 ? taskHistory.sort((a, b) => b.timestamp - a.timestamp)[0] : null;
 
     if (targetChore) {
       const daysSince = (Date.now() - targetChore.timestamp) / (1000 * 3600 * 24);
@@ -422,43 +441,39 @@ export default function App() {
       }
     }
 
-    // 3. Revisar Frenesí Mode
-    const userData = usersData[userName] || { rpcBalance: 0, frenzyExpiresAt: 0 };
-    const now = Date.now();
+    // 3. Revisar Frenesí Diario (>= 3600 segundos agregados hoy)
+    const todayStr = getLocalYYYYMMDD();
+    const todayChores = chores.filter(c => c.userName === userName && c.dateString === todayStr);
+    const totalTodayBeforeThis = todayChores.reduce((sum, c) => sum + c.durationSeconds, 0);
+
     let inFrenzy = false;
-
-    if (userData.frenzyExpiresAt > now) {
-      rpcEarned *= 1.5;
-      inFrenzy = true;
-    }
-
-    // Redondear a 2 decimales
-    rpcEarned = Math.round(rpcEarned * 100) / 100;
-
-    // 4. Activar MODO FRENESÍ (3 tareas *distintas* en 45 min)
-    const last45Mins = chores.filter(c => c.userName === userName && c.timestamp > (now - 45 * 60000));
-    const taskNamesIn45m = new Set(last45Mins.map(c => c.taskName));
-    taskNamesIn45m.add(taskName);
-
-    let newFrenzyExpiresAt = userData.frenzyExpiresAt;
     let justTriggeredFrenzy = false;
 
-    if (taskNamesIn45m.size >= 3 && userData.frenzyExpiresAt < now) {
-      newFrenzyExpiresAt = now + 3600000; // 1 hora
+    if (totalTodayBeforeThis >= 3600) {
+      rpcEarned *= 2.0;
+      inFrenzy = true;
+    } else if ((totalTodayBeforeThis + durationSeconds) >= 3600) {
+      rpcEarned *= 2.0;
+      inFrenzy = true;
       justTriggeredFrenzy = true;
-      showToast('🔥 ¡MODO FRENESÍ ACTIVADO! (x1.5 RPC por 1 Hora)', 'success');
+      showToast('🔥 ¡MODO FRENESÍ x2 DESATADO HASTA MAÑANA!', 'success');
+      import('canvas-confetti').then((confetti) => {
+        confetti.default({ particleCount: 300, spread: 160, origin: { y: 0.5 }, colors: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'] });
+      });
     }
+
+    rpcEarned = Math.round(rpcEarned * 100) / 100;
+    const userData = usersData[userName] || { rpcBalance: 0 };
 
     // 5. Guardar
     try {
       await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName), {
-        rpcBalance: (userData.rpcBalance || 0) + rpcEarned,
-        frenzyExpiresAt: newFrenzyExpiresAt
+        rpcBalance: (userData.rpcBalance || 0) + rpcEarned
       }, { merge: true });
 
       playCashSound();
       if (!justTriggeredFrenzy && rpcEarned >= 0.1) {
-        showToast(`+${rpcEarned.toFixed(2)} RPC Añadidos ${inFrenzy ? '🔥' : ''}`, 'success');
+        showToast(`+${rpcEarned.toFixed(2)} RPC Añadidos ${inFrenzy ? '🔥 x2' : ''}`, 'success');
       }
     } catch (err) {
       console.error("Error updating RPC", err);
@@ -667,6 +682,29 @@ export default function App() {
     }
   };
 
+  const handleAdminDeleteStoreItem = async (id) => {
+    if (window.confirm('¿Seguro que quieres borrar este premio para TODOS?')) {
+      await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'store_items', id));
+      showToast('Premio eliminado de la tienda.', 'success');
+    }
+  };
+
+  const handleAdminDeleteCoupon = async (id) => {
+    if (window.confirm('¿Revocar (borrar) este cupón del inventario de ese usuario?')) {
+      await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'coupons', id));
+      showToast('Cupón revocado.', 'success');
+    }
+  };
+
+  const handleAdminRPC = async (targetUser, delta) => {
+    const uData = usersData[targetUser] || { rpcBalance: 0 };
+    const newVal = Math.max(0, uData.rpcBalance + delta);
+    if (window.confirm(`¿Añadir/Quitar ${delta > 0 ? '+' + delta : delta} RPC a ${targetUser}? (Nuevo balance: ${newVal.toFixed(2)})`)) {
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', targetUser), { rpcBalance: newVal }, { merge: true });
+      showToast('Balance actualizado.', 'success');
+    }
+  };
+
   const handleSaveManual = async () => {
     if (!manualData.name || (manualData.hours === 0 && manualData.minutes === 0)) return;
     const totalSeconds = (parseInt(manualData.hours || 0) * 3600) + (parseInt(manualData.minutes || 0) * 60);
@@ -824,13 +862,32 @@ export default function App() {
             </div>
 
             <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-[2.5rem] shadow-xl border relative overflow-hidden transition-all duration-500`}>
-              <div className="flex justify-between items-center mb-6">
+              <div className="mb-4">
+                <div className="flex justify-between items-end mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1"><Zap size={10} className={inFrenzyMode ? 'text-amber-500' : ''} /> Progreso Frenesí (x2)</span>
+                  <span className={`text-[10px] font-bold ${inFrenzyMode ? 'text-amber-500' : 'text-slate-400'}`}>{Math.floor(userTotalToday / 60)} / 60 min</span>
+                </div>
+                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex shadow-inner">
+                  <div className={`h-full transition-all duration-1000 ${inFrenzyMode ? 'bg-amber-500 animate-pulse' : 'bg-gradient-to-r from-orange-300 to-orange-400'}`} style={{ width: `${frenzyProgress}%` }}></div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center mb-6 mt-6">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sesión en vivo</span>
                 <button onClick={() => { setModalMode('manual'); setManualData({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() }); }} className="text-indigo-500 text-xs font-bold flex items-center gap-1 hover:underline">
                   <Plus size={14} /> Registro manual
                 </button>
               </div>
               <input type="text" placeholder="¿Qué vas a hacer?" value={taskInput} onChange={(e) => setTaskInput(e.target.value)} disabled={!!activeTask} className={`w-full text-lg font-medium p-4 rounded-2xl border mb-6 transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
+
+              {!activeTask && hotTasks.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1 flex items-center gap-1.5"><Flame size={12} className="text-orange-500" /> En busca y captura (Multiplicador)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {hotTasks.map(t => <button key={t.name} onClick={() => setTaskInput(t.name)} className={`text-xs px-2.5 py-1.5 rounded-xl border border-orange-200 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:border-orange-900/50 dark:text-orange-300 font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 shadow-sm shadow-orange-500/10`}>{t.name} <span className="text-[9px] bg-orange-200 dark:bg-orange-800 px-1 py-0.5 rounded-md text-orange-900 dark:text-orange-100">x{t.multiplier.toFixed(2)}</span></button>)}
+                  </div>
+                </div>
+              )}
 
               {!activeTask && suggestions.length > 0 && (
                 <div className="mb-6">
@@ -1087,12 +1144,24 @@ export default function App() {
                 </div>
               </div>
 
-              {usersData[userName]?.frenzyExpiresAt > Date.now() && (
-                <div className="mt-4 bg-white/20 backdrop-blur-md rounded-2xl p-4 flex items-center gap-3 animate-pulse border border-white/30">
+              {inFrenzyMode ? (
+                <div className="mt-4 bg-white/20 backdrop-blur-md rounded-2xl p-4 flex items-center gap-3 animate-pulse border border-white/30 shadow-lg shadow-yellow-500/20">
                   <Flame className="text-yellow-300 animate-bounce" size={24} />
                   <div>
                     <p className="text-sm font-bold leading-tight">¡MODO FRENESÍ ACTIVADO!</p>
-                    <p className="text-[10px] text-orange-100 uppercase tracking-widest font-bold">x1.5 RPC en cada tarea</p>
+                    <p className="text-[10px] text-orange-100 uppercase tracking-widest font-bold">x2.0 RPC en cada tarea hasta mañana</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 w-full max-w-xs">
+                  <div className="flex justify-between items-end mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-orange-100/80">Progreso Frenesí (x2)</span>
+                    <span className="text-[10px] font-bold text-white">{Math.floor(userTotalToday / 60)} / 60 min</span>
+                  </div>
+                  <div className="h-1.5 bg-black/20 rounded-full overflow-hidden flex shadow-inner backdrop-blur-sm">
+                    <div className="h-full bg-gradient-to-r from-yellow-400 to-amber-300 transition-all duration-1000 relative" style={{ width: `${frenzyProgress}%` }}>
+                      <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1118,9 +1187,14 @@ export default function App() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center px-1">
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Catálogo de Premios</h3>
-                  <button onClick={() => setShowItemModal(true)} className="text-orange-500 text-xs font-bold flex items-center gap-1 hover:underline">
-                    <Plus size={14} /> Crear Artículo
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowAdminModal(true)} className={`text-xs font-bold px-2 py-1 rounded border flex items-center gap-1 transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800'}`}>
+                      <Shield size={12} /> Admin
+                    </button>
+                    <button onClick={() => setShowItemModal(true)} className="text-orange-500 text-xs font-bold flex items-center gap-1 hover:underline">
+                      <Plus size={14} /> Crear Artículo
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -1279,6 +1353,75 @@ export default function App() {
               </div>
               <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha</label><input type="date" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.date} onChange={(e) => setManualData({ ...manualData, date: e.target.value })} /></div>
               <button onClick={handleSaveManual} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl mt-4 hover:bg-indigo-700 active:scale-95 transition-all">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAdminModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-md rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8 max-h-[90vh] overflow-y-auto no-scrollbar`}>
+            <div className="flex justify-between items-center mb-6 sticky top-0 bg-inherit py-2 z-10">
+              <h2 className="font-black text-xl flex items-center gap-2"><Shield size={22} className="text-indigo-500" /> Configuración Admin</h2>
+              <button onClick={() => setShowAdminModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
+            </div>
+
+            <div className="space-y-6">
+              <section>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">Carteras Locales</h3>
+                <div className="space-y-2">
+                  {Object.keys(usersData).map(u => (
+                    <div key={u} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                      <div>
+                        <p className="font-bold text-sm tracking-tight">{u}</p>
+                        <p className="text-[10px] text-orange-500 font-bold">{usersData[u].rpcBalance?.toFixed(2) || 0} RPC</p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => handleAdminRPC(u, -10)} className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold text-xs flex items-center justify-center">-10</button>
+                        <button onClick={() => handleAdminRPC(u, 10)} className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 font-bold text-xs flex items-center justify-center">+10</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">Tienda de Premios</h3>
+                <div className="space-y-2">
+                  {storeItems.map(item => (
+                    <div key={item.id} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{item.icon}</span>
+                        <div>
+                          <p className="font-bold text-sm leading-tight">{item.name}</p>
+                          <p className="text-[10px] font-medium text-slate-500">{item.costRPC} RPC</p>
+                        </div>
+                      </div>
+                      <button onClick={() => handleAdminDeleteStoreItem(item.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                    </div>
+                  ))}
+                  {storeItems.length === 0 && <p className="text-xs text-slate-500 italic">No hay premios creados.</p>}
+                </div>
+              </section>
+
+              <section>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">Cupones Activos (Toda la familia)</h3>
+                <div className="space-y-2">
+                  {coupons.map(coupon => (
+                    <div key={coupon.id} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                      <div className="flex items-center gap-3 w-3/4">
+                        <span className="text-xl">{coupon.icon}</span>
+                        <div className="truncate">
+                          <p className="font-bold text-sm tracking-tight truncate">{coupon.itemName}</p>
+                          <p className="text-[10px] font-bold text-slate-500">Pertenece a {coupon.owner}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => handleAdminDeleteCoupon(coupon.id)} className="text-[10px] font-bold uppercase text-red-500 px-2 py-1 rounded bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors">Revocar</button>
+                    </div>
+                  ))}
+                  {coupons.length === 0 && <p className="text-xs text-slate-500 italic">Nadie tiene cupones activos.</p>}
+                </div>
+              </section>
             </div>
           </div>
         </div>
