@@ -4,7 +4,7 @@ import {
   Play, Square, Calendar as CalendarIcon, BarChart3, Clock,
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
-  Sparkles, Coffee, Briefcase, Activity, CheckSquare
+  Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause, Timer
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
@@ -119,6 +119,7 @@ export default function App() {
   const [activeTask, setActiveTask] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [taskInput, setTaskInput] = useState('');
+  const [isPomodoro, setIsPomodoro] = useState(false);
 
   const [modalMode, setModalMode] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
@@ -131,6 +132,7 @@ export default function App() {
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [calendarUserFilter, setCalendarUserFilter] = useState(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -177,13 +179,32 @@ export default function App() {
 
   useEffect(() => {
     let interval = null;
-    if (activeTask) {
+    if (activeTask && !activeTask.isPaused) {
       interval = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - activeTask.startTime) / 1000));
+        const diff = Math.floor((Date.now() - activeTask.startTime) / 1000);
+        if (isPomodoro) {
+          const timeLeft = activeTask.accumulatedTime - diff;
+          if (timeLeft <= 0) {
+            setElapsed(0);
+            clearInterval(interval);
+            import('canvas-confetti').then((confetti) => {
+              confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6'] });
+            });
+            stopAndSaveTimer(true); // Auto-save on pomodoro finish
+          } else {
+            setElapsed(timeLeft);
+          }
+        } else {
+          setElapsed(activeTask.accumulatedTime + diff);
+        }
       }, 1000);
-    } else { setElapsed(0); }
+    } else if (activeTask && activeTask.isPaused) {
+      setElapsed(activeTask.accumulatedTime);
+    } else {
+      setElapsed(isPomodoro ? 15 * 60 : 0);
+    }
     return () => clearInterval(interval);
-  }, [activeTask]);
+  }, [activeTask, isPomodoro]);
 
   const suggestions = useMemo(() => {
     const names = chores.map(c => c.taskName);
@@ -195,32 +216,50 @@ export default function App() {
     setTimeout(() => setToast({ msg: '', type: 'success', visible: false }), 3000);
   };
 
-  const toggleTimer = async () => {
+  const togglePlayPause = () => {
     if (!userName) { setShowProfileModal(true); return; }
-    if (activeTask) {
-      const durationSeconds = elapsed;
-      if (durationSeconds > 5) {
-        try {
-          await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
-            taskName: activeTask.name || 'Tarea sin nombre',
-            durationSeconds,
-            timestamp: Date.now(),
-            dateString: getLocalYYYYMMDD(),
-            userName: userName,
-            userColor: userColor,
-            userId: user?.uid || 'anonymous'
-          });
-          showToast('¡Tarea guardada con éxito!', 'success');
-        } catch (error) {
-          console.error("Error saving chore:", error);
-          showToast('Error al guardar.', 'error');
-        }
-      }
-      setActiveTask(null);
-      setTaskInput('');
+    if (!activeTask) {
+      // Iniciar nuevo contador
+      setActiveTask({ name: taskInput, startTime: Date.now(), accumulatedTime: isPomodoro ? 15 * 60 : 0, isPaused: false });
+    } else if (activeTask.isPaused) {
+      // Reanudar
+      setActiveTask({ ...activeTask, startTime: Date.now(), isPaused: false });
     } else {
-      setActiveTask({ name: taskInput, startTime: Date.now() });
+      // Pausar
+      setActiveTask({ ...activeTask, accumulatedTime: elapsed, isPaused: true });
     }
+  };
+
+  const stopAndSaveTimer = async (isAutoPomodoro = false) => {
+    if (!activeTask) return;
+    const durationSeconds = isPomodoro ? (15 * 60) - elapsed : elapsed;
+    if (durationSeconds > 5) {
+      try {
+        await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
+          taskName: activeTask.name || 'Tarea sin nombre',
+          durationSeconds,
+          timestamp: Date.now(),
+          dateString: getLocalYYYYMMDD(),
+          userName: userName,
+          userColor: userColor,
+          isPomodoroFinished: isAutoPomodoro,
+          userId: user?.uid || 'anonymous'
+        });
+        showToast('¡Tarea guardada con éxito!', 'success');
+
+        // --- OPCION A: CONFETTI (>10 min) o Pomodoro terminado ---
+        if (durationSeconds >= 600 || isAutoPomodoro) {
+          import('canvas-confetti').then((confetti) => {
+            confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6'] });
+          });
+        }
+      } catch (error) {
+        console.error("Error saving chore:", error);
+        showToast('Error al guardar.', 'error');
+      }
+    }
+    setActiveTask(null);
+    setTaskInput('');
   };
 
   const handleSaveManual = async () => {
@@ -378,9 +417,16 @@ export default function App() {
               <p className="text-sm italic font-medium text-slate-500 dark:text-slate-400">"{dailyQuote}"</p>
             </div>
 
-            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-[2.5rem] shadow-xl border relative overflow-hidden`}>
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-[2.5rem] shadow-xl border relative overflow-hidden transition-all duration-500 ${isPomodoro ? 'ring-2 ring-rose-500/50 shadow-rose-500/10' : ''}`}>
               <div className="flex justify-between items-center mb-6">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sesión en vivo</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sesión en vivo</span>
+                  {!activeTask && (
+                    <button onClick={() => setIsPomodoro(!isPomodoro)} className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border transition-all ${isPomodoro ? 'bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-500/20 dark:border-rose-500/30 dark:text-rose-400' : 'bg-slate-50 border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-700'}`}>
+                      <Timer size={12} /> 15 Min
+                    </button>
+                  )}
+                </div>
                 <button onClick={() => { setModalMode('manual'); setManualData({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() }); }} className="text-indigo-500 text-xs font-bold flex items-center gap-1 hover:underline">
                   <Plus size={14} /> Registro manual
                 </button>
@@ -396,11 +442,16 @@ export default function App() {
                 </div>
               )}
 
-              <div className={`text-6xl font-mono font-bold text-center mb-8 tabular-nums tracking-tight ${activeTask ? 'text-indigo-500' : 'text-slate-400 opacity-50'}`}>{formatTimeDigital(elapsed)}</div>
-              <div className="flex justify-center">
-                <button onClick={toggleTimer} className={`w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all transform hover:scale-105 active:scale-95 ${activeTask ? 'bg-red-500 text-white shadow-red-500/40 ring-8 ring-red-500/10' : 'bg-indigo-600 text-white shadow-indigo-500/40 ring-8 ring-indigo-500/10'}`}>
-                  {activeTask ? <Square size={32} fill="currentColor" /> : <Play size={36} fill="currentColor" className="ml-2" />}
+              <div className={`text-6xl font-mono font-bold text-center mb-8 tabular-nums tracking-tight ${activeTask ? (activeTask.isPaused ? 'text-indigo-400 animate-pulse' : 'text-indigo-500') : 'text-slate-400 opacity-50'}`}>{formatTimeDigital(elapsed)}</div>
+              <div className="flex justify-center gap-6 items-center">
+                <button onClick={togglePlayPause} className={`w-24 h-24 rounded-full flex items-center justify-center shadow-xl transition-all transform hover:scale-105 active:scale-95 ${activeTask && !activeTask.isPaused ? 'bg-amber-500 text-white shadow-amber-500/40 ring-8 ring-amber-500/10' : 'bg-indigo-600 text-white shadow-indigo-500/40 ring-8 ring-indigo-500/10'}`}>
+                  {activeTask && !activeTask.isPaused ? <Pause size={32} fill="currentColor" /> : <Play size={36} fill="currentColor" className="ml-2" />}
                 </button>
+                {activeTask && (
+                  <button onClick={stopAndSaveTimer} className="w-16 h-16 rounded-full flex items-center justify-center bg-red-500 text-white shadow-xl shadow-red-500/40 ring-4 ring-red-500/10 transition-all transform hover:scale-105 active:scale-95 animate-in slide-in-from-left-4 fade-in">
+                    <Square size={20} fill="currentColor" />
+                  </button>
+                )}
               </div>
             </div>
             <div className="mt-2">
@@ -411,7 +462,8 @@ export default function App() {
                   const Icon = style.icon;
                   const uColorClass = USER_COLORS.find(c => c.id === chore.userColor)?.css || 'text-slate-500';
                   return (
-                    <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group`}>
+                    <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group relative overflow-hidden`}>
+                      {chore.isPomodoroFinished && <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-amber-400 via-rose-500 to-indigo-500"></div>}
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.bg}`}><Icon size={18} className={style.color} /></div>
                         <div>
@@ -450,7 +502,9 @@ export default function App() {
                   const day = i + 1;
                   const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
                   const isSelected = selectedDate.toDateString() === dateObj.toDateString();
-                  const hasChores = getChoresForDate(dateObj).length > 0;
+                  const dateChores = getChoresForDate(dateObj);
+                  const hasChores = dateChores.length > 0;
+
                   return (
                     <button key={`day-${day}`} onClick={() => setSelectedDate(dateObj)} className={`aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all ${isSelected ? 'bg-indigo-600 text-white font-bold' : hasChores ? (isDarkMode ? 'bg-slate-800 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : 'hover:bg-slate-100'}`}>
                       {day}
@@ -459,6 +513,20 @@ export default function App() {
                   );
                 })}
               </div>
+
+              {/* Filtro de Usuario en Agenda */}
+              {Object.keys(currentRadiographyStats.users).length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <button onClick={() => setCalendarUserFilter(null)} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${calendarUserFilter === null ? 'bg-slate-800 text-white border-slate-800 dark:bg-slate-200 dark:text-slate-900' : 'bg-transparent border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700'}`}>
+                    Todos
+                  </button>
+                  {Object.keys(currentRadiographyStats.users).map(userNam => (
+                    <button key={userNam} onClick={() => setCalendarUserFilter(userNam)} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${calendarUserFilter === userNam ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-transparent border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700'}`}>
+                      {userNam}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-5 rounded-3xl border shadow-sm`}>
               <div className="flex justify-between items-center mb-4">
@@ -485,29 +553,34 @@ export default function App() {
               )}
             </div>
             <div className="space-y-3">
-              {getChoresForDate(selectedDate).length > 0 && getChoresForDate(selectedDate).map(chore => {
-                const style = getTaskStyle(chore.taskName);
-                const Icon = style.icon;
-                const uColorClass = USER_COLORS.find(c => c.id === chore.userColor)?.css || 'text-slate-500';
-                return (
-                  <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.bg}`}><Icon size={14} className={style.color} /></div>
-                      <div>
-                        <p className="font-bold text-sm">{chore.taskName}</p>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                          <span className={style.color}>{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                          • <span className={`font-bold ${uColorClass}`}>{chore.userName}</span> • <span className="text-slate-500 font-medium">{formatTimeDetailed(chore.durationSeconds)}</span>
-                        </p>
+              {getChoresForDate(selectedDate).filter(c => !calendarUserFilter || c.userName === calendarUserFilter).length > 0 ? (
+                getChoresForDate(selectedDate).filter(c => !calendarUserFilter || c.userName === calendarUserFilter).map(chore => {
+                  const style = getTaskStyle(chore.taskName);
+                  const Icon = style.icon;
+                  const uColorClass = USER_COLORS.find(c => c.id === chore.userColor)?.css || 'text-slate-500';
+                  return (
+                    <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between relative overflow-hidden`}>
+                      {chore.isPomodoroFinished && <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-amber-400 via-rose-500 to-indigo-500"></div>}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.bg}`}><Icon size={14} className={style.color} /></div>
+                        <div>
+                          <p className="font-bold text-sm">{chore.taskName}</p>
+                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                            <span className={style.color}>{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                            • <span className={`font-bold ${uColorClass}`}>{chore.userName}</span> • <span className="text-slate-500 font-medium">{formatTimeDetailed(chore.durationSeconds)}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 opacity-50 hover:opacity-100 transition-opacity">
+                        <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
+                        <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
                       </div>
                     </div>
-                    <div className="flex gap-1 opacity-50 hover:opacity-100 transition-opacity">
-                      <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
-                      <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              ) : (
+                <p className="text-center text-xs text-slate-400 italic py-3">Sin tareas registradas este día.</p>
+              )}
             </div>
           </div>
         )}
