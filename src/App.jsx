@@ -843,7 +843,7 @@ export default function App() {
                         {groceries.filter(g => !g.completed).length === 0 ? <p className="text-center text-xs text-slate-400 italic py-6">Lista de la compra vacía.</p> : groceries.filter(g => !g.completed).map((item, index) => (
                           <Draggable key={item.id} draggableId={item.id} index={index}>
                             {(provided) => (
-                              <div ref={provided.innerRef} {...provided.draggableProps} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group transition-all`}>
+                              <div ref={provided.innerRef} {...provided.draggableProps} style={provided.draggableProps.style} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group transition-colors`}>
                                 <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleGrocery(item.id, item.completed)}>
                                   <button className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${isDarkMode ? 'border-slate-700' : 'border-slate-300'}`}>
                                     <div className="w-0 h-0 transition-all"></div>
