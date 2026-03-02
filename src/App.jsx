@@ -4,8 +4,10 @@ import {
   Play, Square, Calendar as CalendarIcon, BarChart3, Clock,
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
-  Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause, ShoppingCart
+  Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause, ShoppingCart,
+  GripVertical, Store
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
@@ -121,6 +123,7 @@ export default function App() {
   const [elapsed, setElapsed] = useState(0);
   const [taskInput, setTaskInput] = useState('');
   const [groceryInput, setGroceryInput] = useState('');
+  const [selectedSupermarket, setSelectedSupermarket] = useState('');
 
   const [modalMode, setModalMode] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
@@ -169,7 +172,11 @@ export default function App() {
     const groceriesRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'groceries');
     const unsubscribeGroceries = onSnapshot(query(groceriesRef), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      data.sort((a, b) => b.timestamp - a.timestamp);
+      // Sort first by order property if exists, fallback to timestamp
+      data.sort((a, b) => {
+        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+        return a.timestamp - b.timestamp;
+      });
       setGroceries(data);
     }, (error) => console.error("Firestore groceries error:", error));
 
@@ -288,17 +295,53 @@ export default function App() {
     if (!name.trim()) return;
     if (!userName) { setShowProfileModal(true); return; }
     try {
+      const highestOrder = Math.max(-1, ...groceries.filter(g => !g.completed).map(g => g.order || 0));
       await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'groceries'), {
         name: name.trim(),
         completed: false,
         timestamp: Date.now(),
         userName: userName,
         userColor: userColor,
+        supermarket: selectedSupermarket,
+        order: highestOrder + 1
       });
       setGroceryInput('');
     } catch (error) {
       console.error("Error adding grocery:", error);
       showToast('Error al añadir producto', 'error');
+    }
+  };
+
+  const handleDragEndGroceries = async (result) => {
+    if (!result.destination) return;
+
+    const pendingGroceries = groceries.filter(g => !g.completed);
+    const items = Array.from(pendingGroceries);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update optimistic UI order immediately to prevent flickers
+    const updatedGroceries = groceries.map(g => {
+      if (g.completed) return g;
+      const newIndex = items.findIndex(item => item.id === g.id);
+      return { ...g, order: newIndex };
+    }).sort((a, b) => {
+      if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+      return a.timestamp - b.timestamp;
+    });
+    setGroceries(updatedGroceries);
+
+    // Save batch to firestore
+    try {
+      items.forEach(async (item, index) => {
+        if (item.order !== index) {
+          await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'groceries', item.id), {
+            order: index
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Error updating sort order:", error);
     }
   };
 
@@ -658,24 +701,47 @@ export default function App() {
               )}
             </div>
 
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar -mt-2 mb-2">
+              <Store size={14} className="text-slate-400 shrink-0 ml-1" />
+              {['Mercadona', 'Consum', 'Lidl', 'Carrefour', 'Frutería', 'Carnicería'].map(supermarket => (
+                <button key={supermarket} onClick={() => setSelectedSupermarket(selectedSupermarket === supermarket ? '' : supermarket)} className={`py-1.5 px-3 text-[10px] uppercase font-bold tracking-widest rounded-xl border whitespace-nowrap transition-all ${selectedSupermarket === supermarket ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-500/20 dark:border-indigo-500/30 dark:text-indigo-400' : isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-700'}`}>
+                  {supermarket}
+                </button>
+              ))}
+            </div>
+
             <div className="space-y-6">
               <div>
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Pendientes</h3>
-                <div className="space-y-2">
-                  {groceries.filter(g => !g.completed).length === 0 ? <p className="text-center text-xs text-slate-400 italic py-6">Lista de la compra vacía.</p> : groceries.filter(g => !g.completed).map(item => (
-                    <div key={item.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group transition-all`}>
-                      <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleGrocery(item.id, item.completed)}>
-                        <button className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${isDarkMode ? 'border-slate-700' : 'border-slate-300'}`}>
-                          <div className="w-0 h-0 transition-all"></div>
-                        </button>
-                        <p className="font-bold text-base flex-1">{item.name}</p>
+                <DragDropContext onDragEnd={handleDragEndGroceries}>
+                  <Droppable droppableId="groceries-list">
+                    {(provided) => (
+                      <div className="space-y-2" {...provided.droppableProps} ref={provided.innerRef}>
+                        {groceries.filter(g => !g.completed).length === 0 ? <p className="text-center text-xs text-slate-400 italic py-6">Lista de la compra vacía.</p> : groceries.filter(g => !g.completed).map((item, index) => (
+                          <Draggable key={item.id} draggableId={item.id} index={index}>
+                            {(provided) => (
+                              <div ref={provided.innerRef} {...provided.draggableProps} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group transition-all`}>
+                                <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleGrocery(item.id, item.completed)}>
+                                  <button className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${isDarkMode ? 'border-slate-700' : 'border-slate-300'}`}>
+                                    <div className="w-0 h-0 transition-all"></div>
+                                  </button>
+                                  <div className="flex-1 flex flex-col justify-center">
+                                    <p className="font-bold text-base leading-tight">{item.name}</p>
+                                    {item.supermarket && <span className={`text-[9px] font-bold mt-1 max-w-max uppercase tracking-widest px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{item.supermarket}</span>}
+                                  </div>
+                                </div>
+                                <div {...provided.dragHandleProps} className="p-2 text-slate-300 hover:text-slate-500 touch-none">
+                                  <GripVertical size={16} />
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
                       </div>
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase ml-2 ${USER_COLORS.find(c => c.id === item.userColor)?.bg || 'bg-slate-500'}`}>
-                        {item.userName ? item.userName.charAt(0) : '?'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
               </div>
 
               {groceries.filter(g => g.completed).length > 0 && (

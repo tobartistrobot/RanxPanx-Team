@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "canvas-confetti": "^1.9.4",
     "firebase": "^10.4.0",
     "lucide-react": "^0.284.0",
