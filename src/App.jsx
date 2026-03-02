@@ -111,6 +111,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [chores, setChores] = useState([]);
   const [groceries, setGroceries] = useState([]);
+  const [supermarkets, setSupermarkets] = useState([]);
   const [activeTab, setActiveTab] = useState('timer');
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('hometeam_dark') === 'true');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -180,9 +181,16 @@ export default function App() {
       setGroceries(data);
     }, (error) => console.error("Firestore groceries error:", error));
 
+    const supermarketsRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'supermarkets');
+    const unsubscribeSupermarkets = onSnapshot(query(supermarketsRef), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSupermarkets(data);
+    }, (error) => console.error("Firestore supermarkets error:", error));
+
     return () => {
       unsubscribeChores();
       unsubscribeGroceries();
+      unsubscribeSupermarkets();
     };
   }, [user]);
 
@@ -365,6 +373,31 @@ export default function App() {
       await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'groceries', id));
     } catch (error) {
       console.error("Error deleting grocery:", error);
+    }
+  };
+
+  const addSupermarket = async () => {
+    const name = window.prompt("Nombre del nuevo supermercado o tienda:");
+    if (!name || !name.trim()) return;
+    try {
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'supermarkets'), {
+        name: name.trim()
+      });
+    } catch (error) {
+      console.error("Error adding supermarket:", error);
+      showToast('Error al crear tienda', 'error');
+    }
+  };
+
+  const deleteSupermarket = async (e, id) => {
+    e.stopPropagation(); // Evitar que seleccione al borrar
+    if (window.confirm('¿Seguro que quieres borrar esta etiqueta de supermercado? (No borrará los productos que ya la tengan)')) {
+      try {
+        await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'supermarkets', id));
+        if (selectedSupermarket === id) setSelectedSupermarket('');
+      } catch (error) {
+        console.error("Error deleting supermarket:", error);
+      }
     }
   };
 
@@ -703,11 +736,18 @@ export default function App() {
 
             <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar -mt-2 mb-2">
               <Store size={14} className="text-slate-400 shrink-0 ml-1" />
-              {['Mercadona', 'Consum', 'Lidl', 'Carrefour', 'Frutería', 'Carnicería'].map(supermarket => (
-                <button key={supermarket} onClick={() => setSelectedSupermarket(selectedSupermarket === supermarket ? '' : supermarket)} className={`py-1.5 px-3 text-[10px] uppercase font-bold tracking-widest rounded-xl border whitespace-nowrap transition-all ${selectedSupermarket === supermarket ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-500/20 dark:border-indigo-500/30 dark:text-indigo-400' : isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-700'}`}>
-                  {supermarket}
+              {supermarkets.length === 0 && (
+                <span className="text-[10px] text-slate-400 italic">Pulsa + Nuevo para empezar</span>
+              )}
+              {supermarkets.map(s => (
+                <button key={s.id} onClick={() => setSelectedSupermarket(selectedSupermarket === s.name ? '' : s.name)} className={`py-1.5 pl-3 pr-2 flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest rounded-xl border whitespace-nowrap transition-all ${selectedSupermarket === s.name ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-500/20 dark:border-indigo-500/30 dark:text-indigo-400' : isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-700'}`}>
+                  {s.name}
+                  <div onClick={(e) => deleteSupermarket(e, s.id)} className={`p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors ${selectedSupermarket === s.name ? 'hover:bg-indigo-200 dark:hover:bg-indigo-800' : ''}`}><X size={10} /></div>
                 </button>
               ))}
+              <button onClick={addSupermarket} className={`py-1.5 px-3 flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest rounded-xl border whitespace-nowrap transition-all ${isDarkMode ? 'bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-slate-200' : 'bg-slate-50 border-slate-200/50 text-slate-500 hover:text-slate-700'}`}>
+                <Plus size={10} /> Nuevo
+              </button>
             </div>
 
             <div className="space-y-6">
