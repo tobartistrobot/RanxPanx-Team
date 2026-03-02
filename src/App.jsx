@@ -27,6 +27,26 @@ const db = getFirestore(app);
 const rawAppId = 'ranxpanx-team-prod';
 const safeAppId = rawAppId.replace(/\//g, '_');
 
+// --- DATOS: FRASES INSPIRACIONALES ---
+const DAILY_QUOTES = [
+  "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
+  "La disciplina es el puente entre tus metas y tus logros.",
+  "No cuentes los días, haz que los días cuenten.",
+  "Un viaje de mil millas comienza con un solo paso.",
+  "Lo que haces hoy puede mejorar todas tus mañanas.",
+  "La única forma de hacer un gran trabajo es amar lo que haces.",
+  "No busques el momento perfecto, solo busca el momento y hazlo perfecto.",
+  "Cada pequeña tarea completada es una victoria para el equipo.",
+  "El esfuerzo organizado es la clave de todo logro.",
+  "Trabajar en equipo divide la tarea y multiplica el éxito.",
+  "La constancia vence a lo que la dicha no alcanza.",
+  "Hoy es un buen día para avanzar un paso más.",
+  "Tus acciones de hoy conforman tu libertad de mañana.",
+  "La motivación nos impulsa a comenzar, el hábito nos permite continuar.",
+  "Pequeños actos de cuidado mantienen el hogar y el espíritu fuertes.",
+  "El progreso lento es mejor que ningún progreso."
+];
+
 // --- UTILIDADES ---
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
@@ -243,6 +263,20 @@ export default function App() {
 
   const currentRadiographyStats = radiographyView === 'day' ? selectedDayStats : (radiographyView === 'week' ? selectedWeekStats : selectedMonthStats);
 
+  const getDailyQuote = () => {
+    // Calculamos un índice basado en la fecha exacta local para que cambie cada medianoche
+    const dateStr = getLocalYYYYMMDD();
+    let hash = 0;
+    for (let i = 0; i < dateStr.length; i++) {
+      hash = ((hash << 5) - hash) + dateStr.charCodeAt(i);
+      hash |= 0; // Convertir a entero de 32bits
+    }
+    const index = Math.abs(hash) % DAILY_QUOTES.length;
+    return DAILY_QUOTES[index];
+  };
+
+  const dailyQuote = useMemo(() => getDailyQuote(), [getLocalYYYYMMDD()]);
+
   const stats = useMemo(() => {
     const currentMonthStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
     const monthly = chores.filter(c => c.dateString.startsWith(currentMonthStr));
@@ -296,6 +330,12 @@ export default function App() {
       <main className="max-w-md mx-auto p-4">
         {activeTab === 'timer' && (
           <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
+
+            {/* Mensaje Inspiracional Diario */}
+            <div className="px-4 py-2 text-center animate-in slide-in-from-top-2 fade-in duration-500 delay-100">
+              <p className="text-sm italic font-medium text-slate-500 dark:text-slate-400">"{dailyQuote}"</p>
+            </div>
+
             <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-[2.5rem] shadow-xl border relative overflow-hidden`}>
               <div className="flex justify-between items-center mb-6">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sesión en vivo</span>
