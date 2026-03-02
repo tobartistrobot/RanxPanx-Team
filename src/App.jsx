@@ -279,28 +279,28 @@ export default function App() {
       setSupermarkets(data);
     }, (error) => console.error("Firestore supermarkets error:", error));
 
-    const usersRef = collection(db, 'artifacts', safeAppId, 'public', 'users');
+    const usersRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'users');
     const unsubscribeUsers = onSnapshot(query(usersRef), (snapshot) => {
       const data = {};
       snapshot.docs.forEach(doc => { data[doc.id] = doc.data(); });
       setUsersData(data);
     }, (error) => console.error("Firestore users error:", error));
 
-    const storeRef = collection(db, 'artifacts', safeAppId, 'public', 'store_items');
+    const storeRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'store_items');
     const unsubscribeStore = onSnapshot(query(storeRef), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       data.sort((a, b) => b.timestamp - a.timestamp);
       setStoreItems(data);
     });
 
-    const couponsRef = collection(db, 'artifacts', safeAppId, 'public', 'coupons');
+    const couponsRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'coupons');
     const unsubscribeCoupons = onSnapshot(query(couponsRef), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       data.sort((a, b) => b.timestamp - a.timestamp);
       setCoupons(data);
     });
 
-    const momentsRef = collection(db, 'artifacts', safeAppId, 'public', 'moments');
+    const momentsRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'moments');
     const unsubscribeMoments = onSnapshot(query(momentsRef), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       data.sort((a, b) => b.timestamp - a.timestamp);
@@ -451,7 +451,7 @@ export default function App() {
 
     // 5. Guardar
     try {
-      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'users', userName), {
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName), {
         rpcBalance: (userData.rpcBalance || 0) + rpcEarned,
         frenzyExpiresAt: newFrenzyExpiresAt
       }, { merge: true });
@@ -605,11 +605,11 @@ export default function App() {
     if (!window.confirm(`¿Comprar ${item.name} por ${item.costRPC} RPC?`)) return;
 
     try {
-      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'users', userName), {
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName), {
         rpcBalance: userData.rpcBalance - item.costRPC
       }, { merge: true });
 
-      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'coupons'), {
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'coupons'), {
         itemName: item.name,
         icon: item.icon,
         owner: userName,
@@ -628,9 +628,9 @@ export default function App() {
     if (!window.confirm(`¿Seguro que quieres canjear y gastar: ${coupon.itemName}?`)) return;
 
     try {
-      await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'coupons', coupon.id));
+      await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'coupons', coupon.id));
 
-      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'moments'), {
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'moments'), {
         itemName: coupon.itemName,
         icon: coupon.icon,
         owner: coupon.owner,
@@ -652,7 +652,7 @@ export default function App() {
   const handleSaveStoreItem = async () => {
     if (!newItem.name || newItem.cost <= 0) return;
     try {
-      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'store_items'), {
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'store_items'), {
         name: newItem.name,
         costRPC: parseFloat(newItem.cost),
         icon: newItem.icon || '🎁',
