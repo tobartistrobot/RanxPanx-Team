@@ -138,14 +138,18 @@ export default function App() {
     if (activeTask) {
       const durationSeconds = elapsed;
       if (durationSeconds > 5) {
-        await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
-          taskName: activeTask.name || 'Tarea sin nombre',
-          durationSeconds,
-          timestamp: Date.now(),
-          dateString: new Date().toISOString().split('T')[0],
-          userName: userName,
-          userId: user.uid
-        });
+        try {
+          await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
+            taskName: activeTask.name || 'Tarea sin nombre',
+            durationSeconds,
+            timestamp: Date.now(),
+            dateString: new Date().toISOString().split('T')[0],
+            userName: userName,
+            userId: user?.uid || 'anonymous'
+          });
+        } catch (error) {
+          console.error("Error saving chore:", error);
+        }
       }
       setActiveTask(null);
       setTaskInput('');
@@ -163,15 +167,20 @@ export default function App() {
       dateString: manualData.date,
       timestamp: new Date(manualData.date).getTime(),
       userName: userName,
-      userId: user.uid
+      userId: user?.uid || 'anonymous'
     };
-    if (modalMode === 'edit' && editingItem) {
-      await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', editingItem.id), payload);
-    } else {
-      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), payload);
+    try {
+      if (modalMode === 'edit' && editingItem) {
+        await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', editingItem.id), payload);
+      } else {
+        await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), payload);
+      }
+      setModalMode(null);
+      setEditingItem(null);
+    } catch (error) {
+      console.error("Error saving manual database entry:", error);
+      alert("Error al guardar. Por favor, revisa la conexión.");
     }
-    setModalMode(null);
-    setEditingItem(null);
   };
 
   const deleteChore = async (id) => {
