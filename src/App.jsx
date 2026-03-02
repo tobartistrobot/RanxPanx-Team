@@ -642,8 +642,8 @@ export default function App() {
           <div className="flex flex-col gap-6 animate-in fade-in">
             <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-[2.5rem] shadow-xl border relative overflow-hidden`}>
               <div className="flex gap-2 mb-4">
-                <input type="text" placeholder="Añadir a la lista..." value={groceryInput} onChange={(e) => setGroceryInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addGrocery(groceryInput); }} className={`flex-1 text-lg font-medium p-4 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
-                <button onClick={() => addGrocery(groceryInput)} className="w-16 flex items-center justify-center bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30">
+                <input type="text" placeholder="Añadir a la lista..." value={groceryInput} onChange={(e) => setGroceryInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addGrocery(groceryInput); }} className={`flex-1 min-w-0 text-lg font-medium p-4 rounded-2xl border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
+                <button onClick={() => addGrocery(groceryInput)} className="w-16 shrink-0 flex items-center justify-center bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30">
                   <Plus size={24} />
                 </button>
               </div>
