@@ -4,7 +4,7 @@ import {
   Play, Square, Calendar as CalendarIcon, BarChart3, Clock,
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
-  Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause, Timer
+  Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
@@ -119,7 +119,6 @@ export default function App() {
   const [activeTask, setActiveTask] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [taskInput, setTaskInput] = useState('');
-  const [isPomodoro, setIsPomodoro] = useState(false);
 
   const [modalMode, setModalMode] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
@@ -181,30 +180,15 @@ export default function App() {
     let interval = null;
     if (activeTask && !activeTask.isPaused) {
       interval = setInterval(() => {
-        const diff = Math.floor((Date.now() - activeTask.startTime) / 1000);
-        if (isPomodoro) {
-          const timeLeft = activeTask.accumulatedTime - diff;
-          if (timeLeft <= 0) {
-            setElapsed(0);
-            clearInterval(interval);
-            import('canvas-confetti').then((confetti) => {
-              confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6'] });
-            });
-            stopAndSaveTimer(true); // Auto-save on pomodoro finish
-          } else {
-            setElapsed(timeLeft);
-          }
-        } else {
-          setElapsed(activeTask.accumulatedTime + diff);
-        }
+        setElapsed(activeTask.accumulatedTime + Math.floor((Date.now() - activeTask.startTime) / 1000));
       }, 1000);
     } else if (activeTask && activeTask.isPaused) {
       setElapsed(activeTask.accumulatedTime);
     } else {
-      setElapsed(isPomodoro ? 15 * 60 : 0);
+      setElapsed(0);
     }
     return () => clearInterval(interval);
-  }, [activeTask, isPomodoro]);
+  }, [activeTask]);
 
   const suggestions = useMemo(() => {
     const names = chores.map(c => c.taskName);
@@ -220,7 +204,7 @@ export default function App() {
     if (!userName) { setShowProfileModal(true); return; }
     if (!activeTask) {
       // Iniciar nuevo contador
-      setActiveTask({ name: taskInput, startTime: Date.now(), accumulatedTime: isPomodoro ? 15 * 60 : 0, isPaused: false });
+      setActiveTask({ name: taskInput, startTime: Date.now(), accumulatedTime: 0, isPaused: false });
     } else if (activeTask.isPaused) {
       // Reanudar
       setActiveTask({ ...activeTask, startTime: Date.now(), isPaused: false });
@@ -230,9 +214,36 @@ export default function App() {
     }
   };
 
-  const stopAndSaveTimer = async (isAutoPomodoro = false) => {
+  const triggerConfetti = async (seconds) => {
+    if (seconds < 60) return; // Menos de 1 min: Sin recompensa
+
+    const confetti = (await import('canvas-confetti')).default;
+    const minutes = seconds / 60;
+
+    if (minutes >= 600) { // > 10 Horas: Modo Dios (Fuegos Artificiales Intensos)
+      const duration = 15 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+      const randomInRange = (min, max) => Math.random() * (max - min) + min;
+      const interval = setInterval(function () {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) return clearInterval(interval);
+        const particleCount = 50 * (timeLeft / duration);
+        confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+        confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+      }, 250);
+    } else if (minutes > 60) { // 1 a 10 Horas: Cañón denso
+      confetti({ particleCount: Math.min(600, 100 + Math.floor(minutes * 2)), spread: 120, startVelocity: 45, origin: { y: 0.8 }, colors: ['#fffc00', '#ff008d', '#00e5ff', '#ff5100', '#56ff00'] });
+    } else if (minutes > 10) { // 10 a 60 Minutos: Buen cañón
+      confetti({ particleCount: 150 + Math.floor(minutes), spread: 90, origin: { y: 0.7 }, colors: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6'] });
+    } else { // 1 a 10 Minutos: Pop básico escalable
+      confetti({ particleCount: 50 + Math.floor(minutes * 5), spread: 60, origin: { y: 0.6 } });
+    }
+  };
+
+  const stopAndSaveTimer = async () => {
     if (!activeTask) return;
-    const durationSeconds = isPomodoro ? (15 * 60) - elapsed : elapsed;
+    const durationSeconds = elapsed;
     if (durationSeconds > 5) {
       try {
         await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
@@ -242,17 +253,11 @@ export default function App() {
           dateString: getLocalYYYYMMDD(),
           userName: userName,
           userColor: userColor,
-          isPomodoroFinished: isAutoPomodoro,
           userId: user?.uid || 'anonymous'
         });
         showToast('¡Tarea guardada con éxito!', 'success');
 
-        // --- OPCION A: CONFETTI (>10 min) o Pomodoro terminado ---
-        if (durationSeconds >= 600 || isAutoPomodoro) {
-          import('canvas-confetti').then((confetti) => {
-            confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6'] });
-          });
-        }
+        triggerConfetti(durationSeconds);
       } catch (error) {
         console.error("Error saving chore:", error);
         showToast('Error al guardar.', 'error');
@@ -417,16 +422,9 @@ export default function App() {
               <p className="text-sm italic font-medium text-slate-500 dark:text-slate-400">"{dailyQuote}"</p>
             </div>
 
-            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-[2.5rem] shadow-xl border relative overflow-hidden transition-all duration-500 ${isPomodoro ? 'ring-2 ring-rose-500/50 shadow-rose-500/10' : ''}`}>
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-[2.5rem] shadow-xl border relative overflow-hidden transition-all duration-500`}>
               <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sesión en vivo</span>
-                  {!activeTask && (
-                    <button onClick={() => setIsPomodoro(!isPomodoro)} className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border transition-all ${isPomodoro ? 'bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-500/20 dark:border-rose-500/30 dark:text-rose-400' : 'bg-slate-50 border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-700'}`}>
-                      <Timer size={12} /> 15 Min
-                    </button>
-                  )}
-                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sesión en vivo</span>
                 <button onClick={() => { setModalMode('manual'); setManualData({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() }); }} className="text-indigo-500 text-xs font-bold flex items-center gap-1 hover:underline">
                   <Plus size={14} /> Registro manual
                 </button>
@@ -463,7 +461,6 @@ export default function App() {
                   const uColorClass = USER_COLORS.find(c => c.id === chore.userColor)?.css || 'text-slate-500';
                   return (
                     <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group relative overflow-hidden`}>
-                      {chore.isPomodoroFinished && <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-amber-400 via-rose-500 to-indigo-500"></div>}
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.bg}`}><Icon size={18} className={style.color} /></div>
                         <div>
@@ -560,7 +557,6 @@ export default function App() {
                   const uColorClass = USER_COLORS.find(c => c.id === chore.userColor)?.css || 'text-slate-500';
                   return (
                     <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between relative overflow-hidden`}>
-                      {chore.isPomodoroFinished && <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-amber-400 via-rose-500 to-indigo-500"></div>}
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.bg}`}><Icon size={14} className={style.color} /></div>
                         <div>
