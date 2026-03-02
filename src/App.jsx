@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client'; // ¡Esta es la pieza clave que f
 import {
   Play, Square, Calendar as CalendarIcon, BarChart3, Clock,
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
-  ChevronRight, ChevronDown, Award, TrendingUp, WifiOff
+  ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
+  Sparkles, Coffee, Briefcase, Activity
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
@@ -47,6 +48,15 @@ const DAILY_QUOTES = [
   "El progreso lento es mejor que ningún progreso."
 ];
 
+// --- DATOS: CATEGORÍAS ---
+const CATEGORIAS = {
+  limpieza: { id: 'limpieza', label: 'Limpiar', icon: Sparkles, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  cocina: { id: 'cocina', label: 'Cocinar', icon: Coffee, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+  trabajo: { id: 'trabajo', label: 'Trabajo', icon: Briefcase, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+  ejercicio: { id: 'ejercicio', label: 'Ejercicio', icon: Activity, color: 'text-red-500', bg: 'bg-red-500/10' },
+  general: { id: 'general', label: 'General', icon: CheckCircle2, color: 'text-slate-500', bg: 'bg-slate-500/10' }
+};
+
 // --- UTILIDADES ---
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
@@ -87,12 +97,15 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState(!localStorage.getItem('hometeam_username'));
 
   const [activeTask, setActiveTask] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('general');
   const [elapsed, setElapsed] = useState(0);
   const [taskInput, setTaskInput] = useState('');
 
   const [modalMode, setModalMode] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  const [manualData, setManualData] = useState({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() });
+  const [manualData, setManualData] = useState({ name: '', category: 'general', hours: 0, minutes: 0, date: getLocalYYYYMMDD() });
+
+  const [toast, setToast] = useState({ msg: '', visible: false, type: 'success' });
 
   const [expandedUser, setExpandedUser] = useState(null);
   const [radiographyView, setRadiographyView] = useState('day');
@@ -158,6 +171,11 @@ export default function App() {
     return [...new Set(names)].slice(0, 6);
   }, [chores]);
 
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type, visible: true });
+    setTimeout(() => setToast({ msg: '', type: 'success', visible: false }), 3000);
+  };
+
   const toggleTimer = async () => {
     if (!userName) { setShowProfileModal(true); return; }
     if (activeTask) {
@@ -166,20 +184,23 @@ export default function App() {
         try {
           await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
             taskName: activeTask.name || 'Tarea sin nombre',
+            categoryId: activeTask.category || 'general',
             durationSeconds,
             timestamp: Date.now(),
             dateString: getLocalYYYYMMDD(),
             userName: userName,
             userId: user?.uid || 'anonymous'
           });
+          showToast('¡Tarea guardada con éxito!', 'success');
         } catch (error) {
           console.error("Error saving chore:", error);
+          showToast('Error al guardar.', 'error');
         }
       }
       setActiveTask(null);
       setTaskInput('');
     } else {
-      setActiveTask({ name: taskInput, startTime: Date.now() });
+      setActiveTask({ name: taskInput, category: activeCategory, startTime: Date.now() });
     }
   };
 
@@ -188,6 +209,7 @@ export default function App() {
     const totalSeconds = (parseInt(manualData.hours || 0) * 3600) + (parseInt(manualData.minutes || 0) * 60);
     const payload = {
       taskName: manualData.name,
+      categoryId: manualData.category || 'general',
       durationSeconds: totalSeconds,
       dateString: manualData.date,
       timestamp: new Date(manualData.date).getTime(),
@@ -202,9 +224,10 @@ export default function App() {
       }
       setModalMode(null);
       setEditingItem(null);
+      showToast('¡Registro añadido!', 'success');
     } catch (error) {
       console.error("Error saving manual database entry:", error);
-      alert("Error al guardar. Por favor, revisa la conexión.");
+      showToast("Error de conexión.", 'error');
     }
   };
 
@@ -218,6 +241,7 @@ export default function App() {
     setEditingItem(chore);
     setManualData({
       name: chore.taskName,
+      category: chore.categoryId || 'general',
       hours: Math.floor(chore.durationSeconds / 3600),
       minutes: Math.floor((chore.durationSeconds % 3600) / 60),
       date: chore.dateString
@@ -277,6 +301,22 @@ export default function App() {
 
   const dailyQuote = useMemo(() => getDailyQuote(), [getLocalYYYYMMDD()]);
 
+  // Gamificación (Usuario actual)
+  const userGamification = useMemo(() => {
+    if (!userName) return { xp: 0, level: 1, currentLevelXP: 0, nextLevelXP: 100, progress: 0 };
+    const userChores = chores.filter(c => c.userName === userName);
+    const totalSeconds = userChores.reduce((s, c) => s + c.durationSeconds, 0);
+    const totalXP = Math.floor(totalSeconds / 60) * 10;
+    const level = Math.floor(Math.sqrt(totalXP / 100)) + 1;
+    const currentLevelBaseXP = Math.pow(level - 1, 2) * 100;
+    const nextLevelBaseXP = Math.pow(level, 2) * 100;
+    const currentLevelXP = totalXP - currentLevelBaseXP;
+    const xpNeeded = nextLevelBaseXP - currentLevelBaseXP;
+    const progress = Math.min(100, Math.round((currentLevelXP / xpNeeded) * 100));
+
+    return { xp: totalXP, level, progress, currentLevelXP, xpNeeded };
+  }, [chores, userName]);
+
   const stats = useMemo(() => {
     const currentMonthStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
     const monthly = chores.filter(c => c.dateString.startsWith(currentMonthStr));
@@ -318,6 +358,11 @@ export default function App() {
           <h1 className="text-xl font-bold tracking-tight">RanxPanx Team</h1>
         </div>
         <div className="flex items-center gap-2">
+          {userName && (
+            <div className="flex items-center gap-1.5 mr-2 px-2 py-1 rounded-lg bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 font-bold text-xs ring-1 ring-indigo-500/20">
+              <Award size={14} /> Nvl {userGamification.level}
+            </div>
+          )}
           <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full ${isDarkMode ? 'bg-slate-800 text-yellow-400' : 'bg-slate-100 text-slate-600'}`}>
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -343,15 +388,27 @@ export default function App() {
                   <Plus size={14} /> Registro manual
                 </button>
               </div>
-              <input type="text" placeholder="¿Qué vas a hacer?" value={taskInput} onChange={(e) => setTaskInput(e.target.value)} disabled={!!activeTask} className={`w-full text-lg font-medium p-4 rounded-2xl border mb-6 transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
-              {!activeTask && suggestions.length > 0 && (
+              <input type="text" placeholder="¿Qué vas a hacer?" value={taskInput} onChange={(e) => setTaskInput(e.target.value)} disabled={!!activeTask} className={`w-full text-lg font-medium p-4 rounded-2xl border mb-4 transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
+
+              {!activeTask && (
                 <div className="mb-6">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
+                  <div className="flex justify-between items-center mb-2 px-1">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">Categoría</p>
+                  </div>
                   <div className="flex flex-wrap gap-2">
-                    {suggestions.map(s => <button key={s} onClick={() => setTaskInput(s)} className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>{s}</button>)}
+                    {Object.values(CATEGORIAS).map(cat => {
+                      const CatIcon = cat.icon;
+                      const isSel = activeCategory === cat.id;
+                      return (
+                        <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-all ${isSel ? `border-transparent ${cat.bg} ${cat.color} font-bold ring-2 ring-offset-1 ${isDarkMode ? 'ring-offset-slate-900' : 'ring-offset-white'} ring-${cat.color.split('-')[1]}-500/50` : isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                          <CatIcon size={14} /> {cat.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               )}
+
               <div className={`text-6xl font-mono font-bold text-center mb-8 tabular-nums tracking-tight ${activeTask ? 'text-indigo-500' : 'text-slate-400 opacity-50'}`}>{formatTimeDigital(elapsed)}</div>
               <div className="flex justify-center">
                 <button onClick={toggleTimer} className={`w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all transform hover:scale-105 active:scale-95 ${activeTask ? 'bg-red-500 text-white shadow-red-500/40 ring-8 ring-red-500/10' : 'bg-indigo-600 text-white shadow-indigo-500/40 ring-8 ring-indigo-500/10'}`}>
@@ -362,24 +419,28 @@ export default function App() {
             <div className="mt-2">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 px-2">Actividad de hoy</h3>
               <div className="space-y-3">
-                {chores.filter(c => c.dateString === getLocalYYYYMMDD()).slice(0, 5).map(chore => (
-                  <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}><History size={18} className="text-indigo-500" /></div>
-                      <div>
-                        <p className="font-bold text-sm tracking-tight">{chore.taskName}</p>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                          <span className="text-indigo-400 font-bold">{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                          • {chore.userName} • {formatTimeDetailed(chore.durationSeconds)}
-                        </p>
+                {chores.filter(c => c.dateString === getLocalYYYYMMDD()).slice(0, 5).map(chore => {
+                  const cat = CATEGORIAS[chore.categoryId] || CATEGORIAS.general;
+                  const Icon = cat.icon;
+                  return (
+                    <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cat.bg}`}><Icon size={18} className={cat.color} /></div>
+                        <div>
+                          <p className="font-bold text-sm tracking-tight">{chore.taskName}</p>
+                          <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                            <span className={`${cat.color} font-bold`}>{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                            • {chore.userName} • {formatTimeDetailed(chore.durationSeconds)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 opacity-50 hover:opacity-100 transition-opacity">
+                        <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500 active:text-indigo-500"><Edit2 size={16} /></button>
+                        <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500 active:text-red-500"><Trash2 size={16} /></button>
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500 active:text-indigo-500"><Edit2 size={16} /></button>
-                      <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500 active:text-red-500"><Trash2 size={16} /></button>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -436,21 +497,28 @@ export default function App() {
               )}
             </div>
             <div className="space-y-3">
-              {getChoresForDate(selectedDate).length > 0 && getChoresForDate(selectedDate).map(chore => (
-                <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between`}>
-                  <div>
-                    <p className="font-bold text-sm">{chore.taskName}</p>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                      <span className="text-indigo-400">{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                      • {chore.userName} • <span className="text-slate-500 font-medium">{formatTimeDetailed(chore.durationSeconds)}</span>
-                    </p>
+              {getChoresForDate(selectedDate).length > 0 && getChoresForDate(selectedDate).map(chore => {
+                const cat = CATEGORIAS[chore.categoryId] || CATEGORIAS.general;
+                const Icon = cat.icon;
+                return (
+                  <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.bg}`}><Icon size={14} className={cat.color} /></div>
+                      <div>
+                        <p className="font-bold text-sm">{chore.taskName}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                          <span className={cat.color}>{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                          • {chore.userName} • <span className="text-slate-500 font-medium">{formatTimeDetailed(chore.durationSeconds)}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 opacity-50 hover:opacity-100 transition-opacity">
+                      <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
+                      <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
-                    <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -458,7 +526,24 @@ export default function App() {
           <div className="space-y-6 animate-in fade-in">
             <div className="bg-gradient-to-br from-indigo-600 to-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
               <Award className="absolute -top-4 -right-4 text-white/10" size={120} />
-              <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-2">Esfuerzo del Mes</p>
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-1">Tu Progreso 🏆</p>
+                  <p className="text-sm font-bold opacity-80 mb-2">XP Total: {userGamification.xp}</p>
+                  <div className="w-full h-1.5 bg-black/30 rounded-full mt-2">
+                    <div className="h-full bg-yellow-400 rounded-full shadow-[0_0_10px_rgba(250,204,21,0.5)] transition-all duration-1000" style={{ width: `${userGamification.progress}%` }}></div>
+                  </div>
+                  <p className="text-[10px] font-bold text-indigo-200 mt-1 uppercase tracking-widest">{userGamification.currentLevelXP} / {userGamification.xpNeeded} XP para Nvl {userGamification.level + 1}</p>
+                </div>
+                <div className="bg-yellow-400 text-slate-900 w-16 h-16 rounded-full flex flex-col items-center justify-center font-black shadow-lg ring-4 ring-yellow-400/20 transform rotate-3">
+                  <span className="text-[10px] uppercase leading-none opacity-80">Nivel</span>
+                  <span className="text-2xl leading-none -mt-1">{userGamification.level}</span>
+                </div>
+              </div>
+
+              <div className="w-full h-px bg-white/10 my-6"></div>
+
+              <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-2">Esfuerzo del Mes (Equipo)</p>
               <h2 className="text-4xl font-bold mb-6">{formatTime(stats.total)}</h2>
               <div className="space-y-5 relative z-10">
                 {stats.personData.map((p) => (
@@ -530,15 +615,22 @@ export default function App() {
             <div className="space-y-4">
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tarea</label>
-                <input type="text" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.name} onChange={(e) => setManualData({ ...manualData, name: e.target.value })} />
-                {suggestions.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
-                    <div className="flex flex-wrap gap-2">
-                      {suggestions.map(s => <button key={s} onClick={() => setManualData({ ...manualData, name: s })} className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>{s}</button>)}
-                    </div>
+                <input type="text" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all`} value={manualData.name} onChange={(e) => setManualData({ ...manualData, name: e.target.value })} />
+
+                <div className="mt-4">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Categoría</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.values(CATEGORIAS).map(cat => {
+                      const CatIcon = cat.icon;
+                      const isSel = manualData.category === cat.id;
+                      return (
+                        <button key={cat.id} onClick={() => setManualData({ ...manualData, category: cat.id })} className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-all ${isSel ? `border-transparent ${cat.bg} ${cat.color} font-bold ring-2 ring-offset-1 ${isDarkMode ? 'ring-offset-slate-900' : 'ring-offset-white'} ring-${cat.color.split('-')[1]}-500/50` : isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-500'}`}>
+                          <CatIcon size={14} /> {cat.label}
+                        </button>
+                      )
+                    })}
                   </div>
-                )}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Horas</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.hours} onChange={(e) => setManualData({ ...manualData, hours: e.target.value })} /></div>
@@ -560,6 +652,16 @@ export default function App() {
               <input type="text" placeholder="Tu nombre..." className={`w-full text-lg p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} onKeyDown={(e) => e.key === 'Enter' && e.target.value && (setUserName(e.target.value), localStorage.setItem('hometeam_username', e.target.value), setShowProfileModal(false))} />
               <p className="text-[10px] text-center text-slate-500 font-bold uppercase tracking-widest mt-4">Pulsa Enter para entrar</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOAST SYSTEM */}
+      {toast.visible && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className={`px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 font-bold text-sm ${toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
+            {toast.type === 'success' ? <CheckCircle2 size={18} /> : <WifiOff size={18} />}
+            {toast.msg}
           </div>
         </div>
       )}
