@@ -1178,16 +1178,8 @@ export default function App() {
                   <Plus size={24} />
                 </button>
               </div>
-
-              {grocerySuggestions.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
-                  <div className="flex flex-wrap gap-2">
-                    {grocerySuggestions.map(s => <button key={s} onClick={() => addGrocery(s)} className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>{s}</button>)}
-                  </div>
-                </div>
-              )}
             </div>
+
 
             <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar -mt-2 mb-2">
               <Store size={14} className="text-slate-400 shrink-0 ml-1" />
@@ -1215,50 +1207,53 @@ export default function App() {
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">Pendientes</h3>
                 <DragDropContext onDragEnd={handleDragEndGroceries}>
                   <Droppable droppableId="groceries-list">
-                    {(provided) => (
-                      <div className="space-y-2" {...provided.droppableProps} ref={provided.innerRef}>
-                        {groceries.filter(g => !g.completed).length === 0 ? <p className="text-center text-xs text-slate-400 italic py-6">Lista de la compra vacía.</p> : groceries.filter(g => !g.completed).map((item, index) => (
-                          <Draggable key={item.id} draggableId={item.id} index={index}>
-                            {(provided) => (
-                              <div ref={provided.innerRef} {...provided.draggableProps} style={provided.draggableProps.style} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group transition-colors`}>
-                                <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleGrocery(item.id, item.completed)}>
-                                  <button className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${isDarkMode ? 'border-slate-700' : 'border-slate-300'}`}>
-                                    <div className="w-0 h-0 transition-all"></div>
-                                  </button>
-                                  <div className="flex-1 flex flex-col justify-center">
-                                    <p className="font-bold text-base leading-tight">{item.name}</p>
-                                    {item.supermarket && (() => {
-                                      const superData = supermarkets.find(s => s.name === item.supermarket);
-                                      const colorObj = superData && superData.color ? USER_COLORS.find(c => c.id === superData.color) : null;
-                                      const tagColorClass = colorObj ? (isDarkMode ? `bg-${colorObj.id}-900/40 text-${colorObj.id}-300 border border-${colorObj.id}-800/50` : `bg-${colorObj.id}-100 text-${colorObj.id}-700`) : (isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500');
+                    {(provided) => {
+                      const pendingItems = groceries.filter(g => !g.completed && (!selectedSupermarket || g.supermarket === selectedSupermarket));
+                      return (
+                        <div className="space-y-2" {...provided.droppableProps} ref={provided.innerRef}>
+                          {pendingItems.length === 0 ? <p className="text-center text-xs text-slate-400 italic py-6">Lista de la compra vacía.</p> : pendingItems.map((item, index) => (
+                            <Draggable key={item.id} draggableId={item.id} index={index}>
+                              {(provided) => (
+                                <div ref={provided.innerRef} {...provided.draggableProps} style={provided.draggableProps.style} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group transition-colors`}>
+                                  <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleGrocery(item.id, item.completed)}>
+                                    <button className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${isDarkMode ? 'border-slate-700' : 'border-slate-300'}`}>
+                                      <div className="w-0 h-0 transition-all"></div>
+                                    </button>
+                                    <div className="flex-1 flex flex-col justify-center">
+                                      <p className="font-bold text-base leading-tight">{item.name}</p>
+                                      {item.supermarket && (() => {
+                                        const superData = supermarkets.find(s => s.name === item.supermarket);
+                                        const colorObj = superData && superData.color ? USER_COLORS.find(c => c.id === superData.color) : null;
+                                        const tagColorClass = colorObj ? (isDarkMode ? `bg-${colorObj.id}-900/40 text-${colorObj.id}-300 border border-${colorObj.id}-800/50` : `bg-${colorObj.id}-100 text-${colorObj.id}-700`) : (isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500');
 
-                                      return (
-                                        <span className={`text-[9px] font-bold mt-1 max-w-max uppercase tracking-widest px-1.5 py-0.5 rounded ${tagColorClass}`}>
-                                          {item.supermarket}
-                                        </span>
-                                      );
-                                    })()}
+                                        return (
+                                          <span className={`text-[9px] font-bold mt-1 max-w-max uppercase tracking-widest px-1.5 py-0.5 rounded ${tagColorClass}`}>
+                                            {item.supermarket}
+                                          </span>
+                                        );
+                                      })()}
+                                    </div>
+                                  </div>
+                                  <div {...provided.dragHandleProps} className="p-2 text-slate-300 hover:text-slate-500 touch-none">
+                                    <GripVertical size={16} />
                                   </div>
                                 </div>
-                                <div {...provided.dragHandleProps} className="p-2 text-slate-300 hover:text-slate-500 touch-none">
-                                  <GripVertical size={16} />
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )
+                    }}
                   </Droppable>
                 </DragDropContext>
               </div>
 
-              {groceries.filter(g => g.completed).length > 0 && (
+              {groceries.filter(g => g.completed && (!selectedSupermarket || g.supermarket === selectedSupermarket)).length > 0 && (
                 <div>
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">En el Carrito</h3>
                   <div className="space-y-2 opacity-60">
-                    {groceries.filter(g => g.completed).map(item => (
+                    {groceries.filter(g => g.completed && (!selectedSupermarket || g.supermarket === selectedSupermarket)).map(item => (
                       <div key={item.id} className={`${isDarkMode ? 'bg-slate-900/50 border-slate-800/50' : 'bg-slate-50 border-slate-200'} p-4 rounded-2xl border flex items-center justify-between group`}>
                         <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleGrocery(item.id, item.completed)}>
                           <button className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center transition-all">
