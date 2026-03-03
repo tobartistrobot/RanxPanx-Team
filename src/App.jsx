@@ -1599,6 +1599,7 @@ export default function App() {
                         <div key={w.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-indigo-100 dark:border-indigo-900">
                           <p className="font-bold text-sm">¡{w.proposer} te ha retado!</p>
                           <p className="text-xs italic text-slate-500">{w.description}</p>
+                          {w.deadline && <p className="text-[10px] text-red-500 font-bold uppercase tracking-wider">⏳ Límite: {new Date(w.deadline).toLocaleDateString()} {new Date(w.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
                           <div className="flex gap-2 font-bold text-xs mt-1">
                             {w.amountRPC > 0 && <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-md">{w.amountRPC} RPC</span>}
                             {w.storeItemId && <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-1 rounded-md">Premio de Tienda</span>}
@@ -1626,6 +1627,7 @@ export default function App() {
                               {w.amountRPC > 0 && <span className="font-black text-orange-300">{w.amountRPC} RPC</span>}
                             </div>
                             <p className="font-bold text-sm leading-tight mb-3 line-clamp-2">{w.description}</p>
+                            {w.deadline && <p className="text-[10px] text-red-200 font-bold uppercase tracking-wider mb-2">⏳ Límite: {new Date(w.deadline).toLocaleDateString()} {new Date(w.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
                             <div className="flex items-center gap-2 text-xs font-medium text-white/80">
                               <span className="truncate max-w-[80px] text-emerald-300 font-bold">{w.proposer}</span> vs <span className="truncate max-w-[80px] text-blue-300 font-bold">{w.receiver}</span>
                             </div>
@@ -2064,6 +2066,10 @@ export default function App() {
                     </select>
                   </div>
                 </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha Límite (Opcional)</label>
+                  <input type="datetime-local" className={`w-full p-3 rounded-2xl border mt-1 text-sm font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all`} value={p2pWagerDeadline} onChange={e => setP2pWagerDeadline(e.target.value)} />
+                </div>
                 <button type="submit" className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 transition-all text-lg mt-2">
                   Lanzar Apuesta
                 </button>
@@ -2087,6 +2093,11 @@ export default function App() {
               {showActiveWagerModal.amountRPC > 0 && <p className="text-orange-500 font-bold">{showActiveWagerModal.amountRPC} RPC en juego</p>}
               {showActiveWagerModal.storeItemId && storeItems.find(i => i.id === showActiveWagerModal.storeItemId) && (
                 <p className="text-indigo-500 font-bold">Premio: {storeItems.find(i => i.id === showActiveWagerModal.storeItemId).icon} {storeItems.find(i => i.id === showActiveWagerModal.storeItemId).name}</p>
+              )}
+              {showActiveWagerModal.deadline && (
+                <p className="text-red-500 font-bold mt-2 text-sm uppercase tracking-widest">
+                  ⏳ Límite: {new Date(showActiveWagerModal.deadline).toLocaleDateString()} {new Date(showActiveWagerModal.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
               )}
             </div>
 
