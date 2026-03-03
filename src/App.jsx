@@ -5,7 +5,7 @@ import {
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
   Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause, ShoppingCart,
-  GripVertical, Store, Gift, Flame, Zap, Star, Tag, ShoppingBag, Settings, Shield
+  GripVertical, Store, Gift, Flame, Zap, Star, Tag, ShoppingBag, Settings, Shield, Swords
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { initializeApp } from 'firebase/app';
@@ -238,6 +238,19 @@ export default function App() {
   // ADMIN EDIT STORE ITEM STATE
   const [editingStoreItem, setEditingStoreItem] = useState(null);
 
+  // P2P SYSTEM STATE
+  const [wagers, setWagers] = useState([]);
+  const [p2pNotifications, setP2pNotifications] = useState([]);
+  const [selectedPeer, setSelectedPeer] = useState(null);
+  const [showP2PModal, setShowP2PModal] = useState(false);
+  const [p2pMode, setP2pMode] = useState(null); // 'send' or 'wager'
+  const [p2pAmount, setP2pAmount] = useState('');
+  const [p2pWagerDesc, setP2pWagerDesc] = useState('');
+  const [p2pWagerStoreItem, setP2pWagerStoreItem] = useState('');
+  const [p2pWagerDeadline, setP2pWagerDeadline] = useState('');
+  const [showActiveWagerModal, setShowActiveWagerModal] = useState(null);
+  const [wagerWinner, setWagerWinner] = useState('');
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -318,6 +331,19 @@ export default function App() {
       setMoments(data);
     });
 
+    const p2pNotifRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'p2p_notifications');
+    const unsubscribeP2pNotif = onSnapshot(query(p2pNotifRef), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setP2pNotifications(data);
+    });
+
+    const wagersRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'wagers');
+    const unsubscribeWagers = onSnapshot(query(wagersRef), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => b.created_at - a.created_at);
+      setWagers(data);
+    });
+
     return () => {
       unsubscribeChores();
       unsubscribeGroceries();
@@ -326,8 +352,22 @@ export default function App() {
       unsubscribeStore();
       unsubscribeCoupons();
       unsubscribeMoments();
+      unsubscribeP2pNotif();
+      unsubscribeWagers();
     };
   }, [user]);
+
+  useEffect(() => {
+    if (userName && p2pNotifications.length > 0) {
+      const unreadMyTransfers = p2pNotifications.filter(n => n.to === userName && !n.read && n.type === 'transfer');
+      if (unreadMyTransfers.length > 0) {
+        unreadMyTransfers.forEach(async (notif) => {
+          showToast(`¡${notif.from} te ha enviado ${notif.amount} RPC! 🎉`, 'success');
+          await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'p2p_notifications', notif.id), { read: true }, { merge: true });
+        });
+      }
+    }
+  }, [userName, p2pNotifications]);
 
   useEffect(() => {
     localStorage.setItem('hometeam_dark', isDarkMode);
@@ -800,6 +840,131 @@ export default function App() {
     if (window.confirm(`¿Añadir/Quitar ${delta > 0 ? '+' + delta : delta} RPC a ${targetUser}? (Nuevo balance: ${newVal.toFixed(2)})`)) {
       await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', targetUser), { rpcBalance: newVal }, { merge: true });
       showToast('Balance actualizado.', 'success');
+    }
+  };
+
+  const handleSendRPC = async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(p2pAmount);
+    if (!amount || amount <= 0) {
+      showToast('Cantidad inválida', 'error');
+      return;
+    }
+    const myBalance = usersData[userName]?.rpcBalance || 0;
+    if (amount > myBalance) {
+      showToast('Fondos insuficientes', 'error');
+      return;
+    }
+
+    try {
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName), { rpcBalance: myBalance - amount }, { merge: true });
+      const peerBalance = usersData[selectedPeer]?.rpcBalance || 0;
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', selectedPeer), { rpcBalance: peerBalance + amount }, { merge: true });
+
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'p2p_notifications'), {
+        type: 'transfer',
+        from: userName,
+        to: selectedPeer,
+        amount: amount,
+        read: false,
+        timestamp: Date.now()
+      });
+
+      showToast(`¡Has enviado ${amount} RPC a ${selectedPeer}!`, 'success');
+      setShowP2PModal(false);
+      setP2pAmount('');
+    } catch (err) {
+      console.error(err);
+      showToast('Error en la transferencia', 'error');
+    }
+  };
+
+  const handleProposeWager = async (e) => {
+    e.preventDefault();
+    if (!p2pWagerDesc.trim()) {
+      showToast('Escribe una descripción', 'error');
+      return;
+    }
+
+    const amount = parseFloat(p2pAmount) || 0;
+    const myBalance = usersData[userName]?.rpcBalance || 0;
+    if (amount > myBalance) {
+      showToast('No tienes esos fondos para apostar', 'error');
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'wagers'), {
+        proposer: userName,
+        receiver: selectedPeer,
+        description: p2pWagerDesc.trim(),
+        amountRPC: amount,
+        storeItemId: p2pWagerStoreItem || null,
+        deadline: p2pWagerDeadline || null,
+        status: 'pending',
+        created_at: Date.now()
+      });
+      showToast('Propuesta enviada. Esperando a la otra parte.', 'success');
+      setShowP2PModal(false);
+      setP2pWagerDesc('');
+      setP2pAmount('');
+      setP2pWagerStoreItem('');
+      setP2pWagerDeadline('');
+    } catch (err) {
+      console.error(err);
+      showToast('Error al proponer la apuesta', 'error');
+    }
+  };
+
+  const handleResolveWager = async (wager, winner) => {
+    try {
+      if (winner !== 'Empate') {
+        const loser = winner === wager.proposer ? wager.receiver : wager.proposer;
+
+        if (wager.amountRPC > 0) {
+          const winnerBalance = usersData[winner]?.rpcBalance || 0;
+          const loserBalance = usersData[loser]?.rpcBalance || 0;
+          await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', loser), { rpcBalance: Math.max(0, loserBalance - wager.amountRPC) }, { merge: true });
+          await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', winner), { rpcBalance: winnerBalance + wager.amountRPC }, { merge: true });
+        }
+
+        if (wager.storeItemId) {
+          const item = storeItems.find(i => i.id === wager.storeItemId);
+          if (item) {
+            const loserBalance = usersData[loser]?.rpcBalance || 0;
+            await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', loser), { rpcBalance: Math.max(0, loserBalance - item.costRPC) }, { merge: true });
+            await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'coupons'), {
+              itemId: item.id,
+              itemName: item.name,
+              icon: item.icon,
+              owner: winner,
+              timestamp: Date.now()
+            });
+          }
+        }
+      }
+
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'wagers', wager.id), { status: 'completed', winner, winner_timestamp: Date.now() }, { merge: true });
+      showToast('Apuesta finalizada. ¡El resultado es definitivo!', 'success');
+      setShowActiveWagerModal(null);
+    } catch (err) {
+      console.error(err);
+      showToast('Error al resolver la apuesta', 'error');
+    }
+  };
+
+  const handleRespondWager = async (wagerId, accept) => {
+    try {
+      if (accept) {
+        await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'wagers', wagerId), { status: 'accepted' }, { merge: true });
+        showToast('¡Apuesta aceptada! Que comience el juego.', 'success');
+      } else {
+        await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'wagers', wagerId), { status: 'declined' }, { merge: true });
+        showToast('Apuesta rechazada.', 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error de conexión', 'error');
     }
   };
 
@@ -1359,7 +1524,17 @@ export default function App() {
                         const recentChore = chores.find(c => c.userName === name);
                         const baseColor = recentChore ? USER_COLORS.find(c => c.id === recentChore.userColor)?.bg : 'bg-slate-400';
                         return (
-                          <div key={name} className="shrink-0 snap-start bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-3 flex items-center gap-3 min-w-[140px] shadow-sm">
+                          <div
+                            key={name}
+                            onClick={() => {
+                              if (name !== userName) {
+                                setSelectedPeer(name);
+                                setP2pMode(null);
+                                setShowP2PModal(true);
+                              }
+                            }}
+                            className={`shrink-0 snap-start bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-3 flex items-center gap-3 min-w-[140px] shadow-sm ${name !== userName ? 'cursor-pointer hover:bg-white/20 transition-colors' : ''}`}
+                          >
                             <div className={`w-8 h-8 rounded-full ${baseColor} flex items-center justify-center text-white font-bold shadow-inner`}>
                               {name.charAt(0).toUpperCase()}
                             </div>
@@ -1415,7 +1590,53 @@ export default function App() {
 
             {rewardsView === 'store' && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center px-1">
+                {/* Wagers Area */}
+                {wagers.filter(w => w.status === 'pending' && w.receiver === userName).length > 0 && (
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-3xl p-4 shadow-sm mb-4">
+                    <h3 className="text-xs font-bold text-indigo-800 dark:text-indigo-300 uppercase tracking-widest mb-3 flex items-center gap-2"><Flame size={14} /> Retos Pendientes</h3>
+                    <div className="space-y-3">
+                      {wagers.filter(w => w.status === 'pending' && w.receiver === userName).map(w => (
+                        <div key={w.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-indigo-100 dark:border-indigo-900">
+                          <p className="font-bold text-sm">¡{w.proposer} te ha retado!</p>
+                          <p className="text-xs italic text-slate-500">{w.description}</p>
+                          <div className="flex gap-2 font-bold text-xs mt-1">
+                            {w.amountRPC > 0 && <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-md">{w.amountRPC} RPC</span>}
+                            {w.storeItemId && <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-1 rounded-md">Premio de Tienda</span>}
+                          </div>
+                          <div className="flex gap-2 mt-2">
+                            <button onClick={() => handleRespondWager(w.id, true)} className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-2 rounded-xl text-xs flex justify-center items-center gap-1 transition-colors"><CheckCircle2 size={14} /> Aceptar</button>
+                            <button onClick={() => handleRespondWager(w.id, false)} className="flex-1 bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-500 dark:bg-slate-700 py-2 rounded-xl text-xs transition-colors">Rechazar</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {wagers.filter(w => w.status === 'accepted' && (w.proposer === userName || w.receiver === userName)).length > 0 && (
+                  <div className="mb-6 mb-4">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-2"><Swords size={14} /> Apuestas Activas</h3>
+                    <div className="flex overflow-x-auto gap-4 pb-2 -mx-2 px-2 no-scrollbar snap-x">
+                      {wagers.filter(w => w.status === 'accepted' && (w.proposer === userName || w.receiver === userName)).map(w => (
+                        <div key={w.id} onClick={() => setShowActiveWagerModal(w)} className="shrink-0 snap-start bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-5 w-64 shadow-lg cursor-pointer transform hover:scale-[1.02] active:scale-95 transition-all relative overflow-hidden group">
+                          <div className="absolute -right-4 -bottom-4 text-white/10 text-8xl rotate-12 group-hover:rotate-0 transition-transform"><Swords /></div>
+                          <div className="relative z-10 text-white">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest backdrop-blur-sm">En Juego</span>
+                              {w.amountRPC > 0 && <span className="font-black text-orange-300">{w.amountRPC} RPC</span>}
+                            </div>
+                            <p className="font-bold text-sm leading-tight mb-3 line-clamp-2">{w.description}</p>
+                            <div className="flex items-center gap-2 text-xs font-medium text-white/80">
+                              <span className="truncate max-w-[80px] text-emerald-300 font-bold">{w.proposer}</span> vs <span className="truncate max-w-[80px] text-blue-300 font-bold">{w.receiver}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center px-1 mt-6">
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Catálogo de Premios</h3>
                   <div className="flex gap-2">
                     <button onClick={() => {
@@ -1792,6 +2013,97 @@ export default function App() {
                 )}
               </Droppable>
             </DragDropContext>
+          </div>
+        </div>
+      )}
+
+      {showP2PModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8`}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-bold text-xl flex items-center gap-2">Interactuar con {selectedPeer}</h2>
+              <button onClick={() => { setShowP2PModal(false); setP2pMode(null); }} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
+            </div>
+
+            {!p2pMode ? (
+              <div className="space-y-4">
+                <button onClick={() => setP2pMode('send')} className="w-full p-4 rounded-2xl border-2 border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 font-bold transition-colors flex items-center justify-center gap-2 text-lg">
+                  💸 Enviar RPC
+                </button>
+                <button onClick={() => setP2pMode('wager')} className="w-full p-4 rounded-2xl border-2 border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold transition-colors flex items-center justify-center gap-2 text-lg">
+                  🤝 Proponer Apuesta
+                </button>
+              </div>
+            ) : p2pMode === 'send' ? (
+              <form onSubmit={handleSendRPC} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Cantidad de RPC a enviar</label>
+                  <input type="number" min="0.5" step="0.5" autoFocus className={`w-full p-4 rounded-2xl border mt-1 text-2xl text-center font-black text-orange-500 ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={p2pAmount} onChange={e => setP2pAmount(e.target.value)} />
+                </div>
+                <button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-lg">
+                  Enviar RPC
+                </button>
+                <button type="button" onClick={() => setP2pMode(null)} className="w-full py-2 text-xs text-slate-400 font-bold uppercase tracking-widest hover:text-slate-600">Volver</button>
+              </form>
+            ) : (
+              <form onSubmit={handleProposeWager} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Condición de la apuesta</label>
+                  <input type="text" placeholder="Ej: Quién saca la basura un mes..." className={`w-full p-4 rounded-2xl border mt-1 text-base font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all`} value={p2pWagerDesc} onChange={e => setP2pWagerDesc(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">RPC en juego</label>
+                    <input type="number" min="0" placeholder="0" className={`w-full p-3 rounded-2xl border mt-1 text-lg font-bold text-center ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'}`} value={p2pAmount} onChange={e => setP2pAmount(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">O Artículo de Tienda</label>
+                    <select className={`w-full p-3 rounded-2xl border mt-1 text-xs font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'}`} value={p2pWagerStoreItem} onChange={e => setP2pWagerStoreItem(e.target.value)}>
+                      <option value="">Ninguno</option>
+                      {storeItems.map(i => <option key={i.id} value={i.id}>{i.icon} {i.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 transition-all text-lg mt-2">
+                  Lanzar Apuesta
+                </button>
+                <button type="button" onClick={() => setP2pMode(null)} className="w-full py-2 text-xs text-slate-400 font-bold uppercase tracking-widest hover:text-slate-600">Volver</button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showActiveWagerModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8`}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-bold text-xl flex items-center gap-2">Resolver Apuesta</h2>
+              <button onClick={() => setShowActiveWagerModal(null)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
+            </div>
+
+            <div className="text-center mb-6">
+              <p className="text-2xl font-black mb-2">{showActiveWagerModal.description}</p>
+              {showActiveWagerModal.amountRPC > 0 && <p className="text-orange-500 font-bold">{showActiveWagerModal.amountRPC} RPC en juego</p>}
+              {showActiveWagerModal.storeItemId && storeItems.find(i => i.id === showActiveWagerModal.storeItemId) && (
+                <p className="text-indigo-500 font-bold">Premio: {storeItems.find(i => i.id === showActiveWagerModal.storeItemId).icon} {storeItems.find(i => i.id === showActiveWagerModal.storeItemId).name}</p>
+              )}
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase text-center mb-4">¿Quién ha ganado?</p>
+              <div className="space-y-3">
+                <button onClick={() => handleResolveWager(showActiveWagerModal, showActiveWagerModal.proposer)} className="w-full py-4 rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/20 transition-all text-lg">
+                  🏆 {showActiveWagerModal.proposer}
+                </button>
+                <button onClick={() => handleResolveWager(showActiveWagerModal, showActiveWagerModal.receiver)} className="w-full py-4 rounded-2xl border-2 border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-500/20 transition-all text-lg">
+                  🏆 {showActiveWagerModal.receiver}
+                </button>
+                <button onClick={() => handleResolveWager(showActiveWagerModal, 'Empate')} className="w-full py-3 rounded-2xl border-2 border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-500/20 transition-all">
+                  🤝 Empate / Cancelar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
