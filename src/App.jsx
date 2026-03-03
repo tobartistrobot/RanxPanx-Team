@@ -297,7 +297,7 @@ export default function App() {
     const storeRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'store_items');
     const unsubscribeStore = onSnapshot(query(storeRef), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      data.sort((a, b) => b.timestamp - a.timestamp);
+      data.sort((a, b) => (a.costRPC || 0) - (b.costRPC || 0) || b.timestamp - a.timestamp);
       setStoreItems(data);
     });
 
