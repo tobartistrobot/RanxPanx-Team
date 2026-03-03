@@ -1085,11 +1085,10 @@ export default function App() {
                   return (
                     <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group relative overflow-hidden`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.bg}`}><Icon size={18} className={style.color} /></div>
                         <div>
                           <p className="font-bold text-sm tracking-tight">{chore.taskName}</p>
                           <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                            <span className={`${style.color} font-bold`}>{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-slate-500 font-bold">{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                             • <span className={`font-bold ${uColorClass}`}>{chore.userName}</span> • {formatTimeDetailed(chore.durationSeconds)}
                           </p>
                         </div>
@@ -1212,11 +1211,10 @@ export default function App() {
                   return (
                     <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between relative overflow-hidden`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.bg}`}><Icon size={14} className={style.color} /></div>
                         <div>
                           <p className="font-bold text-sm">{chore.taskName}</p>
                           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                            <span className={style.color}>{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-slate-500">{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                             • <span className={`font-bold ${uColorClass}`}>{chore.userName}</span> • <span className="text-slate-500 font-medium">{formatTimeDetailed(chore.durationSeconds)}</span>
                           </p>
                         </div>
