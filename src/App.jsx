@@ -235,6 +235,9 @@ export default function App() {
   // SUPERMARKET CUSTOMIZATION STATE
   const [showSupermarketModal, setShowSupermarketModal] = useState(false);
 
+  // ADMIN EDIT STORE ITEM STATE
+  const [editingStoreItem, setEditingStoreItem] = useState(null);
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -739,6 +742,22 @@ export default function App() {
     if (window.confirm('¿Seguro que quieres borrar este premio para TODOS?')) {
       await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'store_items', id));
       showToast('Premio eliminado de la tienda.', 'success');
+    }
+  };
+
+  const handleUpdateStoreItem = async () => {
+    if (!editingStoreItem || !editingStoreItem.name.trim() || editingStoreItem.cost < 1) return;
+    try {
+      await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'store_items', editingStoreItem.id), {
+        name: editingStoreItem.name.trim(),
+        costRPC: Number(editingStoreItem.cost),
+        icon: editingStoreItem.icon || '🎁'
+      });
+      setEditingStoreItem(null);
+      showToast('Premio actualizado', 'success');
+    } catch (error) {
+      console.error("Error updating store item:", error);
+      showToast('Error al actualizar', 'error');
     }
   };
 
@@ -1565,15 +1584,54 @@ export default function App() {
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">Tienda de Premios</h3>
                 <div className="space-y-2">
                   {storeItems.map(item => (
-                    <div key={item.id} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{item.icon}</span>
-                        <div>
-                          <p className="font-bold text-sm leading-tight">{item.name}</p>
-                          <p className="text-[10px] font-medium text-slate-500">{item.costRPC} RPC</p>
+                    <div key={item.id} className={`p-3 rounded-xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                      {editingStoreItem?.id === item.id ? (
+                        <div className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                          <div className="flex gap-2">
+                            <input type="text" maxLength="2" className={`w-12 text-center rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.icon} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, icon: e.target.value })} />
+                            <input type="text" className={`flex-1 min-w-0 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.name} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, name: e.target.value })} />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input type="number" min="1" className={`w-20 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600 text-orange-400' : 'bg-white border-slate-300 text-orange-600'} px-2 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.cost} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, cost: e.target.value })} />
+                            <span className="text-[10px] uppercase font-bold text-slate-400 mr-auto">RPC</span>
+
+                            <button onClick={() => setEditingStoreItem(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Cancelar</button>
+                            <button onClick={handleUpdateStoreItem} className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 transition shadow-sm">Guardar</button>
+                          </div>
                         </div>
-                      </div>
-                      <button onClick={() => handleAdminDeleteStoreItem(item.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          {editingStoreItem?.id === item.id ? (
+                            <div className="flex-1 space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                              <div className="flex gap-2">
+                                <input type="text" maxLength="2" className={`w-12 text-center rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.icon} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, icon: e.target.value })} />
+                                <input type="text" className={`flex-1 min-w-0 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.name} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, name: e.target.value })} />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input type="number" min="1" className={`w-20 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600 text-orange-400' : 'bg-white border-slate-300 text-orange-600'} px-2 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.cost} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, cost: e.target.value })} />
+                                <span className="text-[10px] uppercase font-bold text-slate-400 mr-auto">RPC</span>
+
+                                <button onClick={() => setEditingStoreItem(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Cancelar</button>
+                                <button onClick={handleUpdateStoreItem} className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 transition shadow-sm">Guardar</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">{item.icon}</span>
+                                <div>
+                                  <p className="font-bold text-sm leading-tight">{item.name}</p>
+                                  <p className="text-[10px] font-medium text-slate-500">{item.costRPC} RPC</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <button onClick={() => setEditingStoreItem({ id: item.id, name: item.name, cost: item.costRPC, icon: item.icon })} className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"><Edit2 size={16} /></button>
+                                <button onClick={() => handleAdminDeleteStoreItem(item.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                   {storeItems.length === 0 && <p className="text-xs text-slate-500 italic">No hay premios creados.</p>}
