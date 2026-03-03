@@ -359,8 +359,8 @@ export default function App() {
       return taskChores.sort((a, b) => b.timestamp - a.timestamp)[0];
     }).filter(c => c && c.timestamp < Date.now() - 60000).map(c => {
       const daysSince = (Date.now() - c.timestamp) / (1000 * 3600 * 24);
-      return { name: c.taskName, multiplier: Math.pow(1.10, Math.floor(daysSince)) };
-    }).filter(t => t.multiplier > 1.0).sort((a, b) => b.multiplier - a.multiplier).slice(0, 3);
+      return { name: c.taskName, multiplier: Math.pow(1.10, daysSince) };
+    }).filter(t => t.multiplier >= 1.01).sort((a, b) => b.multiplier - a.multiplier).slice(0, 3);
   }, [chores]);
 
   const userTotalToday = useMemo(() => {
@@ -436,9 +436,7 @@ export default function App() {
 
     if (targetChore) {
       const daysSince = (Date.now() - targetChore.timestamp) / (1000 * 3600 * 24);
-      if (daysSince > 1) {
-        rpcEarned = rpcEarned * Math.pow(1.10, Math.floor(daysSince));
-      }
+      rpcEarned = rpcEarned * Math.pow(1.10, daysSince);
     }
 
     // 3. Revisar Frenesí Diario (>= 3600 segundos agregados hoy)
@@ -696,7 +694,14 @@ export default function App() {
     }
   };
 
-  const handleAdminRPC = async (targetUser, delta) => {
+  const handleAdminRPC = async (targetUser) => {
+    const deltaStr = window.prompt(`¿Cuántos RPC quieres empezar a añadir/quitar a ${targetUser}? (Usa negativo para restar, ej: -15, 50)`);
+    if (!deltaStr) return;
+    const delta = parseFloat(deltaStr);
+    if (isNaN(delta)) {
+      showToast('Cantidad inválida.', 'error');
+      return;
+    }
     const uData = usersData[targetUser] || { rpcBalance: 0 };
     const newVal = Math.max(0, uData.rpcBalance + delta);
     if (window.confirm(`¿Añadir/Quitar ${delta > 0 ? '+' + delta : delta} RPC a ${targetUser}? (Nuevo balance: ${newVal.toFixed(2)})`)) {
@@ -1188,7 +1193,11 @@ export default function App() {
                 <div className="flex justify-between items-center px-1">
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Catálogo de Premios</h3>
                   <div className="flex gap-2">
-                    <button onClick={() => setShowAdminModal(true)} className={`text-xs font-bold px-2 py-1 rounded border flex items-center gap-1 transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800'}`}>
+                    <button onClick={() => {
+                      const pass = window.prompt("Introduce contraseña de Admin:");
+                      if (pass === '123456') setShowAdminModal(true);
+                      else if (pass !== null) showToast('Contraseña incorrecta', 'error');
+                    }} className={`text-xs font-bold px-2 py-1 rounded border flex items-center gap-1 transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800'}`}>
                       <Shield size={12} /> Admin
                     </button>
                     <button onClick={() => setShowItemModal(true)} className="text-orange-500 text-xs font-bold flex items-center gap-1 hover:underline">
@@ -1377,8 +1386,7 @@ export default function App() {
                         <p className="text-[10px] text-orange-500 font-bold">{usersData[u].rpcBalance?.toFixed(2) || 0} RPC</p>
                       </div>
                       <div className="flex gap-1">
-                        <button onClick={() => handleAdminRPC(u, -10)} className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold text-xs flex items-center justify-center">-10</button>
-                        <button onClick={() => handleAdminRPC(u, 10)} className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 font-bold text-xs flex items-center justify-center">+10</button>
+                        <button onClick={() => handleAdminRPC(u)} className="px-3 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center transition-colors hover:bg-indigo-200 dark:hover:bg-indigo-900/50"><Edit2 size={12} className="mr-1" /> Editar RPC</button>
                       </div>
                     </div>
                   ))}
