@@ -880,6 +880,10 @@ export default function App() {
         {activeTab === 'timer' && (
           <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
 
+            <div className="px-4 py-2 text-center animate-in slide-in-from-top-2 fade-in duration-500 delay-100">
+              <p className="text-sm italic font-medium text-slate-500 dark:text-slate-400">"{dailyQuote}"</p>
+            </div>
+
             <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-8 rounded-[3rem] shadow-2xl border relative overflow-hidden transition-all duration-500`}>
 
               <div className="flex justify-between items-center mb-6">
@@ -954,15 +958,16 @@ export default function App() {
                   <button onClick={togglePlayPause} className={`w-[96px] h-[96px] rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 relative z-10 ${activeTask && !activeTask.isPaused ? 'bg-amber-500 text-white shadow-[0_0_30px_rgba(245,158,11,0.4)]' : 'bg-indigo-600 text-white shadow-[0_0_30px_rgba(79,70,229,0.4)]'}`}>
                     {activeTask && !activeTask.isPaused ? <Pause size={40} fill="currentColor" /> : <Play size={44} fill="currentColor" className="ml-2" />}
                   </button>
-
-                  {activeTask && (
-                    <button onClick={stopAndSaveTimer} className="absolute -right-2 top-0 bottom-0 my-auto w-14 h-14 rounded-full flex items-center justify-center bg-red-500 text-white shadow-xl shadow-red-500/40 border-4 border-white dark:border-slate-900 transition-all transform hover:scale-110 active:scale-95 animate-in slide-in-from-left-4 fade-in z-20">
-                      <Square size={20} fill="currentColor" />
-                    </button>
-                  )}
                 </div>
+
+                {activeTask && (
+                  <div className="w-full mt-8 flex justify-center animate-in slide-in-from-top-4 fade-in">
+                    <button onClick={stopAndSaveTimer} className="w-full max-w-[240px] h-14 rounded-2xl flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white text-sm font-bold shadow-xl shadow-red-500/30 transition-all transform active:scale-95 border-2 border-red-400/20">
+                      <Square size={16} fill="currentColor" /> FINALIZAR TAREA
+                    </button>
+                  </div>
+                )}
               </div>
-              <p className="text-[10px] italic font-medium text-slate-400 text-center mt-10 w-full max-w-xs mx-auto">"{dailyQuote}"</p>
             </div>
             <div className="mt-2">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 px-2">Actividad de hoy</h3>
