@@ -687,6 +687,25 @@ export default function App() {
     }
   };
 
+  const handleAdminAddUser = async () => {
+    const newName = window.prompt("Nombre del nuevo integrante o funcionario:");
+    if (!newName) return;
+    const rpcStr = window.prompt(`¿Con cuántos RPC iniciales empezará ${newName}?`, "0");
+    if (rpcStr === null) return;
+    const initialRPC = parseFloat(rpcStr);
+    if (isNaN(initialRPC)) {
+      showToast('Cantidad inicial inválida.', 'error');
+      return;
+    }
+    try {
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', newName), { rpcBalance: initialRPC }, { merge: true });
+      showToast(`Cuenta ${newName} actualizada.`, 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Error de BD', 'error');
+    }
+  };
+
   const handleAdminDeleteCoupon = async (id) => {
     if (window.confirm('¿Revocar (borrar) este cupón del inventario de ese usuario?')) {
       await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'coupons', id));
@@ -861,59 +880,89 @@ export default function App() {
         {activeTab === 'timer' && (
           <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
 
-            {/* Mensaje Inspiracional Diario */}
-            <div className="px-4 py-2 text-center animate-in slide-in-from-top-2 fade-in duration-500 delay-100">
-              <p className="text-sm italic font-medium text-slate-500 dark:text-slate-400">"{dailyQuote}"</p>
-            </div>
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-8 rounded-[3rem] shadow-2xl border relative overflow-hidden transition-all duration-500`}>
 
-            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-[2.5rem] shadow-xl border relative overflow-hidden transition-all duration-500`}>
-              <div className="mb-4">
-                <div className="flex justify-between items-end mb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1"><Zap size={10} className={inFrenzyMode ? 'text-amber-500' : ''} /> Progreso Frenesí (x2)</span>
-                  <span className={`text-[10px] font-bold ${inFrenzyMode ? 'text-amber-500' : 'text-slate-400'}`}>{Math.floor(userTotalToday / 60)} / 60 min</span>
-                </div>
-                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex shadow-inner">
-                  <div className={`h-full transition-all duration-1000 ${inFrenzyMode ? 'bg-amber-500 animate-pulse' : 'bg-gradient-to-r from-orange-300 to-orange-400'}`} style={{ width: `${frenzyProgress}%` }}></div>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center mb-6 mt-6">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sesión en vivo</span>
-                <button onClick={() => { setModalMode('manual'); setManualData({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() }); }} className="text-indigo-500 text-xs font-bold flex items-center gap-1 hover:underline">
-                  <Plus size={14} /> Registro manual
+              <div className="flex justify-between items-center mb-6">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Timer Pro</span>
+                <button onClick={() => { setModalMode('manual'); setManualData({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() }); }} className="text-indigo-500 text-[10px] uppercase font-bold flex items-center gap-1 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-1.5 rounded-full transition-colors">
+                  <Plus size={12} strokeWidth={3} /> Registro manual
                 </button>
               </div>
-              <input type="text" placeholder="¿Qué vas a hacer?" value={taskInput} onChange={(e) => setTaskInput(e.target.value)} disabled={!!activeTask} className={`w-full text-lg font-medium p-4 rounded-2xl border mb-6 transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
+
+              <input type="text" placeholder="¿Qué vas a hacer ahora, genio?" value={taskInput} onChange={(e) => setTaskInput(e.target.value)} disabled={!!activeTask} className={`w-full text-lg font-medium p-5 rounded-2xl border mb-6 transition-all shadow-inner ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400 focus:bg-white'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
 
               {!activeTask && hotTasks.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1 flex items-center gap-1.5"><Flame size={12} className="text-orange-500" /> En busca y captura (Multiplicador)</p>
-                  <div className="flex flex-wrap gap-2">
-                    {hotTasks.map(t => <button key={t.name} onClick={() => setTaskInput(t.name)} className={`text-xs px-2.5 py-1.5 rounded-xl border border-orange-200 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:border-orange-900/50 dark:text-orange-300 font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 shadow-sm shadow-orange-500/10`}>{t.name} <span className="text-[9px] bg-orange-200 dark:bg-orange-800 px-1 py-0.5 rounded-md text-orange-900 dark:text-orange-100">x{t.multiplier.toFixed(2)}</span></button>)}
+                <div className="mb-6 delay-100 animate-in fade-in">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-3 ml-2 flex items-center gap-1.5"><Flame size={12} className="text-orange-500 animate-pulse" /> En busca y captura</p>
+                  <div className="flex overflow-x-auto gap-3 pb-3 -mx-4 px-4 no-scrollbar snap-x">
+                    {hotTasks.map(t => (
+                      <button key={t.name} onClick={() => setTaskInput(t.name)} className={`shrink-0 snap-start text-xs px-4 py-2.5 rounded-2xl border border-orange-200 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:border-orange-900/50 dark:text-orange-300 font-bold flex flex-col items-start justify-center gap-1 transition-all hover:scale-105 active:scale-95 shadow-sm shadow-orange-500/10`}>
+                        {t.name}
+                        <span className="text-[10px] bg-orange-200 dark:bg-orange-800 px-1.5 py-0.5 rounded-md text-orange-900 dark:text-orange-100 font-black tracking-tight">x{t.multiplier.toFixed(2)} RPC</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
 
               {!activeTask && suggestions.length > 0 && (
-                <div className="mb-6">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
-                  <div className="flex flex-wrap gap-2">
-                    {suggestions.map(s => <button key={s} onClick={() => setTaskInput(s)} className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>{s}</button>)}
+                <div className="mb-8 delay-200 animate-in fade-in">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-3 ml-2">Asignaciones Frecuentes</p>
+                  <div className="flex overflow-x-auto gap-2 pb-2 -mx-4 px-4 no-scrollbar">
+                    {suggestions.map(s => <button key={s} onClick={() => setTaskInput(s)} className={`shrink-0 text-[11px] font-bold px-4 py-2 rounded-xl border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm text-slate-600'}`}>{s}</button>)}
                   </div>
                 </div>
               )}
 
-              <div className={`text-6xl font-mono font-bold text-center mb-8 tabular-nums tracking-tight ${activeTask ? (activeTask.isPaused ? 'text-indigo-400 animate-pulse' : 'text-indigo-500') : 'text-slate-400 opacity-50'}`}>{formatTimeDigital(elapsed)}</div>
-              <div className="flex justify-center gap-6 items-center">
-                <button onClick={togglePlayPause} className={`w-24 h-24 rounded-full flex items-center justify-center shadow-xl transition-all transform hover:scale-105 active:scale-95 ${activeTask && !activeTask.isPaused ? 'bg-amber-500 text-white shadow-amber-500/40 ring-8 ring-amber-500/10' : 'bg-indigo-600 text-white shadow-indigo-500/40 ring-8 ring-indigo-500/10'}`}>
-                  {activeTask && !activeTask.isPaused ? <Pause size={32} fill="currentColor" /> : <Play size={36} fill="currentColor" className="ml-2" />}
-                </button>
-                {activeTask && (
-                  <button onClick={stopAndSaveTimer} className="w-16 h-16 rounded-full flex items-center justify-center bg-red-500 text-white shadow-xl shadow-red-500/40 ring-4 ring-red-500/10 transition-all transform hover:scale-105 active:scale-95 animate-in slide-in-from-left-4 fade-in">
-                    <Square size={20} fill="currentColor" />
+              <div className="flex flex-col items-center mt-2 group">
+                <div className={`text-6xl sm:text-7xl font-mono font-black tracking-tighter tabular-nums mb-6 transition-colors duration-500 ${activeTask ? (activeTask.isPaused ? 'text-indigo-400 animate-pulse' : 'text-indigo-600 dark:text-indigo-400 drop-shadow-md') : 'text-slate-300 dark:text-slate-700'}`}>
+                  {formatTimeDigital(elapsed)}
+                </div>
+
+                <div className="relative flex justify-center items-center h-[140px] w-[140px]">
+                  {/* Frenzy Progress Circular SVG */}
+                  {(() => {
+                    const radius = 64;
+                    const stroke = 6;
+                    const normalizedRadius = radius - stroke * 2;
+                    const circumference = normalizedRadius * 2 * Math.PI;
+                    const strokeDashoffset = circumference - (frenzyProgress / 100) * circumference;
+                    return (
+                      <svg height={radius * 2} width={radius * 2} className="absolute inset-0 m-auto rotate-[-90deg] drop-shadow-lg pointer-events-none">
+                        <circle stroke={isDarkMode ? '#1e293b' : '#f1f5f9'} fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={radius} cy={radius} />
+                        <circle
+                          stroke={inFrenzyMode ? '#f59e0b' : '#fb923c'}
+                          fill="transparent"
+                          strokeWidth={stroke + 1}
+                          strokeDasharray={circumference + ' ' + circumference}
+                          style={{ strokeDashoffset, transition: 'stroke-dashoffset 1s ease-in-out' }}
+                          strokeLinecap="round"
+                          r={normalizedRadius}
+                          cx={radius}
+                          cy={radius}
+                          className={inFrenzyMode ? 'animate-pulse drop-shadow-[0_0_12px_rgba(245,158,11,0.8)]' : ''}
+                        />
+                      </svg>
+                    );
+                  })()}
+
+                  <div className="absolute top-[-20px] bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-1.5 z-20">
+                    <Zap size={10} className={inFrenzyMode ? 'text-amber-500 animate-bounce' : 'text-slate-400'} />
+                    <span className={`text-[9px] font-black tracking-widest uppercase ${inFrenzyMode ? 'text-amber-500' : 'text-slate-500'}`}>{Math.floor(userTotalToday / 60)} / 60 m</span>
+                  </div>
+
+                  <button onClick={togglePlayPause} className={`w-[96px] h-[96px] rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 relative z-10 ${activeTask && !activeTask.isPaused ? 'bg-amber-500 text-white shadow-[0_0_30px_rgba(245,158,11,0.4)]' : 'bg-indigo-600 text-white shadow-[0_0_30px_rgba(79,70,229,0.4)]'}`}>
+                    {activeTask && !activeTask.isPaused ? <Pause size={40} fill="currentColor" /> : <Play size={44} fill="currentColor" className="ml-2" />}
                   </button>
-                )}
+
+                  {activeTask && (
+                    <button onClick={stopAndSaveTimer} className="absolute -right-2 top-0 bottom-0 my-auto w-14 h-14 rounded-full flex items-center justify-center bg-red-500 text-white shadow-xl shadow-red-500/40 border-4 border-white dark:border-slate-900 transition-all transform hover:scale-110 active:scale-95 animate-in slide-in-from-left-4 fade-in z-20">
+                      <Square size={20} fill="currentColor" />
+                    </button>
+                  )}
+                </div>
               </div>
+              <p className="text-[10px] italic font-medium text-slate-400 text-center mt-10 w-full max-w-xs mx-auto">"{dailyQuote}"</p>
             </div>
             <div className="mt-2">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 px-2">Actividad de hoy</h3>
@@ -1377,7 +1426,10 @@ export default function App() {
 
             <div className="space-y-6">
               <section>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">Carteras Locales</h3>
+                <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Carteras Locales</h3>
+                  <button onClick={handleAdminAddUser} className="text-[10px] font-bold uppercase text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-1 transition-colors"><Plus size={10} strokeWidth={3} /> Añadir Cuenta</button>
+                </div>
                 <div className="space-y-2">
                   {Object.keys(usersData).map(u => (
                     <div key={u} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
@@ -1506,6 +1558,8 @@ export default function App() {
         .safe-top { padding-top: env(safe-area-inset-top); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         input, button { -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
   );
