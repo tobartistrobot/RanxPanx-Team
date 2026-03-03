@@ -352,6 +352,15 @@ export default function App() {
     return [...new Set(names)].slice(0, 6);
   }, [groceries]);
 
+  const autocompleteResults = useMemo(() => {
+    if (!taskInput || activeTask) return [];
+    const lowerInput = taskInput.toLowerCase().trim();
+    if (!lowerInput) return [];
+    const uniqueTasks = [...new Set(chores.map(c => c.taskName))];
+    const matches = uniqueTasks.filter(t => t.toLowerCase().includes(lowerInput) && t.toLowerCase() !== lowerInput);
+    return matches.slice(0, 5);
+  }, [taskInput, activeTask, chores]);
+
   const hotTasks = useMemo(() => {
     const uniqueTasks = [...new Set(chores.map(c => c.taskName))];
     return uniqueTasks.map(t => {
@@ -893,7 +902,24 @@ export default function App() {
                 </button>
               </div>
 
-              <input type="text" placeholder="¿Qué vas a hacer ahora, genio?" value={taskInput} onChange={(e) => setTaskInput(e.target.value)} disabled={!!activeTask} className={`w-full text-lg font-medium p-5 rounded-2xl border mb-6 transition-all shadow-inner ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400 focus:bg-white'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
+              <div className="relative mb-6 z-30">
+                <input type="text" placeholder="¿Qué vas a hacer ahora, genio?" value={taskInput} onChange={(e) => setTaskInput(e.target.value)} disabled={!!activeTask} className={`w-full text-lg font-medium p-5 rounded-2xl border transition-all shadow-inner ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400 focus:bg-white'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10`} />
+
+                {autocompleteResults.length > 0 && !activeTask && (
+                  <div className={`absolute top-full left-0 right-0 mt-2 p-2 rounded-2xl border shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200 overflow-hidden ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                    {autocompleteResults.map((res, i) => (
+                      <button
+                        key={res}
+                        onClick={() => setTaskInput(res)}
+                        className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-between group ${isDarkMode ? 'hover:bg-slate-700 text-slate-300 hover:text-white' : 'hover:bg-slate-50 text-slate-600 hover:text-indigo-600'}`}
+                      >
+                        {res}
+                        <Plus size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {!activeTask && hotTasks.length > 0 && (
                 <div className="mb-6 delay-100 animate-in fade-in">
