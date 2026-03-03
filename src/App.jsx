@@ -1229,6 +1229,35 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Leaderboard Horizontal */}
+              {Object.keys(usersData).length > 1 && (
+                <div className="relative z-10 mt-6 pt-6 border-t border-white/20">
+                  <p className="text-[10px] text-white/80 uppercase tracking-widest font-bold mb-3 flex items-center gap-1.5">
+                    <TrendingUp size={12} /> Cuentas Familiares
+                  </p>
+                  <div className="flex overflow-x-auto gap-3 pb-2 -mx-2 px-2 no-scrollbar snap-x">
+                    {Object.entries(usersData)
+                      .sort(([, a], [, b]) => (b.rpcBalance || 0) - (a.rpcBalance || 0))
+                      .map(([name, data]) => {
+                        // Intentar encontrar el color en los recientes, sino gris por defecto
+                        const recentChore = chores.find(c => c.userName === name);
+                        const baseColor = recentChore ? USER_COLORS.find(c => c.id === recentChore.userColor)?.bg : 'bg-slate-400';
+                        return (
+                          <div key={name} className="shrink-0 snap-start bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-3 flex items-center gap-3 min-w-[140px] shadow-sm">
+                            <div className={`w-8 h-8 rounded-full ${baseColor} flex items-center justify-center text-white font-bold shadow-inner`}>
+                              {name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold truncate max-w-[80px] text-white">{name}</p>
+                              <p className="text-[10px] font-black text-orange-200">{data.rpcBalance?.toFixed(2) || 0} RPC</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
               {inFrenzyMode ? (
                 <div className="mt-4 bg-white/20 backdrop-blur-md rounded-2xl p-4 flex items-center gap-3 animate-pulse border border-white/30 shadow-lg shadow-yellow-500/20">
                   <Flame className="text-yellow-300 animate-bounce" size={24} />
