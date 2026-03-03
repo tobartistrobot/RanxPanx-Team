@@ -856,8 +856,13 @@ export default function App() {
   const selectedDayStats = useMemo(() => {
     const dayChores = getChoresForDate(selectedDate);
     const users = {};
-    dayChores.forEach(c => { users[c.userName] = (users[c.userName] || 0) + c.durationSeconds; });
-    return { users, total: dayChores.reduce((s, c) => s + c.durationSeconds, 0) };
+    const usersTasks = {};
+    dayChores.forEach(c => {
+      users[c.userName] = (users[c.userName] || 0) + c.durationSeconds;
+      if (!usersTasks[c.userName]) usersTasks[c.userName] = {};
+      usersTasks[c.userName][c.taskName] = (usersTasks[c.userName][c.taskName] || 0) + c.durationSeconds;
+    });
+    return { users, usersTasks, total: dayChores.reduce((s, c) => s + c.durationSeconds, 0) };
   }, [chores, selectedDate]);
 
   const selectedWeekStats = useMemo(() => {
@@ -872,16 +877,26 @@ export default function App() {
     endOfWeek.setHours(23, 59, 59, 999);
     const weekChores = chores.filter(c => c.timestamp >= startOfWeek.getTime() && c.timestamp <= endOfWeek.getTime());
     const users = {};
-    weekChores.forEach(c => { users[c.userName] = (users[c.userName] || 0) + c.durationSeconds; });
-    return { users, total: weekChores.reduce((s, c) => s + c.durationSeconds, 0) };
+    const usersTasks = {};
+    weekChores.forEach(c => {
+      users[c.userName] = (users[c.userName] || 0) + c.durationSeconds;
+      if (!usersTasks[c.userName]) usersTasks[c.userName] = {};
+      usersTasks[c.userName][c.taskName] = (usersTasks[c.userName][c.taskName] || 0) + c.durationSeconds;
+    });
+    return { users, usersTasks, total: weekChores.reduce((s, c) => s + c.durationSeconds, 0) };
   }, [chores, selectedDate]);
 
   const selectedMonthStats = useMemo(() => {
     const monthStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}`;
     const monthChores = chores.filter(c => c.dateString.startsWith(monthStr));
     const users = {};
-    monthChores.forEach(c => { users[c.userName] = (users[c.userName] || 0) + c.durationSeconds; });
-    return { users, total: monthChores.reduce((s, c) => s + c.durationSeconds, 0) };
+    const usersTasks = {};
+    monthChores.forEach(c => {
+      users[c.userName] = (users[c.userName] || 0) + c.durationSeconds;
+      if (!usersTasks[c.userName]) usersTasks[c.userName] = {};
+      usersTasks[c.userName][c.taskName] = (usersTasks[c.userName][c.taskName] || 0) + c.durationSeconds;
+    });
+    return { users, usersTasks, total: monthChores.reduce((s, c) => s + c.durationSeconds, 0) };
   }, [chores, selectedDate]);
 
   const currentRadiographyStats = radiographyView === 'day' ? selectedDayStats : (radiographyView === 'week' ? selectedWeekStats : selectedMonthStats);
@@ -1147,11 +1162,42 @@ export default function App() {
               {currentRadiographyStats.total === 0 ? <p className="text-center text-xs text-slate-400 italic py-3">Sin registros.</p> : (
                 <div className="space-y-4">
                   {Object.entries(currentRadiographyStats.users).map(([name, seconds]) => (
-                    <div key={name}>
-                      <div className="flex justify-between text-xs mb-1 font-bold"><span>{name}</span><span>{formatTimeDetailed(seconds)}</span></div>
-                      <div className="h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-500 transition-all duration-700" style={{ width: `${(seconds / currentRadiographyStats.total) * 100}%` }}></div>
+                    <div key={name} className="group">
+                      <div
+                        className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 p-1 -mx-1 rounded transition-colors"
+                        onClick={() => setExpandedUser(expandedUser === name ? null : name)}
+                      >
+                        <div className="flex justify-between text-xs mb-1 font-bold">
+                          <span className="flex items-center gap-1">
+                            {name}
+                            <span className="text-[10px] text-slate-400 font-normal transition-transform duration-200" style={{ transform: expandedUser === name ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                          </span>
+                          <span>{formatTimeDetailed(seconds)}</span>
+                        </div>
+                        <div className="h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-500 transition-all duration-700" style={{ width: `${(seconds / currentRadiographyStats.total) * 100}%` }}></div>
+                        </div>
                       </div>
+
+                      {expandedUser === name && currentRadiographyStats.usersTasks?.[name] && (
+                        <div className="mt-3 space-y-2 pl-2 border-l-2 border-slate-100 dark:border-slate-800 animate-in slide-in-from-top-2 fade-in duration-200">
+                          {Object.entries(currentRadiographyStats.usersTasks[name])
+                            .sort(([, aSec], [, bSec]) => bSec - aSec)
+                            .map(([taskName, taskSec]) => {
+                              const style = getTaskStyle(taskName);
+                              const Icon = style.icon;
+                              return (
+                                <div key={taskName} className="flex justify-between items-center text-[10px]">
+                                  <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                                    <Icon size={10} className={style.color} />
+                                    <span className="text-slate-600 dark:text-slate-400 font-medium truncate">{taskName}</span>
+                                  </div>
+                                  <span className="font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatTimeDetailed(taskSec)}</span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
