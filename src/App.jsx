@@ -232,6 +232,9 @@ export default function App() {
   const [showItemModal, setShowItemModal] = useState(false);
   const [newItem, setNewItem] = useState({ name: '', cost: 10, icon: '🎁' });
 
+  // SUPERMARKET CUSTOMIZATION STATE
+  const [showSupermarketModal, setShowSupermarketModal] = useState(false);
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -277,6 +280,10 @@ export default function App() {
     const supermarketsRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'supermarkets');
     const unsubscribeSupermarkets = onSnapshot(query(supermarketsRef), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => {
+        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+        return a.name.localeCompare(b.name);
+      });
       setSupermarkets(data);
     }, (error) => console.error("Firestore supermarkets error:", error));
 
@@ -596,12 +603,51 @@ export default function App() {
     const name = window.prompt("Nombre del nuevo supermercado o tienda:");
     if (!name || !name.trim()) return;
     try {
+      const highestOrder = Math.max(-1, ...supermarkets.map(s => s.order || 0));
       await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'supermarkets'), {
-        name: name.trim()
+        name: name.trim(),
+        order: highestOrder + 1,
+        color: 'slate' // Default color
       });
     } catch (error) {
       console.error("Error adding supermarket:", error);
       showToast('Error al crear tienda', 'error');
+    }
+  };
+
+  const handleDragEndSupermarkets = async (result) => {
+    if (!result.destination) return;
+
+    const items = Array.from(supermarkets);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Optimistic UI updates
+    const updatedSupermarkets = items.map((s, index) => ({ ...s, order: index }));
+    setSupermarkets(updatedSupermarkets);
+
+    try {
+      updatedSupermarkets.forEach(async (item, index) => {
+        if (item.order !== supermarkets.find(s => s.id === item.id)?.order) {
+          await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'supermarkets', item.id), {
+            order: index
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Error updating sorted supermarkets:", error);
+    }
+  };
+
+  const updateSupermarketColor = async (id, newColor) => {
+    try {
+      await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'supermarkets', id), {
+        color: newColor
+      });
+      // Optimistic update
+      setSupermarkets(prev => prev.map(s => s.id === id ? { ...s, color: newColor } : s));
+    } catch (error) {
+      console.error("Error updating supermarket color:", error);
     }
   };
 
@@ -1146,16 +1192,21 @@ export default function App() {
             <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar -mt-2 mb-2">
               <Store size={14} className="text-slate-400 shrink-0 ml-1" />
               {supermarkets.length === 0 && (
-                <span className="text-[10px] text-slate-400 italic">Pulsa + Nuevo para empezar</span>
+                <span className="text-[10px] text-slate-400 italic">Pulsa Ajustes para empezar</span>
               )}
-              {supermarkets.map(s => (
-                <button key={s.id} onClick={() => setSelectedSupermarket(selectedSupermarket === s.name ? '' : s.name)} className={`py-1.5 pl-3 pr-2 flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest rounded-xl border whitespace-nowrap transition-all ${selectedSupermarket === s.name ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-500/20 dark:border-indigo-500/30 dark:text-indigo-400' : isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-700'}`}>
-                  {s.name}
-                  <div onClick={(e) => deleteSupermarket(e, s.id)} className={`p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors ${selectedSupermarket === s.name ? 'hover:bg-indigo-200 dark:hover:bg-indigo-800' : ''}`}><X size={10} /></div>
-                </button>
-              ))}
-              <button onClick={addSupermarket} className={`py-1.5 px-3 flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest rounded-xl border whitespace-nowrap transition-all ${isDarkMode ? 'bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-slate-200' : 'bg-slate-50 border-slate-200/50 text-slate-500 hover:text-slate-700'}`}>
-                <Plus size={10} /> Nuevo
+              {supermarkets.map(s => {
+                const colorObj = USER_COLORS.find(c => c.id === s.color);
+                const colorClass = colorObj ? (isDarkMode ? `bg-${colorObj.id}-500/20 text-${colorObj.id}-400 border-${colorObj.id}-500/30` : `bg-${colorObj.id}-50 text-${colorObj.id}-600 border-${colorObj.id}-200`) : (isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-500');
+                const isSelected = selectedSupermarket === s.name;
+
+                return (
+                  <button key={s.id} onClick={() => setSelectedSupermarket(isSelected ? '' : s.name)} className={`py-1.5 px-3 flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest rounded-xl border whitespace-nowrap transition-all ${isSelected ? 'ring-2 ring-offset-1 ' + (isDarkMode ? 'ring-offset-slate-950 ring-indigo-500 scale-105' : 'ring-offset-slate-50 ring-indigo-400 scale-105') : 'hover:scale-105'} ${colorClass}`}>
+                    {s.name}
+                  </button>
+                )
+              })}
+              <button onClick={() => setShowSupermarketModal(true)} className={`p-2 flex items-center justify-center rounded-xl border transition-all ${isDarkMode ? 'bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-slate-200' : 'bg-slate-50 border-slate-200/50 text-slate-500 hover:text-slate-700'}`}>
+                <Settings size={14} />
               </button>
             </div>
 
@@ -1176,7 +1227,17 @@ export default function App() {
                                   </button>
                                   <div className="flex-1 flex flex-col justify-center">
                                     <p className="font-bold text-base leading-tight">{item.name}</p>
-                                    {item.supermarket && <span className={`text-[9px] font-bold mt-1 max-w-max uppercase tracking-widest px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{item.supermarket}</span>}
+                                    {item.supermarket && (() => {
+                                      const superData = supermarkets.find(s => s.name === item.supermarket);
+                                      const colorObj = superData && superData.color ? USER_COLORS.find(c => c.id === superData.color) : null;
+                                      const tagColorClass = colorObj ? (isDarkMode ? `bg-${colorObj.id}-900/40 text-${colorObj.id}-300 border border-${colorObj.id}-800/50` : `bg-${colorObj.id}-100 text-${colorObj.id}-700`) : (isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500');
+
+                                      return (
+                                        <span className={`text-[9px] font-bold mt-1 max-w-max uppercase tracking-widest px-1.5 py-0.5 rounded ${tagColorClass}`}>
+                                          {item.supermarket}
+                                        </span>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                                 <div {...provided.dragHandleProps} className="p-2 text-slate-300 hover:text-slate-500 touch-none">
@@ -1575,6 +1636,68 @@ export default function App() {
                 Publicar en Tienda
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showSupermarketModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8 overflow-y-auto max-h-[80vh] no-scrollbar`}>
+            <div className="flex justify-between items-center mb-6 sticky top-0 bg-inherit z-20 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="font-bold text-xl flex items-center gap-2"><Store size={20} className="text-indigo-500" /> Supermercados</h2>
+              <button onClick={() => setShowSupermarketModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
+            </div>
+
+            <button onClick={addSupermarket} className="w-full mb-6 border-2 border-dashed border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-500 font-bold py-3 rounded-2xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-2">
+              <Plus size={16} strokeWidth={3} /> Añadir Nueva Tienda
+            </button>
+
+            <DragDropContext onDragEnd={handleDragEndSupermarkets}>
+              <Droppable droppableId="supermarkets-list">
+                {(provided) => (
+                  <div className="space-y-3" {...provided.droppableProps} ref={provided.innerRef}>
+                    {supermarkets.length === 0 && <p className="text-center text-xs text-slate-400 italic py-4">No hay tiendas.</p>}
+                    {supermarkets.map((store, index) => (
+                      <Draggable key={store.id} draggableId={store.id} index={index}>
+                        {(provided) => {
+                          const activeColor = store.color || 'slate';
+                          return (
+                            <div ref={provided.innerRef} {...provided.draggableProps} className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} p-3 rounded-2xl border flex flex-col gap-3 group relative`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div {...provided.dragHandleProps} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 active:cursor-grabbing cursor-grab touch-none p-1">
+                                    <GripVertical size={16} />
+                                  </div>
+                                  <span className="font-bold text-sm truncate uppercase tracking-widest">{store.name}</span>
+                                </div>
+                                <button onClick={(e) => deleteSupermarket(e, store.id)} className="p-1.5 text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                              </div>
+
+                              <div className="flex items-center justify-between pl-8 pr-1">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">Color:</p>
+                                <div className="flex gap-2">
+                                  {['slate', ...USER_COLORS.map(c => c.id)].map(c => {
+                                    const uiColor = c === 'slate' ? (isDarkMode ? 'bg-slate-600' : 'bg-slate-400') : USER_COLORS.find(uc => uc.id === c)?.bg;
+                                    return (
+                                      <button
+                                        key={c}
+                                        onClick={() => updateSupermarketColor(store.id, c)}
+                                        className={`w-5 h-5 rounded-full ${uiColor} transition-transform ${activeColor === c ? 'scale-125 ring-2 ring-offset-1 ' + (isDarkMode ? 'ring-offset-slate-800 ring-white' : 'ring-offset-slate-50 ring-slate-400') : 'opacity-50 hover:opacity-100 hover:scale-110'}`}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </div>
         </div>
       )}
