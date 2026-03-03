@@ -1183,12 +1183,9 @@ export default function App() {
                           {Object.entries(currentRadiographyStats.usersTasks[name])
                             .sort(([, aSec], [, bSec]) => bSec - aSec)
                             .map(([taskName, taskSec]) => {
-                              const style = getTaskStyle(taskName);
-                              const Icon = style.icon;
                               return (
                                 <div key={taskName} className="flex justify-between items-center text-[10px]">
                                   <div className="flex items-center gap-1.5 min-w-0 pr-2">
-                                    <Icon size={10} className={style.color} />
                                     <span className="text-slate-600 dark:text-slate-400 font-medium truncate">{taskName}</span>
                                   </div>
                                   <span className="font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatTimeDetailed(taskSec)}</span>
