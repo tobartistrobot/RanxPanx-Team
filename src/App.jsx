@@ -429,17 +429,32 @@ export default function App() {
     setTimeout(() => setToast({ msg: '', type: 'success', visible: false }), 3000);
   };
 
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
     if (!userName) { setShowProfileModal(true); return; }
+    let updatedActiveTask = null;
     if (!activeTask) {
       // Iniciar nuevo contador
-      setActiveTask({ name: taskInput, startTime: Date.now(), accumulatedTime: 0, isPaused: false });
+      updatedActiveTask = { name: taskInput, startTime: Date.now(), accumulatedTime: 0, isPaused: false };
+      setActiveTask(updatedActiveTask);
     } else if (activeTask.isPaused) {
       // Reanudar
-      setActiveTask({ ...activeTask, startTime: Date.now(), isPaused: false });
+      updatedActiveTask = { ...activeTask, startTime: Date.now(), isPaused: false };
+      setActiveTask(updatedActiveTask);
     } else {
       // Pausar
-      setActiveTask({ ...activeTask, accumulatedTime: elapsed, isPaused: true });
+      updatedActiveTask = { ...activeTask, accumulatedTime: elapsed, isPaused: true };
+      setActiveTask(updatedActiveTask);
+    }
+
+    // SYNC a Firestore para mostrar en tiempo real a los demás
+    try {
+      if (updatedActiveTask) {
+        await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName), {
+          activeTimer: updatedActiveTask
+        }, { merge: true });
+      }
+    } catch (err) {
+      console.error("Error sincronizando temporizador activo", err);
     }
   };
 
@@ -558,6 +573,14 @@ export default function App() {
     }
     setActiveTask(null);
     setTaskInput('');
+    // Al detener la tarea, limpiamos el status de Firebase
+    try {
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName), {
+        activeTimer: null
+      }, { merge: true });
+    } catch (err) {
+      console.error("Error limpiando temporizador activo", err);
+    }
   };
 
   const addGrocery = async (name) => {
@@ -1267,6 +1290,39 @@ export default function App() {
               </div>
             </div>
             <div className="mt-2">
+              {/* --- EN DIRECTO --- */}
+              {Object.keys(usersData)
+                .filter(u => u !== userName && usersData[u]?.activeTimer && !usersData[u].activeTimer.isPaused)
+                .map(u => {
+                  const liveTask = usersData[u].activeTimer;
+                  const uColorConfig = USER_COLORS.find(c => c.id === usersData[u]?.color) || USER_COLORS[0];
+                  return (
+                    <div key={`live-${u}`} className="mb-4 animate-in fade-in slide-in-from-bottom-2">
+                      <h3 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-2 px-2 flex items-center gap-1.5 animate-pulse">
+                        <Flame size={12} strokeWidth={3} /> En directo
+                      </h3>
+                      <div className={`relative overflow-hidden p-4 rounded-2xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-900 border-red-500/20' : 'bg-red-50/50 border-red-100'} shadow-sm`}>
+                        {/* Glow effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent pointer-events-none"></div>
+
+                        <div className="flex items-center gap-3 relative z-10 w-full overflow-hidden">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-xs shrink-0 drop-shadow-md ${uColorConfig.bg} ring-2 ring-red-500/30 ring-offset-2 ${isDarkMode ? 'ring-offset-slate-900' : 'ring-offset-white'}`}>
+                            {u.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-bold text-sm tracking-tight truncate ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                              {liveTask.name || 'Tarea sin nombre'}
+                            </p>
+                            <p className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 opacity-80 mt-0.5">
+                              {u} <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping ml-1"></span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 px-2">Actividad de hoy</h3>
               <div className="space-y-3">
                 {chores.filter(c => c.dateString === getLocalYYYYMMDD()).slice(0, 5).map(chore => {
