@@ -252,6 +252,8 @@ export default function App() {
   const [showP2PModal, setShowP2PModal] = useState(false);
   const [p2pMode, setP2pMode] = useState(null); // 'send' or 'wager'
   const [p2pAmount, setP2pAmount] = useState('');
+  const [p2pMessage, setP2pMessage] = useState('');
+  const [activeGiftModal, setActiveGiftModal] = useState(null);
   const [p2pWagerDesc, setP2pWagerDesc] = useState('');
   const [p2pWagerStoreItem, setP2pWagerStoreItem] = useState('');
   const [p2pWagerDeadline, setP2pWagerDeadline] = useState('');
@@ -367,14 +369,11 @@ export default function App() {
   useEffect(() => {
     if (userName && p2pNotifications.length > 0) {
       const unreadMyTransfers = p2pNotifications.filter(n => n.to === userName && !n.read && n.type === 'transfer');
-      if (unreadMyTransfers.length > 0) {
-        unreadMyTransfers.forEach(async (notif) => {
-          showToast(`¡${notif.from} te ha enviado ${notif.amount} RPC! 🎉`, 'success');
-          await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'p2p_notifications', notif.id), { read: true }, { merge: true });
-        });
+      if (unreadMyTransfers.length > 0 && !activeGiftModal) {
+        setActiveGiftModal(unreadMyTransfers[0]);
       }
     }
-  }, [userName, p2pNotifications]);
+  }, [userName, p2pNotifications, activeGiftModal]);
 
   useEffect(() => {
     localStorage.setItem('hometeam_dark', isDarkMode);
@@ -906,13 +905,28 @@ export default function App() {
         from: userName,
         to: selectedPeer,
         amount: amount,
+        message: p2pMessage.trim() || null,
         read: false,
         timestamp: Date.now()
+      });
+
+      // Log in history as a chore for the receiver
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
+        taskName: `🎁 Regalo: ${p2pMessage.trim() || 'RPC'}`,
+        durationSeconds: 1, // Just to have a non-zero value, doesn't impact base unless it replaces a real chore
+        timestamp: Date.now(),
+        dateString: getLocalYYYYMMDD(),
+        userName: selectedPeer,
+        userColor: USER_COLORS[0].id, // fallback
+        userId: user?.uid || 'anonymous',
+        rpcEarned: amount,
+        isGift: true
       });
 
       showToast(`¡Has enviado ${amount} RPC a ${selectedPeer}!`, 'success');
       setShowP2PModal(false);
       setP2pAmount('');
+      setP2pMessage('');
     } catch (err) {
       console.error(err);
       showToast('Error en la transferencia', 'error');
@@ -2187,7 +2201,11 @@ export default function App() {
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Cantidad de RPC a enviar</label>
                   <input type="number" min="0.5" step="0.5" autoFocus className={`w-full p-4 rounded-2xl border mt-1 text-2xl text-center font-black text-orange-500 ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={p2pAmount} onChange={e => setP2pAmount(e.target.value)} />
                 </div>
-                <button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-lg">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Mensaje (Opcional)</label>
+                  <input type="text" placeholder="Ej: Por ayudarme hoy..." className={`w-full p-3 rounded-2xl border mt-1 font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={p2pMessage} onChange={e => setP2pMessage(e.target.value)} />
+                </div>
+                <button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-lg mt-2">
                   Enviar RPC
                 </button>
                 <button type="button" onClick={() => setP2pMode(null)} className="w-full py-2 text-xs text-slate-400 font-bold uppercase tracking-widest hover:text-slate-600">Volver</button>
@@ -2283,6 +2301,57 @@ export default function App() {
 
               <button onClick={() => { if (userName) { localStorage.setItem('hometeam_username', userName); localStorage.setItem('hometeam_usercolor', userColor); setShowProfileModal(false); } }} className={`w-full text-white font-bold py-4 rounded-2xl mt-4 transition-all ${userName ? USER_COLORS.find(c => c.id === userColor)?.bg + ' hover:opacity-90 active:scale-95' : 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed text-slate-400'}`}>
                 Entrar al Equipo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL REGALO RECIBIDO */}
+      {activeGiftModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border animate-in zoom-in-95 duration-300 relative overflow-hidden text-center`}>
+            {/* Fondo de brillo */}
+            <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-amber-500/20 to-transparent pointer-events-none"></div>
+
+            <div className="relative z-10">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/40 mb-6 animate-bounce">
+                <Gift size={40} className="text-white" />
+              </div>
+
+              <h2 className="text-2xl font-black mb-2">¡Un Regalo!</h2>
+              <p className={`text-sm mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                <span className="font-bold text-amber-500">{activeGiftModal.from}</span> te ha enviado algo especial.
+              </p>
+
+              <div className={`p-6 rounded-2xl mb-6 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-orange-50 border-orange-100'} border`}>
+                <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500 mb-2">
+                  {activeGiftModal.amount} <span className="text-2xl tracking-tighter">RPC</span>
+                </div>
+                {activeGiftModal.message && (
+                  <div className="mt-4 pt-4 border-t border-orange-200/20">
+                    <p className={`text-sm italic font-medium ${isDarkMode ? 'text-slate-300' : 'text-orange-900'}`}>"{activeGiftModal.message}"</p>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={async () => {
+                  try {
+                    await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'p2p_notifications', activeGiftModal.id), { read: true }, { merge: true });
+                    setActiveGiftModal(null);
+                    playCashSound();
+                    import('canvas-confetti').then((confetti) => {
+                      confetti.default({ particleCount: 200, spread: 120, origin: { y: 0.6 }, colors: ['#fbbf24', '#f59e0b', '#d97706'] });
+                    });
+                  } catch (err) {
+                    console.error("Error accepting gift:", err);
+                    setActiveGiftModal(null);
+                  }
+                }}
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-xl uppercase tracking-widest"
+              >
+                Aceptar Regalo
               </button>
             </div>
           </div>
