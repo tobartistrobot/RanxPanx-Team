@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { createRoot } from 'react-dom/client'; // ¡Esta es la pieza clave que faltaba!
+import { createRoot } from 'react-dom/client';
+import { createPortal } from 'react-dom';
 import {
   Play, Square, Calendar as CalendarIcon, BarChart3, Clock,
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
@@ -922,7 +923,8 @@ export default function App() {
         userColor: USER_COLORS[0].id, // fallback
         userId: user?.uid || 'anonymous',
         rpcEarned: amount,
-        isGift: true
+        isGift: true,
+        sender: userName
       });
 
       showToast(`¡Has enviado ${amount} RPC a ${selectedPeer}!`, 'success');
@@ -1100,7 +1102,21 @@ export default function App() {
           await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', chore.userName), {
             rpcBalance: Math.max(0, authorBalance - deductedRPC)
           }, { merge: true });
-          showToast(`-${deductedRPC.toFixed(2)} RPC deducidos de ${chore.userName}`, 'info');
+
+          // Revert gift to original sender
+          if (chore.isGift && chore.sender) {
+            const senderBalance = usersData[chore.sender]?.rpcBalance || 0;
+            await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', chore.sender), {
+              rpcBalance: senderBalance + deductedRPC
+            }, { merge: true });
+            if (userName === chore.userName) {
+              showToast(`-${deductedRPC.toFixed(2)} RPC devueltos a ${chore.sender}`, 'info');
+            } else {
+              showToast(`-${deductedRPC.toFixed(2)} RPC deducidos de ${chore.userName} y devueltos a ${chore.sender}`, 'info');
+            }
+          } else {
+            showToast(`-${deductedRPC.toFixed(2)} RPC deducidos de ${chore.userName}`, 'info');
+          }
         }
       }
 
@@ -2310,9 +2326,9 @@ export default function App() {
       )}
 
       {/* MODAL REGALO RECIBIDO */}
-      {activeGiftModal && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border animate-in zoom-in-95 duration-300 relative overflow-hidden text-center`}>
+      {activeGiftModal && document.body && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 pointer-events-auto" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border animate-in zoom-in-95 duration-300 relative overflow-hidden text-center mx-auto`}>
             {/* Fondo de brillo */}
             <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-amber-500/20 to-transparent pointer-events-none"></div>
 
@@ -2344,20 +2360,21 @@ export default function App() {
                     setActiveGiftModal(null);
                     playCashSound();
                     import('canvas-confetti').then((confetti) => {
-                      confetti.default({ particleCount: 200, spread: 120, origin: { y: 0.6 }, colors: ['#fbbf24', '#f59e0b', '#d97706'] });
+                      confetti.default({ particleCount: 200, spread: 120, origin: { y: 0.6 }, colors: ['#fbbf24', '#f59e0b', '#d97706'], zIndex: 1000 });
                     });
                   } catch (err) {
                     console.error("Error accepting gift:", err);
                     setActiveGiftModal(null);
                   }
                 }}
-                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-xl uppercase tracking-widest"
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-xl uppercase tracking-widest pointer-events-auto"
               >
                 Aceptar Regalo
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* TOAST SYSTEM */}
