@@ -1237,8 +1237,8 @@ export default function App() {
                         {/* Shimmer effect */}
                         <div className="absolute inset-0 -translate-x-full animate-[shimmer_3s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"></div>
                         <span className="relative z-10">{t.name}</span>
-                        <span className={`relative z-10 text-[10px] px-1.5 py-0.5 rounded-md font-black tracking-tight ${isDarkMode ? 'bg-emerald-800 text-emerald-100 shadow-inner' : 'bg-emerald-200 text-emerald-900 shadow-sm'}`}>
-                          x{t.multiplier.toFixed(2)} RPC
+                        <span className={`relative flex items-center gap-1 z-10 text-[10px] px-1.5 py-0.5 rounded-md font-black tracking-tight ${inFrenzyMode ? 'bg-amber-500 text-white shadow-md drop-shadow-[0_0_8px_rgba(245,158,11,0.6)] animate-pulse' : isDarkMode ? 'bg-emerald-800 text-emerald-100 shadow-inner' : 'bg-emerald-200 text-emerald-900 shadow-sm'}`}>
+                          x{(t.multiplier * (inFrenzyMode ? 2 : 1)).toFixed(2)} RPC {inFrenzyMode && <Flame size={10} strokeWidth={3} />}
                         </span>
                       </button>
                     ))}
