@@ -1230,12 +1230,16 @@ export default function App() {
 
               {!activeTask && hotTasks.length > 0 && (
                 <div className="mb-6 delay-100 animate-in fade-in">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-3 ml-2 flex items-center gap-1.5"><Flame size={12} className="text-orange-500 animate-pulse" /> En busca y captura</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-3 ml-2 flex items-center gap-1.5"><Sparkles size={12} className="text-emerald-500 animate-pulse" /> En busca y captura</p>
                   <div className="flex overflow-x-auto gap-3 pb-3 -mx-4 px-4 no-scrollbar snap-x">
                     {hotTasks.map(t => (
-                      <button key={t.name} onClick={() => setTaskInput(t.name)} className={`shrink-0 snap-start text-xs px-4 py-2.5 rounded-2xl border border-orange-200 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:border-orange-900/50 dark:text-orange-300 font-bold flex flex-col items-start justify-center gap-1 transition-all hover:scale-105 active:scale-95 shadow-sm shadow-orange-500/10`}>
-                        {t.name}
-                        <span className="text-[10px] bg-orange-200 dark:bg-orange-800 px-1.5 py-0.5 rounded-md text-orange-900 dark:text-orange-100 font-black tracking-tight">x{t.multiplier.toFixed(2)} RPC</span>
+                      <button key={t.name} onClick={() => setTaskInput(t.name)} className={`relative overflow-hidden shrink-0 snap-start text-xs px-4 py-2.5 rounded-2xl border font-bold flex flex-col items-start justify-center gap-1 transition-all hover:scale-105 active:scale-95 shadow-sm ${isDarkMode ? 'bg-gradient-to-br from-emerald-950/40 to-teal-900/40 border-emerald-800/50 text-emerald-300 shadow-emerald-900/20' : 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200 text-emerald-800 shadow-emerald-500/10'}`}>
+                        {/* Shimmer effect */}
+                        <div className="absolute inset-0 -translate-x-full animate-[shimmer_3s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"></div>
+                        <span className="relative z-10">{t.name}</span>
+                        <span className={`relative z-10 text-[10px] px-1.5 py-0.5 rounded-md font-black tracking-tight ${isDarkMode ? 'bg-emerald-800 text-emerald-100 shadow-inner' : 'bg-emerald-200 text-emerald-900 shadow-sm'}`}>
+                          x{t.multiplier.toFixed(2)} RPC
+                        </span>
                       </button>
                     ))}
                   </div>
