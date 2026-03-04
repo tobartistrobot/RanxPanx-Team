@@ -369,7 +369,9 @@ export default function App() {
   useEffect(() => {
     if (userName && p2pNotifications.length > 0) {
       const unreadMyTransfers = p2pNotifications.filter(n => n.to === userName && !n.read && n.type === 'transfer');
+      console.log('p2pNotifications check', { userName, unreadCount: unreadMyTransfers.length, activeGiftModal });
       if (unreadMyTransfers.length > 0 && !activeGiftModal) {
+        console.log('Setting activeGiftModal to:', unreadMyTransfers[0]);
         setActiveGiftModal(unreadMyTransfers[0]);
       }
     }
