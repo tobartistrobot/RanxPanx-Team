@@ -505,8 +505,8 @@ export default function App() {
     } catch (e) { }
   };
 
-  const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false) => {
-    if (!userName || durationSeconds < 60) return; // Menos de 1 min no da RPC
+  const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false, targetUser = userName) => {
+    if (!targetUser || durationSeconds < 60) return 0; // Menos de 1 min no da RPC
 
     // 1. Calcular Base (1 RPC por cada 15 mins)
     let rpcEarned = durationSeconds / 900;
@@ -522,7 +522,7 @@ export default function App() {
 
     // 3. Revisar Frenesí Diario (>= 3600 segundos agregados hoy)
     const todayStr = getLocalYYYYMMDD();
-    const todayChores = chores.filter(c => c.userName === userName && c.dateString === todayStr);
+    const todayChores = chores.filter(c => c.userName === targetUser && c.dateString === todayStr);
     const totalTodayBeforeThis = todayChores.reduce((sum, c) => sum + c.durationSeconds, 0);
 
     let inFrenzy = false;
@@ -535,28 +535,37 @@ export default function App() {
       rpcEarned *= 2.0;
       inFrenzy = true;
       justTriggeredFrenzy = true;
-      showToast('🔥 ¡MODO FRENESÍ x2 DESATADO HASTA MAÑANA!', 'success');
-      import('canvas-confetti').then((confetti) => {
-        confetti.default({ particleCount: 300, spread: 160, origin: { y: 0.5 }, colors: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'] });
-      });
+      // Only show confetti / toast if current user is the target user
+      if (targetUser === userName) {
+        showToast('🔥 ¡MODO FRENESÍ x2 DESATADO HASTA MAÑANA!', 'success');
+        import('canvas-confetti').then((confetti) => {
+          confetti.default({ particleCount: 300, spread: 160, origin: { y: 0.5 }, colors: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'] });
+        });
+      }
     }
 
     rpcEarned = Math.round(rpcEarned * 100) / 100;
-    const userData = usersData[userName] || { rpcBalance: 0 };
+    const userData = usersData[targetUser] || { rpcBalance: 0 };
 
     // 5. Guardar
     try {
-      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName), {
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', targetUser), {
         rpcBalance: (userData.rpcBalance || 0) + rpcEarned
       }, { merge: true });
 
-      playCashSound();
-      if (!justTriggeredFrenzy && rpcEarned >= 0.1) {
-        showToast(`+${rpcEarned.toFixed(2)} RPC Añadidos ${inFrenzy ? '🔥 x2' : ''}`, 'success');
+      if (targetUser === userName) {
+        playCashSound();
+        if (!justTriggeredFrenzy && rpcEarned >= 0.1) {
+          showToast(`+${rpcEarned.toFixed(2)} RPC Añadidos ${inFrenzy ? '🔥 x2' : ''}`, 'success');
+        }
+      } else {
+        showToast(`+${rpcEarned.toFixed(2)} RPC para ${targetUser}`, 'success');
       }
     } catch (err) {
       console.error("Error updating RPC", err);
     }
+
+    return rpcEarned;
   };
 
   const stopAndSaveTimer = async () => {
@@ -564,7 +573,7 @@ export default function App() {
     const durationSeconds = elapsed;
     if (durationSeconds > 5) {
       try {
-        await processRPCAndFrenzy(activeTask.name || 'Tarea sin nombre', durationSeconds);
+        const earned = await processRPCAndFrenzy(activeTask.name || 'Tarea sin nombre', durationSeconds);
 
         await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), {
           taskName: activeTask.name || 'Tarea sin nombre',
@@ -573,7 +582,8 @@ export default function App() {
           dateString: getLocalYYYYMMDD(),
           userName: userName,
           userColor: userColor,
-          userId: user?.uid || 'anonymous'
+          userId: user?.uid || 'anonymous',
+          rpcEarned: earned || 0
         });
         showToast('¡Tarea guardada con éxito!', 'success');
 
@@ -1044,7 +1054,8 @@ export default function App() {
           }
         }
       } else {
-        await processRPCAndFrenzy(payload.taskName, payload.durationSeconds, true);
+        const earned = await processRPCAndFrenzy(payload.taskName, payload.durationSeconds, true, authorName);
+        payload.rpcEarned = earned || 0;
         await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), payload);
       }
       setModalMode(null);
@@ -1058,6 +1069,25 @@ export default function App() {
 
   const deleteChore = async (id) => {
     if (window.confirm('¿Eliminar este registro?')) {
+      const chore = chores.find(c => c.id === id);
+      if (chore) {
+        let deductedRPC = 0;
+        if (chore.rpcEarned !== undefined) {
+          deductedRPC = chore.rpcEarned;
+        } else {
+          // Fallback legacy calculation
+          deductedRPC = Math.round((chore.durationSeconds / 900) * 100) / 100;
+        }
+
+        if (deductedRPC > 0) {
+          const authorBalance = usersData[chore.userName]?.rpcBalance || 0;
+          await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', chore.userName), {
+            rpcBalance: Math.max(0, authorBalance - deductedRPC)
+          }, { merge: true });
+          showToast(`-${deductedRPC.toFixed(2)} RPC deducidos de ${chore.userName}`, 'info');
+        }
+      }
+
       await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', id));
       setModalMode(null);
     }
