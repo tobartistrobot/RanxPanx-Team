@@ -185,6 +185,18 @@ const getLocalYYYYMMDD = (d = new Date()) => {
 };
 
 // --- COMPONENTE PRINCIPAL ---
+const LiveTaskTimer = ({ liveTask }) => {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (liveTask.isPaused) return;
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [liveTask.isPaused]);
+
+  const elapsedSecs = liveTask.accumulatedTime + Math.floor((now - liveTask.startTime) / 1000);
+  return <>{formatTimeDigital(elapsedSecs)}</>;
+};
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [chores, setChores] = useState([]);
@@ -1310,8 +1322,11 @@ export default function App() {
                             {u.substring(0, 2).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-bold text-sm tracking-tight truncate ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                              {liveTask.name || 'Tarea sin nombre'}
+                            <p className={`font-bold text-sm tracking-tight truncate flex justify-between items-center pr-2 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                              <span>{liveTask.name || 'Tarea sin nombre'}</span>
+                              <span className="text-red-500 font-mono text-xs tabular-nums drop-shadow-sm ml-2">
+                                <LiveTaskTimer liveTask={liveTask} />
+                              </span>
                             </p>
                             <p className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1 opacity-80 mt-0.5">
                               {u} <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping ml-1"></span>
