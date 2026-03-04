@@ -1059,6 +1059,7 @@ export default function App() {
   const deleteChore = async (id) => {
     if (window.confirm('¿Eliminar este registro?')) {
       await deleteDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', id));
+      setModalMode(null);
     }
   };
 
@@ -1357,7 +1358,6 @@ export default function App() {
                       </div>
                       <div className="flex gap-1 opacity-50 hover:opacity-100 transition-opacity">
                         <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500 active:text-indigo-500"><Edit2 size={16} /></button>
-                        <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500 active:text-red-500"><Trash2 size={16} /></button>
                       </div>
                     </div>
                   )
@@ -1480,7 +1480,6 @@ export default function App() {
                       </div>
                       <div className="flex gap-1 opacity-50 hover:opacity-100 transition-opacity">
                         <button onClick={() => openEdit(chore)} className="p-2 text-slate-400 hover:text-indigo-500"><Edit2 size={16} /></button>
-                        <button onClick={() => deleteChore(chore.id)} className="p-2 text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
                       </div>
                     </div>
                   )
@@ -1914,7 +1913,14 @@ export default function App() {
                 </div>
                 <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha</label><input type="date" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.date} onChange={(e) => setManualData({ ...manualData, date: e.target.value })} /></div>
               </div>
-              <button onClick={handleSaveManual} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl mt-4 hover:bg-indigo-700 active:scale-95 transition-all">Guardar</button>
+              <div className="flex gap-2 w-full mt-4">
+                {modalMode === 'edit' && editingItem && (
+                  <button onClick={() => deleteChore(editingItem.id)} className="w-16 bg-red-100 text-red-600 rounded-2xl flex justify-center items-center hover:bg-red-200 active:scale-95 transition-all shrink-0">
+                    <Trash2 size={20} />
+                  </button>
+                )}
+                <button onClick={handleSaveManual} className="flex-1 bg-indigo-600 text-white font-bold py-4 rounded-2xl hover:bg-indigo-700 active:scale-95 transition-all">Guardar</button>
+              </div>
             </div>
           </div>
         </div>
