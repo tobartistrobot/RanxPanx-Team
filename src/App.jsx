@@ -31,107 +31,102 @@ const rawAppId = 'ranxpanx-team-prod';
 const safeAppId = rawAppId.replace(/\//g, '_');
 
 // --- DATOS: FRASES INSPIRACIONALES ---
-const DAILY_QUOTES = [
-  "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
-  "La disciplina es el puente entre tus metas y tus logros.",
-  "No cuentes los días, haz que los días cuenten.",
-  "Un viaje de mil millas comienza con un solo paso. Lao-Tse.",
-  "Lo que haces hoy puede mejorar todas tus mañanas.",
-  "La única forma de hacer un gran trabajo es amar lo que haces. Steve Jobs.",
-  "No busques el momento perfecto, solo busca el momento y hazlo perfecto.",
-  "Cada pequeña tarea completada es una victoria para el equipo.",
-  "El esfuerzo organizado es la llave que abre todas las puertas.",
-  "Trabajar en equipo divide la tarea y multiplica el éxito.",
-  "La constancia vence a lo que la dicha no alcanza.",
-  "Hoy es un buen día para avanzar un paso más juntos.",
-  "Tus acciones de hoy conforman tu libertad de mañana.",
-  "La motivación nos impulsa a comenzar, el hábito nos permite continuar.",
-  "Pequeños actos de cuidado mantienen el hogar y el espíritu inquebrantables.",
-  "El progreso lento es infinitamente mejor que el estancamiento.",
-  "La lealtad no se exige, se cultiva regándola con acciones diarias.",
-  "Un compañero de vida no es quien te mira, sino quien mira en tu misma dirección.",
-  "No existe desafío demasiado grande si los cimientos de la confianza son sólidos.",
-  "El amor se demuestra en los detalles cotidianos tanto como en las grandes promesas.",
-  "Ser fuerte no es nunca caer, es ayudarse mutuamente a levantarse una y otra vez.",
-  "El respeto es el único pilar sobre el que se puede construir un futuro eterno.",
-  "Si la carga pesa demasiado, recuerda que somos dos para sostenerla.",
-  "Un hogar no son cuatro paredes, es el refugio que creamos cuando estamos juntos.",
-  "La sabiduría no está en no equivocarse, sino en aprender a perdonar y mejorar juntos.",
-  "Incluso las tareas más tediosas brillan si el propósito es cuidar de los nuestros.",
-  "Siembra sonrisas en tu rutina y recogerás un hogar lleno de luz.",
-  "No se rinde quien sabe que detrás del esfuerzo está el bienestar de su tribu.",
-  "Un líder no es quien manda, es quien inspira a su equipo sirviendo primero.",
-  "Aquel que domina su paciencia es más fuerte que quien conquista una ciudad.",
-  "El mejor momento para plantar un árbol fue hace 20 años; el segundo mejor es ahora.",
-  "La bondad es el lenguaje que los sordos pueden oír y los ciegos pueden ver.",
-  "El trabajo que no se ve es el que sostiene las victorias que todo el mundo aplaude.",
-  "Nadie se hizo grande mostrando cómo de pequeños son los demás.",
-  "La verdadera libertad nace de dominar nuestros propios impulsos.",
-  "Si quieres ir rápido, ve solo. Si quieres llegar lejos, ve acompañado.",
-  "El que hace el bien a los demás, a sí mismo se enriquece.",
-  "El coraje no siempre ruge. A veces es la voz tranquila que dice: 'mañana lo intentaré de nuevo'.",
-  "El amor es el espacio donde dejamos que el otro sea exactamente quien es.",
-  "Un espíritu agradecido es el abono perfecto para la felicidad diaria.",
-  "No puedes calmar la tormenta, pero puedes ser el ancla para los que amas.",
-  "Convierte tus heridas en sabiduría y tus fracasos en gasolina.",
-  "Una promesa rota es una herida en la confianza; una mantenida, es cemento armado.",
-  "El valor de una persona se mide por cómo trata a quienes no pueden ofrecerle nada.",
-  "Quien tiene por qué vivir puede soportar casi cualquier cómo.",
-  "Nuestras vidas son los ríos que van a dar a la familia, que es la mar.",
-  "El mejor remedio contra el desánimo es el sonido de las risas compartidas en casa.",
-  "Sé suave, no dejes que el mundo endurezca tu corazón amable.",
-  "La energía que pones en ordenar tu entorno se refleja ordenando tu mente.",
-  "Dedica tiempo a afilar el hacha antes de ponerte a talar el bosque.",
-  "Lo ordinario se vuelve extraordinario cuando se hace con amor incondicional.",
-  "Nada grande se ha conseguido jamás sin entusiasmo y sin equipo.",
-  "Tu mayor riqueza no está en la cuenta del banco, sino en quienes se sientan a tu mesa.",
-  "La empatía es tratar de sentir el frío del otro antes de exigirle que entre en calor.",
-  "Una discusión jamás se gana gritando más alto, sino escuchando más profundo.",
-  "La paciencia es amarga en la raíz, pero sus frutos son dulces.",
-  "Las cosas más valiosas de este mundo no son cosas, son momentos.",
-  "Ser vulnerable con el otro es la mayor muestra de coraje cívico y amoroso.",
-  "Es en los momentos de fatiga extrema cuando se demuestra de qué estamos hechos.",
-  "Un equipo imbatible es aquel donde nadie teme decir: 'necesito ayuda'.",
-  "Brilla tanto que deslumbres a los problemas y guíes a los que te rodean.",
-  "Un error es solo una oportunidad de empezar de nuevo, esta vez de forma más inteligente.",
-  "Todo aquello que vale la pena requiere tiempo, paciencia y fe recíproca.",
-  "Hazlo, y si te da miedo, hazlo con miedo. Pero no te detengas.",
-  "Las manos que ayudan siempre son más sagradas que los labios que rezan.",
-  "Cuidar del espacio compartido es una carta de amor escrita con acciones.",
-  "El amor verdadero no trata de encontrar a alguien perfecto, sino a alguien que acepte tus imperfecciones.",
-  "Si no dejas de intentarlo, tarde o temprano te despertarás habiendo ganado.",
-  "Las montañas se conquistan piedra a piedra, y la paz del hogar, detalle a detalle.",
-  "Tu tiempo es el recurso más valioso que tienes; regálalo solo a quien construya contigo.",
-  "No esperes a que llegue la luz; conviértete en ella.",
-  "Quien no añade nada a sus conocimientos los disminuye. Aprendamos juntos.",
-  "El secreto de la felicidad no es hacer siempre lo que se quiere, sino querer siempre lo que se hace.",
-  "Frente a la adversidad, o nos hacemos pequeños, o nos volvemos inmensos juntos.",
-  "El sudor del trabajo honesto y por los demás es el perfume de los grandes héroes diarios.",
-  "Confiar es el mayor riesgo del mundo, pero no hacerlo asegura la soledad perpetua.",
-  "Nada pesa cuando quien lo carga es el amor genuino por los tuyos.",
-  "Convierte tu casa en un refugio de paz y nunca querrás estar en ningún otro sitio.",
-  "El verdadero progreso se cuaja en días donde nadie mira y solo importa el propósito.",
-  "Haz hoy algo de lo que tu 'yo' del mañana esté tremendamente orgulloso.",
-  "Cada minuto dedicado al equipo es una semilla que germinará en gratitud eterna.",
-  "Si crees que puedes, ya estás a mitad de camino.",
-  "La sabiduría suprema radica en distinguir lo urgente de lo que es verdaderamente importante.",
-  "Ríe siempre que puedas. Es la medicina más barata y el pegamento más fuerte.",
-  "Aquellos que no se rinden mágicamente cambian su suerte.",
-  "Escuchar es un acto de amor; hacer sentir escuchado, es un milagro.",
-  "Un pacto de lealtad absoluta es un muro irrompible contra la inclemencia de la vida.",
-  "La excelencia no es un acto, es un hábito cultivado entre cuatro paredes.",
-  "Da sin recordar y recibe sin olvidar.",
-  "Para conocer la grandeza de una persona, obsérvala cuando tiene el poder de dañar y elige sanar.",
-  "El éxito consiste en ir de fracaso en fracaso sin perder el entusiasmo.",
-  "Incluso la noche más oscura no puede apagar la luz de un corazón que ama resolutamente.",
-  "A veces, el mayor logro del día es haber mantenido la sonrisa frente a la persona amada.",
-  "Las cicatrices compartidas son los tatuajes de las victorias más difíciles de la dupla.",
-  "Atrévete a ser el tipo de persona que deja todo un poco mejor de lo que lo encontró.",
-  "Perdonar es liberar a un prisionero y descubrir que el prisionero eras tú.",
-  "Sé el hombro en el que tu equipo confía cuando el mundo exterior aprieta demasiado.",
-  "La vida no te ocurre a ti; la vida responde y reacciona a ti. Actúa con nobleza.",
-  "Al final, solo importan tres cosas: cuánto amaste, cuán gentil fuiste y qué tan bien aprendiste a soltar."
-];
+const DAILY_QUOTES = {
+  timer: [
+    "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
+    "La disciplina es el puente entre tus metas y tus logros.",
+    "No cuentes los días, haz que los días cuenten.",
+    "Un viaje de mil millas comienza con un solo paso. Lao-Tse.",
+    "Lo que haces hoy puede mejorar todas tus mañanas.",
+    "La única forma de hacer un gran trabajo es amar lo que haces. Steve Jobs.",
+    "No busques el momento perfecto, solo busca el momento y hazlo perfecto.",
+    "El esfuerzo organizado es la llave que abre todas las puertas.",
+    "La constancia vence a lo que la dicha no alcanza.",
+    "La motivación nos impulsa a comenzar, el hábito nos permite continuar.",
+    "Pequeños actos de cuidado mantienen el hogar y el espíritu inquebrantables.",
+    "El progreso lento es infinitamente mejor que el estancamiento.",
+    "Incluso las tareas más tediosas brillan si el propósito es cuidar de los nuestros.",
+    "El mejor momento para plantar un árbol fue hace 20 años; el segundo mejor es ahora.",
+    "El trabajo que no se ve es el que sostiene las victorias que todo el mundo aplaude.",
+    "La verdadera libertad nace de dominar nuestros propios impulsos.",
+    "El coraje no siempre ruge. A veces es la voz tranquila que dice: 'mañana lo intentaré de nuevo'.",
+    "Convierte tus heridas en sabiduría y tus fracasos en gasolina.",
+    "Quien tiene por qué vivir puede soportar casi cualquier cómo.",
+    "Sé suave, no dejes que el mundo endurezca tu corazón amable.",
+    "Lo ordinario se vuelve extraordinario cuando se hace con amor incondicional.",
+    "La paciencia es amarga en la raíz, pero sus frutos son dulces.",
+    "Las cosas más valiosas de este mundo no son cosas, son momentos.",
+    "Todo aquello que vale la pena requiere tiempo, paciencia y fe recíproca.",
+    "Hazlo, y si te da miedo, hazlo con miedo. Pero no te detengas.",
+    "Si no dejas de intentarlo, tarde o temprano te despertarás habiendo ganado.",
+    "La sabiduría suprema radica en distinguir lo urgente de lo que es verdaderamente importante.",
+    "El éxito consiste en ir de fracaso en fracaso sin perder el entusiasmo."
+  ],
+  calendar: [
+    "Un minuto de planificación ahorra diez de ejecución.",
+    "Si no sabes a qué puerto navegas, ningún viento es favorable.",
+    "La energía que pones en ordenar tu entorno se refleja ordenando tu mente.",
+    "No se trata de tener tiempo, se trata de hacer tiempo.",
+    "El orden es la primera ley del cielo y debería ser la primera del hogar.",
+    "Quien domina su agenda, domina su destino.",
+    "Dedica tiempo a afilar el hacha antes de ponerte a talar el bosque.",
+    "Tu tiempo es el recurso más valioso que tienes; regálalo solo a quien construya contigo.",
+    "Haz hoy algo de lo que tu 'yo' del mañana esté tremendamente orgulloso.",
+    "La clave no está en gastar el tiempo, sino en invertirlo."
+  ],
+  groceries: [
+    "Cuida de los centavos y los euros se cuidarán solos.",
+    "El ahorrador no es aquel que guarda mucho, sino el que gasta con inteligencia.",
+    "Compra solamente lo necesario; lo superfluo, aunque cueste solo un céntimo, es caro.",
+    "La calidad recuerda su valor mucho tiempo después de haber olvidado su precio.",
+    "Ahorrar no es solo guardar dinero, es prevenir para construir un futuro mejor.",
+    "No ahorres lo que te sobra después de gastar; gasta lo que te sobra después de ahorrar.",
+    "Comprar con cabeza hoy es la tranquilidad de mañana.",
+    "La verdadera riqueza consiste en saber vivir bien con poco.",
+    "Elige calidad sobre cantidad, y durabilidad sobre inmediatez.",
+    "Un buen presupuesto es decirle a tu dinero a dónde ir en lugar de preguntarte a dónde fue."
+  ],
+  rewards: [
+    "Celebra tus pequeñas victorias, te darán fuerza para las grandes batallas.",
+    "No hay atajo al éxito, pero todo logro merece ser festejado.",
+    "Disfrutar del camino es tan vital como alcanzar la meta.",
+    "Los logros más hermosos son aquellos que compartimos con los que amamos.",
+    "Date permiso para pausar y disfrutar del fruto de tu esfuerzo.",
+    "Un espíritu agradecido es el abono perfecto para la felicidad diaria.",
+    "Brilla tanto que deslumbres a los problemas y guíes a los que te rodean.",
+    "El mejor remedio contra el desánimo es el sonido de las risas compartidas en casa.",
+    "Reconocer el esfuerzo ajeno es el mayor premio que puedes otorgar.",
+    "A veces, el mayor logro del día es haber mantenido la sonrisa."
+  ],
+  dashboard: [
+    "Cada pequeña tarea completada es una victoria para el equipo.",
+    "Trabajar en equipo divide la tarea y multiplica el éxito.",
+    "Hoy es un buen día para avanzar un paso más juntos.",
+    "La lealtad no se exige, se cultiva regándola con acciones diarias.",
+    "Un compañero de vida no es quien te mira, sino quien mira en tu misma dirección.",
+    "No existe desafío demasiado grande si los cimientos de la confianza son sólidos.",
+    "Ser fuerte no es nunca caer, es ayudarse mutuamente a levantarse una y otra vez.",
+    "Si la carga pesa demasiado, recuerda que somos dos para sostenerla.",
+    "Un hogar no son cuatro paredes, es el refugio que creamos cuando estamos juntos.",
+    "No se rinde quien sabe que detrás del esfuerzo está el bienestar de su tribu.",
+    "Un líder no es quien manda, es quien inspira a su equipo sirviendo primero.",
+    "Nadie se hizo grande mostrando cómo de pequeños son los demás.",
+    "Si quieres ir rápido, ve solo. Si quieres llegar lejos, ve acompañado.",
+    "El que hace el bien a los demás, a sí mismo se enriquece.",
+    "Una promesa rota es una herida en la confianza; una mantenida, es cemento armado.",
+    "Nuestras vidas son los ríos que van a dar a la familia, que es la mar.",
+    "Nada grande se ha conseguido jamás sin entusiasmo y sin equipo.",
+    "Tu mayor riqueza no está en la cuenta del banco, sino en quienes se sientan a tu mesa.",
+    "La empatía es tratar de sentir el frío del otro antes de exigirle que entre en calor.",
+    "Ser vulnerable con el otro es la mayor muestra de coraje cívico y amoroso.",
+    "Es en los momentos de fatiga extrema cuando se demuestra de qué estamos hechos.",
+    "Un equipo imbatible es aquel donde nadie teme decir: 'necesito ayuda'.",
+    "Cada minuto dedicado al equipo es una semilla que germinará en gratitud eterna.",
+    "Un pacto de lealtad absoluta es un muro irrompible contra la inclemencia de la vida.",
+    "Las cicatrices compartidas son los tatuajes de las victorias más difíciles de la dupla.",
+    "Sé el hombro en el que tu equipo confía cuando el mundo exterior aprieta demasiado."
+  ]
+};
 
 // --- DATOS: ESTILOS AUTOMÁTICOS DE TAREAS ---
 const TASK_STYLES = [
@@ -1066,19 +1061,19 @@ export default function App() {
 
   const currentRadiographyStats = radiographyView === 'day' ? selectedDayStats : (radiographyView === 'week' ? selectedWeekStats : selectedMonthStats);
 
-  const getDailyQuote = () => {
-    // Calculamos un índice basado en la fecha exacta local para que cambie cada medianoche
+  const getDailyQuote = (tabId) => {
+    const quotesArray = DAILY_QUOTES[tabId] || DAILY_QUOTES['timer'];
     const dateStr = getLocalYYYYMMDD();
     let hash = 0;
     for (let i = 0; i < dateStr.length; i++) {
       hash = ((hash << 5) - hash) + dateStr.charCodeAt(i);
-      hash |= 0; // Convertir a entero de 32bits
+      hash |= 0;
     }
-    const index = Math.abs(hash) % DAILY_QUOTES.length;
-    return DAILY_QUOTES[index];
+    const index = Math.abs(hash) % quotesArray.length;
+    return quotesArray[index];
   };
 
-  const dailyQuote = useMemo(() => getDailyQuote(), [getLocalYYYYMMDD()]);
+  const dailyQuote = useMemo(() => getDailyQuote(activeTab), [getLocalYYYYMMDD(), activeTab]);
 
   const stats = useMemo(() => {
     const currentMonthStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
@@ -1131,12 +1126,12 @@ export default function App() {
       </header>
 
       <main className="max-w-md mx-auto p-4">
+        <div className="px-4 py-2 text-center animate-in slide-in-from-top-2 fade-in duration-500 delay-100 mb-2">
+          <p className="text-sm italic font-medium text-slate-500 dark:text-slate-400">"{dailyQuote}"</p>
+        </div>
+
         {activeTab === 'timer' && (
           <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
-
-            <div className="px-4 py-2 text-center animate-in slide-in-from-top-2 fade-in duration-500 delay-100">
-              <p className="text-sm italic font-medium text-slate-500 dark:text-slate-400">"{dailyQuote}"</p>
-            </div>
 
             <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-8 rounded-[3rem] shadow-2xl border relative overflow-hidden transition-all duration-500`}>
 
