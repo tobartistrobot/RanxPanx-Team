@@ -10,7 +10,7 @@ import {
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, setDoc, getDocs, writeBatch } from 'firebase/firestore';
 
 // --- CONFIGURACIÓN DE FIREBASE ---
 const firebaseConfig = {
@@ -966,25 +966,55 @@ export default function App() {
   const handleSaveManual = async () => {
     if (!manualData.name || (manualData.hours === 0 && manualData.minutes === 0)) return;
     const totalSeconds = (parseInt(manualData.hours || 0) * 3600) + (parseInt(manualData.minutes || 0) * 60);
+
+    // Usa el autor seleccionado en manualData o el usuario actual como resguardo
+    const authorName = manualData.author || userName;
+    const authorUserConfig = Object.values(USER_COLORS).find(c => c.id === usersData[authorName]?.color) || USER_COLORS[0];
+    const authorColor = authorUserConfig.id;
+
     const payload = {
       taskName: manualData.name,
       durationSeconds: totalSeconds,
       dateString: manualData.date,
       timestamp: new Date(manualData.date).getTime(),
-      userName: userName,
-      userColor: userColor,
-      userId: user?.uid || 'anonymous'
+      userName: authorName,
+      userColor: authorColor,
+      userId: user?.uid || 'anonymous' // Para multicuenta, valdría con el de auth u omitirlo
     };
+
     try {
       if (modalMode === 'edit' && editingItem) {
         await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'chores', editingItem.id), payload);
+
+        // BULK RENAME LOGIC
+        if (editingItem.taskName !== payload.taskName) {
+          if (window.confirm(`Has cambiado el nombre a "${payload.taskName}". ¿Deseas actualizar el nombre en TODOS los registros de "${editingItem.taskName}"?`)) {
+            const q = query(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'));
+            // Since we don't have an index for taskName, fetch all and filter client side
+            showToast('Actualizando historial...', 'info');
+            const snapshot = await getDocs(q);
+            const batch = writeBatch(db);
+            let updatedCount = 0;
+            snapshot.forEach(docSnap => {
+              const data = docSnap.data();
+              if (data.taskName === editingItem.taskName && docSnap.id !== editingItem.id) {
+                batch.update(docSnap.ref, { taskName: payload.taskName });
+                updatedCount++;
+              }
+            });
+            if (updatedCount > 0) {
+              await batch.commit();
+              showToast(`Renombrados ${updatedCount} registros históricos.`, 'success');
+            }
+          }
+        }
       } else {
         await processRPCAndFrenzy(payload.taskName, payload.durationSeconds, true);
         await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'chores'), payload);
       }
       setModalMode(null);
       setEditingItem(null);
-      showToast('¡Registro añadido!', 'success');
+      showToast('¡Registro guardado!', 'success');
     } catch (error) {
       console.error("Error saving manual database entry:", error);
       showToast("Error de conexión.", 'error');
@@ -1003,7 +1033,8 @@ export default function App() {
       name: chore.taskName,
       hours: Math.floor(chore.durationSeconds / 3600),
       minutes: Math.floor((chore.durationSeconds % 3600) / 60),
-      date: chore.dateString
+      date: chore.dateString,
+      author: chore.userName
     });
     setModalMode('edit');
   };
@@ -1803,7 +1834,15 @@ export default function App() {
                 <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Horas</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.hours} onChange={(e) => setManualData({ ...manualData, hours: e.target.value })} /></div>
                 <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Minutos</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.minutes} onChange={(e) => setManualData({ ...manualData, minutes: e.target.value })} /></div>
               </div>
-              <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha</label><input type="date" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.date} onChange={(e) => setManualData({ ...manualData, date: e.target.value })} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Realizado por:</label>
+                  <select className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all`} value={manualData.author || userName} onChange={(e) => setManualData({ ...manualData, author: e.target.value })}>
+                    {Object.keys(usersData).map(u => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+                <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha</label><input type="date" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.date} onChange={(e) => setManualData({ ...manualData, date: e.target.value })} /></div>
+              </div>
               <button onClick={handleSaveManual} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl mt-4 hover:bg-indigo-700 active:scale-95 transition-all">Guardar</button>
             </div>
           </div>
