@@ -1032,6 +1032,66 @@ export default function App() {
     } catch (e) { }
   };
 
+  const playFireSound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      // 1. Chispa (Ruido Blanco con HighPass)
+      const bufferSize = ctx.sampleRate * 0.2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.setValueAtTime(500, ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(5000, ctx.currentTime + 0.1);
+
+      const gainNoise = ctx.createGain();
+      gainNoise.gain.setValueAtTime(0, ctx.currentTime);
+      gainNoise.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+      gainNoise.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+
+      noise.connect(filter);
+      filter.connect(gainNoise);
+      gainNoise.connect(ctx.destination);
+      noise.start();
+
+      // 2. Destello (Level Up Chime)
+      const osc = ctx.createOscillator();
+      const gainOsc = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.05); // Entra un pelín tarde
+      osc.frequency.exponentialRampToValueAtTime(2400, ctx.currentTime + 0.15);
+
+      gainOsc.gain.setValueAtTime(0, ctx.currentTime + 0.05);
+      gainOsc.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.08);
+      gainOsc.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+      // Reverb delay
+      const delay = ctx.createDelay();
+      delay.delayTime.value = 0.1;
+      const feedback = ctx.createGain();
+      feedback.gain.value = 0.25;
+      delay.connect(feedback);
+      feedback.connect(delay);
+
+      osc.connect(gainOsc);
+      gainOsc.connect(ctx.destination);
+      gainOsc.connect(delay);
+      delay.connect(ctx.destination);
+
+      osc.start(ctx.currentTime + 0.05);
+      osc.stop(ctx.currentTime + 0.4);
+    } catch (e) { }
+  };
+
   const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false, targetUser = userName) => {
     if (!targetUser || durationSeconds < 60) return 0; // Menos de 1 min no da RPC
 
@@ -1444,7 +1504,11 @@ export default function App() {
       });
 
       setActiveAchievementModal(null);
-      playCashSound();
+      if (ack.id === 'streak_global') {
+        playFireSound();
+      } else {
+        playCashSound();
+      }
       showToast(`¡Logro reclamado! +${earned.toFixed(1)} RPC`, 'success');
       import('canvas-confetti').then((confetti) => {
         confetti.default({ particleCount: 400, spread: 180, origin: { y: 0.5 }, colors: ['#f59e0b', '#fbbf24', '#fcd34d', '#ffffff'], zIndex: 1200 });
