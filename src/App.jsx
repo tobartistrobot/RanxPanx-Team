@@ -887,6 +887,38 @@ export default function App() {
     } catch (e) { }
   };
 
+  const playTaskCompleteSound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      const playTone = (freq, startTime, duration, vol) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+
+        gain.gain.setValueAtTime(0, ctx.currentTime + startTime);
+        gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + startTime);
+        osc.stop(ctx.currentTime + startTime + duration);
+      };
+
+      // Triumphant ascending major arpeggio (C5, E5, G5, C6)
+      playTone(523.25, 0.00, 0.15, 0.15); // C5
+      playTone(659.25, 0.10, 0.15, 0.15); // E5
+      playTone(783.99, 0.20, 0.15, 0.15); // G5
+      playTone(1046.50, 0.30, 0.40, 0.25); // C6 (longer and slightly louder)
+
+    } catch (e) { }
+  };
+
   const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false, targetUser = userName) => {
     if (!targetUser || durationSeconds < 60) return 0; // Menos de 1 min no da RPC
 
@@ -968,7 +1000,7 @@ export default function App() {
           rpcEarned: earned || 0
         });
         showToast('¡Tarea guardada con éxito!', 'success');
-
+        playTaskCompleteSound();
         triggerConfetti(durationSeconds);
       } catch (error) {
         console.error("Error saving chore:", error);
