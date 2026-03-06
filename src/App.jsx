@@ -1303,6 +1303,68 @@ export default function App() {
     } catch (e) { }
   };
 
+  const playLegendSound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      const echo = ctx.createDelay();
+      echo.delayTime.value = 0.2;
+      const feedback = ctx.createGain();
+      feedback.gain.value = 0.5;
+      echo.connect(feedback);
+      feedback.connect(echo);
+      echo.connect(ctx.destination);
+
+      const notes = [392.00, 523.25, 659.25, 783.99];
+      const delays = [0.0, 0.15, 0.30, 0.45];
+
+      notes.forEach((freq, index) => {
+        const isLast = index === notes.length - 1;
+        const dur = isLast ? 1.5 : 0.1;
+
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        osc1.type = 'sawtooth';
+        osc2.type = 'square';
+
+        osc1.frequency.setValueAtTime(freq, ctx.currentTime + delays[index]);
+        osc2.frequency.setValueAtTime(freq * 1.002, ctx.currentTime + delays[index]);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(500, ctx.currentTime + delays[index]);
+        filter.frequency.exponentialRampToValueAtTime(4000, ctx.currentTime + delays[index] + 0.05);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0, ctx.currentTime + delays[index]);
+        gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + delays[index] + 0.02);
+
+        if (isLast) {
+          gain.gain.setValueAtTime(0.25, ctx.currentTime + delays[index] + 0.5);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delays[index] + 1.2);
+        } else {
+          gain.gain.setValueAtTime(0.25, ctx.currentTime + delays[index] + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delays[index] + 0.1);
+        }
+
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (isLast) gain.connect(echo);
+
+        osc1.start(ctx.currentTime + delays[index]);
+        osc2.start(ctx.currentTime + delays[index]);
+        osc1.stop(ctx.currentTime + delays[index] + dur + 0.2);
+        osc2.stop(ctx.currentTime + delays[index] + dur + 0.2);
+      });
+    } catch (e) { }
+  };
+
   const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false, targetUser = userName) => {
     if (!targetUser || durationSeconds < 60) return 0; // Menos de 1 min no da RPC
 
@@ -1725,6 +1787,8 @@ export default function App() {
         playAvalancheSound();
       } else if (ack.id === 'p2p_gifts') {
         playCharitySound();
+      } else if (ack.id === 'total_hours') {
+        playLegendSound();
       } else {
         playCashSound();
       }
