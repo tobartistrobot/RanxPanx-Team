@@ -3384,7 +3384,7 @@ export default function App() {
                     try {
                       await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'p2p_notifications', activeGiftModal.id), { read: true }, { merge: true });
                       setActiveGiftModal(null);
-                      playCashSound();
+                      playCharitySound();
                       import('canvas-confetti').then((confetti) => {
                         confetti.default({ particleCount: 200, spread: 120, origin: { y: 0.6 }, colors: ['#fbbf24', '#f59e0b', '#d97706'], zIndex: 1000 });
                       });
