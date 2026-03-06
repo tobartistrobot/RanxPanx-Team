@@ -1036,7 +1036,7 @@ export default function App() {
         owner: userName,
         redeemedAt: Date.now(),
         timestamp: Date.now(), // Sort fix
-        badgeProps: { color: ack.color, bg: ack.bg, darkBg: ack.darkBg, border: ack.border, shadow: ack.shadow, icon: ack.icon }
+        badgeProps: { color: ack.color, bg: ack.bg, darkBg: ack.darkBg, border: ack.border, shadow: ack.shadow, icon: ack.icon, tier: newTier }
       });
 
       setActiveAchievementModal(null);
@@ -2121,19 +2121,47 @@ export default function App() {
                   return (
                     <div key={moment.id} className="bg-white dark:bg-slate-900 border-[8px] border-white dark:border-slate-800 shadow-xl rounded-sm transition-transform hover:-translate-y-1 hover:shadow-2xl max-w-[280px] mx-auto">
                       <div className={`aspect-square flex items-center justify-center text-8xl border border-slate-200 dark:border-slate-700 relative overflow-hidden ${moment.badgeProps ? moment.badgeProps.bg + ' ' + (moment.badgeProps.darkBg || '') : 'bg-slate-100 dark:bg-slate-800'}`}>
-                        {moment.badgeProps ? (
-                          <div className="relative w-32 h-32 flex items-center justify-center">
-                            <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full -rotate-90 opacity-20">
-                              <circle strokeDasharray="100, 100" className={`${moment.badgeProps.color} stroke-current`} strokeWidth="4" fill="none" r="16" cx="18" cy="18" />
-                            </svg>
-                            <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full -rotate-90">
-                              <circle strokeDasharray="100, 100" className={`${moment.badgeProps.color} stroke-current`} strokeWidth="1" fill="none" r="16" cx="18" cy="18" />
-                            </svg>
-                            <div className={`w-20 h-20 rounded-full flex items-center justify-center relative z-10 bg-white/50 dark:bg-black/50 backdrop-blur-sm border-2 ${moment.badgeProps.border} shadow-2xl`}>
-                              <IconCmp size={40} className={`${moment.badgeProps.color}`} />
+                        {moment.badgeProps ? (() => {
+                          const tier = moment.badgeProps.tier || 1;
+                          const isUncommon = tier >= 2;
+                          const isRare = tier >= 3;
+                          const isEpic = tier >= 5;
+                          const isLegendary = tier >= 10;
+
+                          const baseSize = isLegendary ? 'w-48 h-48' : isEpic ? 'w-44 h-44' : isRare ? 'w-40 h-40' : isUncommon ? 'w-36 h-36' : 'w-32 h-32';
+                          const iconSize = isLegendary ? 72 : isEpic ? 64 : isRare ? 56 : isUncommon ? 48 : 40;
+                          const centerSize = isLegendary ? 'w-32 h-32' : isEpic ? 'w-28 h-28' : isRare ? 'w-24 h-24' : 'w-20 h-20';
+
+                          return (
+                            <div className={`relative ${baseSize} flex items-center justify-center transition-all duration-500 hover:scale-105`}>
+                              {isEpic && <div className={`absolute inset-0 rounded-full ${moment.badgeProps.bg} animate-pulse blur-2xl opacity-60 z-0`}></div>}
+                              {isLegendary && <div className={`absolute -inset-4 rounded-full ${moment.badgeProps.bg} animate-ping opacity-30 blur-xl z-0`}></div>}
+
+                              {isUncommon && (
+                                <svg viewBox="0 0 50 50" className={`absolute inset-0 w-full h-full -rotate-90 opacity-50 z-10 ${isEpic ? 'animate-[spin_4s_linear_infinite]' : isRare ? 'animate-[spin_8s_linear_infinite]' : ''}`}>
+                                  <circle strokeDasharray={isEpic ? "5, 5" : "15, 10"} className={`${moment.badgeProps.color} stroke-current`} strokeWidth={isEpic ? "3" : "1"} fill="none" r="23" cx="25" cy="25" />
+                                </svg>
+                              )}
+
+                              {isRare && (
+                                <svg viewBox="0 0 50 50" className={`absolute inset-2 w-[calc(100%-16px)] h-[calc(100%-16px)] -rotate-90 opacity-60 z-10 ${isLegendary ? 'animate-[spin_3s_linear_infinite_reverse]' : 'animate-[spin_6s_linear_infinite_reverse]'}`}>
+                                  <circle strokeDasharray="2, 8" className={`${moment.badgeProps.color} stroke-current`} strokeWidth={isLegendary ? "4" : "2"} fill="none" r="23" cx="25" cy="25" />
+                                </svg>
+                              )}
+
+                              <svg viewBox="0 0 36 36" className={`absolute inset-4 w-[calc(100%-32px)] h-[calc(100%-32px)] -rotate-90 z-10 ${isRare ? 'opacity-40' : 'opacity-20'}`}>
+                                <circle strokeDasharray="100, 100" className={`${moment.badgeProps.color} stroke-current`} strokeWidth="4" fill="none" r="16" cx="18" cy="18" />
+                              </svg>
+                              <svg viewBox="0 0 36 36" className="absolute inset-4 w-[calc(100%-32px)] h-[calc(100%-32px)] -rotate-90 z-10">
+                                <circle strokeDasharray="100, 100" className={`${moment.badgeProps.color} stroke-current`} strokeWidth="1" fill="none" r="16" cx="18" cy="18" />
+                              </svg>
+
+                              <div className={`${centerSize} rounded-full flex items-center justify-center relative z-20 bg-white/60 dark:bg-black/60 backdrop-blur-md border-[3px] ${moment.badgeProps.border} ${isEpic ? 'shadow-[0_0_40px_rgba(255,255,255,0.5)] dark:shadow-[0_0_40px_rgba(0,0,0,0.8)]' : isRare ? 'shadow-[0_0_20px_rgba(0,0,0,0.2)] dark:shadow-[0_0_20px_rgba(0,0,0,0.5)]' : 'shadow-xl'} transition-all duration-500`}>
+                                <IconCmp size={iconSize} className={`${moment.badgeProps.color} ${isLegendary ? 'drop-shadow-[0_0_15px_currentColor] animate-soft-glow' : ''}`} />
+                              </div>
                             </div>
-                          </div>
-                        ) : (
+                          );
+                        })() : (
                           moment.icon
                         )}
                       </div>
