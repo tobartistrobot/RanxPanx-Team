@@ -1263,6 +1263,46 @@ export default function App() {
     } catch (e) { }
   };
 
+  const playCharitySound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      const delay = ctx.createDelay();
+      delay.delayTime.value = 0.15;
+      const feedback = ctx.createGain();
+      feedback.gain.value = 0.4;
+      delay.connect(feedback);
+      feedback.connect(delay);
+
+      const notes = [1046.50, 880.00, 783.99, 659.25, 523.25, 440.00];
+      const dropDuration = 0.08;
+
+      notes.forEach((freq, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + index * dropDuration);
+
+        const time = ctx.currentTime + index * dropDuration;
+
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(0.2, time + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.connect(delay); delay.connect(ctx.destination);
+
+        osc.start(time);
+        osc.stop(time + 0.35);
+      });
+    } catch (e) { }
+  };
+
   const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false, targetUser = userName) => {
     if (!targetUser || durationSeconds < 60) return 0; // Menos de 1 min no da RPC
 
@@ -1683,6 +1723,8 @@ export default function App() {
         playBountySound();
       } else if (ack.id === 'streak_frenzy') {
         playAvalancheSound();
+      } else if (ack.id === 'p2p_gifts') {
+        playCharitySound();
       } else {
         playCashSound();
       }
