@@ -1092,6 +1092,53 @@ export default function App() {
     } catch (e) { }
   };
 
+  const playConstancySound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      const delay = ctx.createDelay();
+      delay.delayTime.value = 0.4;
+      const feedback = ctx.createGain();
+      feedback.gain.value = 0.3;
+      delay.connect(feedback);
+      feedback.connect(delay);
+
+      // 1. Dron grave constante (Foco)
+      const oscDrone = ctx.createOscillator();
+      const gainDrone = ctx.createGain();
+      oscDrone.type = 'sine';
+      oscDrone.frequency.setValueAtTime(130.81 * 2, ctx.currentTime); // C3
+
+      gainDrone.gain.setValueAtTime(0, ctx.currentTime);
+      gainDrone.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.4);
+      gainDrone.gain.setValueAtTime(0.3, ctx.currentTime + 1.0);
+      gainDrone.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
+
+      oscDrone.connect(gainDrone);
+      gainDrone.connect(ctx.destination);
+
+      // 2. Armónico suave y menos estridente
+      const oscHigh = ctx.createOscillator();
+      const gainHigh = ctx.createGain();
+      oscHigh.type = 'triangle'; // Onda más suave, sin picos
+      oscHigh.frequency.setValueAtTime(392.00 * 2, ctx.currentTime + 0.2); // Bajada una octava (G4) para no pitar fuerte
+
+      gainHigh.gain.setValueAtTime(0, ctx.currentTime + 0.2);
+      gainHigh.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.4); // Mitad de volumen
+      gainHigh.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.8);
+
+      oscHigh.connect(gainHigh);
+      gainHigh.connect(ctx.destination);
+      gainHigh.connect(delay); delay.connect(ctx.destination);
+
+      oscDrone.start(ctx.currentTime); oscDrone.stop(ctx.currentTime + 2.0);
+      oscHigh.start(ctx.currentTime + 0.2); oscHigh.stop(ctx.currentTime + 1.8);
+    } catch (e) { }
+  };
+
   const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false, targetUser = userName) => {
     if (!targetUser || durationSeconds < 60) return 0; // Menos de 1 min no da RPC
 
@@ -1506,6 +1553,8 @@ export default function App() {
       setActiveAchievementModal(null);
       if (ack.id === 'streak_global') {
         playFireSound();
+      } else if (ack.id === 'streak_specific') {
+        playConstancySound();
       } else {
         playCashSound();
       }
