@@ -1798,7 +1798,14 @@ export default function App() {
                     <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group relative overflow-hidden`}>
                       <div className="flex items-center gap-3">
                         <div>
-                          <p className="font-bold text-sm tracking-tight">{chore.taskName}</p>
+                          <p className="font-bold text-sm tracking-tight flex items-center">
+                            {chore.taskName}
+                            {chore.rpcEarned > 0 && (
+                              <span className="ml-2 text-[10px] font-black bg-orange-100/50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded-md border border-orange-200 dark:border-orange-800">
+                                +{chore.rpcEarned.toFixed(2)} RPC
+                              </span>
+                            )}
+                          </p>
                           <p className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
                             <span className="text-slate-500 font-bold">{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                             • <span className={`font-bold ${uColorClass}`}>{chore.userName}</span> • {formatTimeDetailed(chore.durationSeconds)}
@@ -1920,7 +1927,14 @@ export default function App() {
                     <div key={chore.id} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between relative overflow-hidden`}>
                       <div className="flex items-center gap-3">
                         <div>
-                          <p className="font-bold text-sm">{chore.taskName}</p>
+                          <p className="font-bold text-sm flex items-center">
+                            {chore.taskName}
+                            {chore.rpcEarned > 0 && (
+                              <span className="ml-2 text-[10px] font-black bg-orange-100/50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded-md border border-orange-200 dark:border-orange-800">
+                                +{chore.rpcEarned.toFixed(2)} RPC
+                              </span>
+                            )}
+                          </p>
                           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
                             <span className="text-slate-500">{new Date(chore.timestamp || Date.now()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                             • <span className={`font-bold ${uColorClass}`}>{chore.userName}</span> • <span className="text-slate-500 font-medium">{formatTimeDetailed(chore.durationSeconds)}</span>
