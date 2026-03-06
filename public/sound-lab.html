@@ -235,7 +235,7 @@
             oscFlash.stop(ctx.currentTime + 1.0);
         };
 
-        // Opción C: Acorde Minimalista (Zen Focus, Drone + Armónico)
+        // Opción C: Acorde Minimalista (Zen Focus, Drone + Armónico Suavizado)
         const playConstancyC = () => {
             const ctx = getCtx();
 
@@ -259,11 +259,11 @@
             // 2. Armónico Brillante (El éxito de la suma de partes)
             const oscHigh = ctx.createOscillator();
             const gainHigh = ctx.createGain();
-            oscHigh.type = 'sine'; // Tonada pura
-            oscHigh.frequency.setValueAtTime(392.00 * 2 * 2, ctx.currentTime + 0.2); // G5 (Quinta justa arriba)
+            oscHigh.type = 'triangle'; // Onda más suave, sin picos
+            oscHigh.frequency.setValueAtTime(392.00 * 2, ctx.currentTime + 0.2); // G4 bajado para no pitar
 
             gainHigh.gain.setValueAtTime(0, ctx.currentTime + 0.2);
-            gainHigh.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.3);
+            gainHigh.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.4); // Menos volumen
             gainHigh.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.8);
 
             oscHigh.connect(gainHigh);
