@@ -14,12 +14,13 @@
         }
 
         h1 {
-            color: #38bdf8;
+            color: #f59e0b;
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1rem;
             margin-top: 2rem;
         }
@@ -30,6 +31,8 @@
             padding: 1.5rem;
             text-align: center;
             border: 1px solid #334155;
+            position: relative;
+            overflow: hidden;
         }
 
         .card h2 {
@@ -39,67 +42,79 @@
         }
 
         button {
-            background: #10b981;
-            color: white;
+            background: #f59e0b;
+            color: #78350f;
             border: none;
             padding: 0.75rem 1.5rem;
             border-radius: 8px;
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
         }
 
         button:hover {
-            background: #059669;
+            background: #fbbf24;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
         }
 
         button:active {
-            transform: scale(0.95);
+            transform: translateY(1px);
         }
 
-        .btn-uncheck {
-            background: #ef4444;
-        }
-
-        .btn-uncheck:hover {
-            background: #dc2626;
+        .badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
     </style>
 </head>
 
 <body>
-    <h1>🧪 Laboratorio de Sonidos: Misión "Alegría"</h1>
-    <p>Hemos descartado el "Cantarín chillón" y el "Maderazo triste". Aquí tienes 3 opciones nuevas enfocadas en dar
-        <b>alegría y satisfacción jugable</b> al recolectar productos.</p>
+    <h1>⚡ Laboratorio de Sonidos: Modo FRENESÍ</h1>
+    <p>El Modo Frenesí se activa cuando el usuario encadena más de 1 hora documentada de tareas domésticas en un solo
+        día. Representa entrar en calor o desatar una racha de combo. Debe ser épico y transmitir "Aumento de Poder"
+        (Power-Up).</p>
 
     <div class="grid">
-        <div class="card">
-            <h2>🛒 Opción A: Moneda Clásica (Coin Collect)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Inspirado en recoger monedas. Un doble tono
-                rápido y brillante (B5 a E6) que el cerebro asocia con premio inmediato.</p>
-            <button onclick="playJoyA()">Probar Recolección A</button>
+        <div class="card" style="border-color: #f59e0b;">
+            <div class="badge">Épico</div>
+            <h2>🔥 Opción A: Aumento de Aura (Super Saiyan)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un sonido barrido envolvente y sostenido
+                que sube de tono (pitch bend) y culmina con un destello. Da sensación de que las baterías se acaban de
+                cargar al 200%.</p>
+            <button onclick="playFrenzyA()">Desatar FRENESÍ A</button>
         </div>
 
-        <div class="card">
-            <h2>🛒 Opción B: Xilófono Feliz (Double-Tap)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Dos golpecitos rápidos y orgánicos en
-                escala mayor. Suena a juguete de calidad, da alegría sin ser molesto.</p>
-            <button onclick="playJoyB()">Probar Recolección B</button>
+        <div class="card" style="border-color: #10b981;">
+            <div class="badge">Retro</div>
+            <h2>🔥 Opción B: Sobrecarga Arcade (Overdrive)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un arpegio rápido (casi como de 8-bits pero
+                redondo) que asciende escalonadamente de agudo a súper-agudo. Sensación de lograr un "¡Mega Combo!".</p>
+            <button onclick="playFrenzyB()"
+                style="background: #10b981; color: #064e3b; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">Desatar
+                FRENESÍ B</button>
         </div>
 
-        <div class="card">
-            <h2>🛒 Opción C: Burbuja Mágica (Happy Bubble)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un pop muy redondo, dulce y simpático con
-                un pequeño "brillo" al final. Es muy "kawaii" pero sutil.</p>
-            <button onclick="playJoyC()">Probar Recolección C</button>
-        </div>
-
-        <div class="card" style="border-color: #7f1d1d; opacity: 0.8;">
-            <h2>↩️ Revertir (Extra)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">El mismo "Viento / Soplo" que antes, para
-                cuando te equivocas y devuelves el artículo a la lista.</p>
-            <button class="btn-uncheck" onclick="playUncheck()">Probar Revertir</button>
+        <div class="card" style="border-color: #ef4444;">
+            <div class="badge">Cinemático</div>
+            <h2>🔥 Opción C: Latidos de Adrenalina (Heartbeat Flare)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Empieza con tres latidos cardíacos
+                profundos que se aceleran dramáticamente, rompiendo finalmente en una campana mayor sintética y
+                sostenida.</p>
+            <button onclick="playFrenzyC()"
+                style="background: #ef4444; color: #450a0a; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">Desatar
+                FRENESÍ C</button>
         </div>
     </div>
 
@@ -109,118 +124,166 @@
             return new AudioCtx();
         };
 
-        const playJoyA = () => {
-            // Coin Collect style (B5 -> E6)
-            const ctx = getCtx();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
+        const createEcho = (ctx) => {
+            const delay = ctx.createDelay();
+            delay.delayTime.value = 0.2; // 200ms
 
-            osc.type = 'sine';
+            const feedback = ctx.createGain();
+            feedback.gain.value = 0.3; // % de retorno
 
-            // B5 (987.77 Hz) to E6 (1318.51 Hz) after a tiny delay
-            osc.frequency.setValueAtTime(987.77, ctx.currentTime);
-            osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.08);
+            delay.connect(feedback);
+            feedback.connect(delay);
 
-            gain.gain.setValueAtTime(0, ctx.currentTime);
-            // First note attack
-            gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.1, ctx.currentTime + 0.08);
-
-            // Second note attack
-            gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.09);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.4);
+            return { delayNode: delay, outNode: delay };
         };
 
-        const playJoyB = () => {
-            // Xilófono Feliz (C5 -> E5) two distinct hits
+        // OPCIÓN A: Aumento de Aura (Swelling Pad)
+        const playFrenzyA = () => {
+            const ctx = getCtx();
+            const dur = 1.5; // Todo dura 1.5 segundos
+
+            // Capa 1: Pad grave subiendo
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(150, ctx.currentTime);
+            osc1.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + dur - 0.2);
+
+            gain1.gain.setValueAtTime(0, ctx.currentTime);
+            gain1.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.5); // Sube lento
+            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + dur);
+
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+
+            // Capa 2: Brillo/Rompimiento (Flash) al final
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(800, ctx.currentTime + dur - 0.3);
+            osc2.frequency.linearRampToValueAtTime(1600, ctx.currentTime + dur);
+
+            gain2.gain.setValueAtTime(0, ctx.currentTime + dur - 0.3);
+            gain2.gain.linearRampToValueAtTime(0.3, ctx.currentTime + dur - 0.1);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + dur + 0.5);
+
+            // Reverb falso con un Delay al brillo
+            const echo = createEcho(ctx);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination); // original
+            gain2.connect(echo.delayNode);
+            echo.outNode.connect(ctx.destination); // reverbed
+
+            osc1.start(); osc1.stop(ctx.currentTime + dur);
+            osc2.start(ctx.currentTime + dur - 0.3); osc2.stop(ctx.currentTime + dur + 0.5);
+        };
+
+        // OPCIÓN B: Sobrecarga Arcade (Arpegio rápido C Major, 3 octavas)
+        const playFrenzyB = () => {
+            const ctx = getCtx();
+            const notes = [
+                261.63, // C4
+                329.63, // E4
+                392.00, // G4
+                523.25, // C5
+                659.25, // E5
+                783.99, // G5
+                1046.50, // C6
+                1318.51, // E6
+                1567.98, // G6
+                2093.00  // C7 (Grito final)
+            ];
+
+            const noteDur = 0.08; // Muy rápidas
+
+            notes.forEach((freq, idx) => {
+                const isLast = idx === notes.length - 1;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'square'; // Arcade feel
+
+                // Filtro para suavizar la onda cuadrada (hacerla menos molesta)
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(2500, ctx.currentTime);
+
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + (idx * noteDur));
+
+                gain.gain.setValueAtTime(0, ctx.currentTime + (idx * noteDur));
+                gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + (idx * noteDur) + 0.01);
+
+                if (isLast) {
+                    // La última nota suena libre y con cola
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (idx * noteDur) + 0.8);
+
+                    const echo = createEcho(ctx);
+                    echo.delayNode.delayTime.value = 0.15;
+                    osc.connect(filter); filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
+
+                    osc.start(ctx.currentTime + (idx * noteDur));
+                    osc.stop(ctx.currentTime + (idx * noteDur) + 0.8);
+                } else {
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (idx * noteDur) + noteDur);
+                    osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + (idx * noteDur));
+                    osc.stop(ctx.currentTime + (idx * noteDur) + noteDur);
+                }
+            });
+        };
+
+        // OPCIÓN C: Latidos de Adrenalina (Thumps -> Glow)
+        const playFrenzyC = () => {
             const ctx = getCtx();
 
-            const playNote = (freq, delay) => {
+            const playThump = (time, vol, duration = 0.2) => {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
 
-                // Un poco de "fm" feeling o ataque puro
-                osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+                // Pitch drop rápido emulando un tambor grave o latido
+                osc.frequency.setValueAtTime(150, ctx.currentTime + time);
+                osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + time + 0.1);
 
-                gain.gain.setValueAtTime(0, ctx.currentTime + delay);
-                gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + delay + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + 0.15);
+                gain.gain.setValueAtTime(0, ctx.currentTime + time);
+                gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + time + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + time + duration);
 
                 osc.connect(gain);
                 gain.connect(ctx.destination);
-                osc.start(ctx.currentTime + delay);
-                osc.stop(ctx.currentTime + delay + 0.15);
+                osc.start(ctx.currentTime + time);
+                osc.stop(ctx.currentTime + time + duration);
             };
 
-            playNote(523.25, 0);       // C5
-            playNote(659.25, 0.12);    // E5
-        };
+            // Secuencia de latidos acelerándose
+            playThump(0.00, 0.4);
+            playThump(0.40, 0.5);
+            playThump(0.70, 0.6);
+            playThump(0.90, 0.8);
+            playThump(1.05, 1.0); // El pulso de ruptura
 
-        const playJoyC = () => {
-            // Burbuja Mágica (Fast sweep up + tiny high overtone)
-            const ctx = getCtx();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
+            // Campana gloriosa final (Flare / Glow)
+            const oscC = ctx.createOscillator();
+            const gainC = ctx.createGain();
+            oscC.type = 'sine';
+            oscC.frequency.setValueAtTime(659.25, ctx.currentTime + 1.05); // E5 mayor vibrante
 
-            osc.type = 'sine';
-            // Sweep rápido hacia arriba
-            osc.frequency.setValueAtTime(400, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+            gainC.gain.setValueAtTime(0, ctx.currentTime + 1.05);
+            gainC.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 1.15);
+            gainC.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.5);
 
-            gain.gain.setValueAtTime(0, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+            const echo = createEcho(ctx);
+            echo.delayNode.delayTime.value = 0.3;
 
-            osc.connect(gain);
-            gain.connect(ctx.destination);
+            oscC.connect(gainC);
+            gainC.connect(ctx.destination);
+            gainC.connect(echo.delayNode);
+            echo.outNode.connect(ctx.destination);
 
-            osc.start();
-            osc.stop(ctx.currentTime + 0.15);
-
-            // Capa de brillo mágico
-            const osc2 = ctx.createOscillator();
-            const gain2 = ctx.createGain();
-            osc2.type = 'triangle';
-            osc2.frequency.setValueAtTime(2400, ctx.currentTime + 0.05);
-            gain2.gain.setValueAtTime(0, ctx.currentTime + 0.05);
-            gain2.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.06);
-            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-            osc2.connect(gain2);
-            gain2.connect(ctx.destination);
-            osc2.start(ctx.currentTime + 0.05);
-            osc2.stop(ctx.currentTime + 0.2);
-        };
-
-        const playUncheck = () => {
-            const ctx = getCtx();
-            const bufferSize = ctx.sampleRate * 0.15;
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-            const noise = ctx.createBufferSource();
-            noise.buffer = buffer;
-
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(800, ctx.currentTime);
-            filter.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.15);
-
-            const gain = ctx.createGain();
-            gain.gain.setValueAtTime(0, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-
-            noise.connect(filter);
-            filter.connect(gain);
-            gain.connect(ctx.destination);
-            noise.start();
+            oscC.start(ctx.currentTime + 1.05);
+            oscC.stop(ctx.currentTime + 2.5);
         };
     </script>
 </body>
