@@ -14,8 +14,8 @@
         }
 
         h1 {
-            color: #f59e0b;
-            text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            color: #f97316;
+            text-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
         }
 
         .grid {
@@ -42,8 +42,8 @@
         }
 
         button {
-            background: #f59e0b;
-            color: #78350f;
+            background: #ea580c;
+            color: white;
             border: none;
             padding: 0.75rem 1.5rem;
             border-radius: 8px;
@@ -51,13 +51,13 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
         }
 
         button:hover {
-            background: #fbbf24;
+            background: #f97316;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 6px 20px rgba(234, 88, 12, 0.4);
         }
 
         button:active {
@@ -68,53 +68,48 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
+            background: rgba(249, 115, 22, 0.2);
+            color: #fdba74;
             font-size: 0.7rem;
             padding: 3px 8px;
             border-radius: 10px;
             font-weight: bold;
             text-transform: uppercase;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            border: 1px solid rgba(249, 115, 22, 0.3);
         }
     </style>
 </head>
 
 <body>
-    <h1>⚡ Laboratorio de Sonidos: Modo FRENESÍ</h1>
-    <p>El Modo Frenesí se activa cuando el usuario encadena más de 1 hora documentada de tareas domésticas en un solo
-        día. Representa entrar en calor o desatar una racha de combo. Debe ser épico y transmitir "Aumento de Poder"
-        (Power-Up).</p>
+    <h1>🔥 Laboratorio: Logro "Fuego Inextinguible"</h1>
+    <p>Este logro representa la constancia, el mantener la llama viva encadenando días seguidos. El sonido debe evocar
+        calor, una chispa que se enciende o una racha que se consolida épicamente (Level Up de Fuego).</p>
 
     <div class="grid">
-        <div class="card" style="border-color: #f59e0b;">
-            <div class="badge">Épico</div>
-            <h2>🔥 Opción A: Aumento de Aura (Super Saiyan)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un sonido barrido envolvente y sostenido
-                que sube de tono (pitch bend) y culmina con un destello. Da sensación de que las baterías se acaban de
-                cargar al 200%.</p>
-            <button onclick="playFrenzyA()">Desatar FRENESÍ A</button>
+        <div class="card" style="border-color: #f97316;">
+            <div class="badge">Rápido</div>
+            <h2>🔥 Opción A: Chispa Brillante (Fire Ignition)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Como el sonido de encender una
+                súper-cerilla mágica. Un estallido rápido de estática (viento/fuego) seguido de un ligero tono de
+                campana ascendente.</p>
+            <button onclick="playFireA()">Cobrar Logro A</button>
         </div>
 
-        <div class="card" style="border-color: #10b981;">
-            <div class="badge">Retro</div>
-            <h2>🔥 Opción B: Sobrecarga Arcade (Overdrive)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un arpegio rápido (casi como de 8-bits pero
-                redondo) que asciende escalonadamente de agudo a súper-agudo. Sensación de lograr un "¡Mega Combo!".</p>
-            <button onclick="playFrenzyB()"
-                style="background: #10b981; color: #064e3b; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">Desatar
-                FRENESÍ B</button>
+        <div class="card" style="border-color: #ea580c;">
+            <div class="badge">Musical</div>
+            <h2>🔥 Opción B: Escala Incandescente</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Tres notas poderosas y cálidas en escalada
+                rápida (C - G - C agudo) que terminan con mucha reverberación. Muy "Juego RPG clásico".</p>
+            <button onclick="playFireB()">Cobrar Logro B</button>
         </div>
 
-        <div class="card" style="border-color: #ef4444;">
+        <div class="card" style="border-color: #c2410c;">
             <div class="badge">Cinemático</div>
-            <h2>🔥 Opción C: Latidos de Adrenalina (Heartbeat Flare)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Empieza con tres latidos cardíacos
-                profundos que se aceleran dramáticamente, rompiendo finalmente en una campana mayor sintética y
-                sostenida.</p>
-            <button onclick="playFrenzyC()"
-                style="background: #ef4444; color: #450a0a; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">Desatar
-                FRENESÍ C</button>
+            <h2>🔥 Opción C: Erupción de Calor (Swoosh & Boom)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Mucho más grave y espacial. Un barrido
+                hacia arriba muy rápido como una llamarada subiendo por la pared (flame whoosh) que estalla en un eco
+                satisfactorio.</p>
+            <button onclick="playFireC()">Cobrar Logro C</button>
         </div>
     </div>
 
@@ -126,164 +121,149 @@
 
         const createEcho = (ctx) => {
             const delay = ctx.createDelay();
-            delay.delayTime.value = 0.2; // 200ms
-
+            delay.delayTime.value = 0.25;
             const feedback = ctx.createGain();
-            feedback.gain.value = 0.3; // % de retorno
-
+            feedback.gain.value = 0.25;
             delay.connect(feedback);
             feedback.connect(delay);
-
             return { delayNode: delay, outNode: delay };
         };
 
-        // OPCIÓN A: Aumento de Aura (Swelling Pad)
-        const playFrenzyA = () => {
+        // Opción A: Ignición (Ruido blanco ascendente + Campana corta)
+        const playFireA = () => {
             const ctx = getCtx();
-            const dur = 1.5; // Todo dura 1.5 segundos
 
-            // Capa 1: Pad grave subiendo
-            const osc1 = ctx.createOscillator();
-            const gain1 = ctx.createGain();
-            osc1.type = 'sine';
-            osc1.frequency.setValueAtTime(150, ctx.currentTime);
-            osc1.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + dur - 0.2);
+            // 1. Chispa (Ruido Blanco con HighPass)
+            const bufferSize = ctx.sampleRate * 0.2;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
-            gain1.gain.setValueAtTime(0, ctx.currentTime);
-            gain1.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.5); // Sube lento
-            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + dur);
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
 
-            osc1.connect(gain1);
-            gain1.connect(ctx.destination);
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'highpass';
+            // Barre de sordo a brillante para simular ignición
+            filter.frequency.setValueAtTime(500, ctx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(5000, ctx.currentTime + 0.1);
 
-            // Capa 2: Brillo/Rompimiento (Flash) al final
-            const osc2 = ctx.createOscillator();
-            const gain2 = ctx.createGain();
-            osc2.type = 'triangle';
-            osc2.frequency.setValueAtTime(800, ctx.currentTime + dur - 0.3);
-            osc2.frequency.linearRampToValueAtTime(1600, ctx.currentTime + dur);
+            const gainNoise = ctx.createGain();
+            gainNoise.gain.setValueAtTime(0, ctx.currentTime);
+            gainNoise.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+            gainNoise.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
 
-            gain2.gain.setValueAtTime(0, ctx.currentTime + dur - 0.3);
-            gain2.gain.linearRampToValueAtTime(0.3, ctx.currentTime + dur - 0.1);
-            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + dur + 0.5);
+            noise.connect(filter);
+            filter.connect(gainNoise);
+            gainNoise.connect(ctx.destination);
+            noise.start();
 
-            // Reverb falso con un Delay al brillo
+            // 2. Destello (Level Up Chime)
+            const osc = ctx.createOscillator();
+            const gainOsc = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.05); // Entra un pelín tarde
+            osc.frequency.exponentialRampToValueAtTime(2400, ctx.currentTime + 0.15);
+
+            gainOsc.gain.setValueAtTime(0, ctx.currentTime + 0.05);
+            gainOsc.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.08);
+            gainOsc.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+            osc.connect(gainOsc);
+            gainOsc.connect(ctx.destination);
+
+            // Reverb effect
             const echo = createEcho(ctx);
-            osc2.connect(gain2);
-            gain2.connect(ctx.destination); // original
-            gain2.connect(echo.delayNode);
-            echo.outNode.connect(ctx.destination); // reverbed
+            // Hacer la cola más difusa
+            echo.delayNode.delayTime.value = 0.1;
+            gainOsc.connect(echo.delayNode);
+            echo.outNode.connect(ctx.destination);
 
-            osc1.start(); osc1.stop(ctx.currentTime + dur);
-            osc2.start(ctx.currentTime + dur - 0.3); osc2.stop(ctx.currentTime + dur + 0.5);
+            osc.start(ctx.currentTime + 0.05);
+            osc.stop(ctx.currentTime + 0.4);
         };
 
-        // OPCIÓN B: Sobrecarga Arcade (Arpegio rápido C Major, 3 octavas)
-        const playFrenzyB = () => {
+        // Opción B: Escala Incandescente (C4 -> G4 -> C5)
+        const playFireB = () => {
             const ctx = getCtx();
-            const notes = [
-                261.63, // C4
-                329.63, // E4
-                392.00, // G4
-                523.25, // C5
-                659.25, // E5
-                783.99, // G5
-                1046.50, // C6
-                1318.51, // E6
-                1567.98, // G6
-                2093.00  // C7 (Grito final)
-            ];
+            const notes = [261.63, 392.00, 523.25]; // C4, G4, C5 (Acorde Perfecto Mayor extendido)
+            const delays = [0, 0.1, 0.2]; // Rápido pero rítmico
 
-            const noteDur = 0.08; // Muy rápidas
+            const echo = createEcho(ctx); // Reverb global
 
-            notes.forEach((freq, idx) => {
-                const isLast = idx === notes.length - 1;
+            notes.forEach((freq, i) => {
+                const isLast = i === notes.length - 1;
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
 
-                osc.type = 'square'; // Arcade feel
+                // Mezcla entre cálido y sintetizador de consola
+                osc.type = 'square';
 
-                // Filtro para suavizar la onda cuadrada (hacerla menos molesta)
+                // Suavizamos la onda cuadrada
                 const filter = ctx.createBiquadFilter();
                 filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(2500, ctx.currentTime);
+                filter.frequency.setValueAtTime(3000, ctx.currentTime);
 
-                osc.frequency.setValueAtTime(freq, ctx.currentTime + (idx * noteDur));
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + delays[i]);
 
-                gain.gain.setValueAtTime(0, ctx.currentTime + (idx * noteDur));
-                gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + (idx * noteDur) + 0.01);
+                // Glissando muy rápido de cada nota
+                if (isLast) {
+                    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, ctx.currentTime + delays[i] + 0.4);
+                }
+
+                gain.gain.setValueAtTime(0, ctx.currentTime + delays[i]);
+                gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + delays[i] + 0.02);
 
                 if (isLast) {
-                    // La última nota suena libre y con cola
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (idx * noteDur) + 0.8);
-
-                    const echo = createEcho(ctx);
-                    echo.delayNode.delayTime.value = 0.15;
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delays[i] + 0.6);
                     osc.connect(filter); filter.connect(gain);
                     gain.connect(ctx.destination);
                     gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
-
-                    osc.start(ctx.currentTime + (idx * noteDur));
-                    osc.stop(ctx.currentTime + (idx * noteDur) + 0.8);
+                    osc.start(ctx.currentTime + delays[i]);
+                    osc.stop(ctx.currentTime + delays[i] + 0.7);
                 } else {
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (idx * noteDur) + noteDur);
-                    osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
-                    osc.start(ctx.currentTime + (idx * noteDur));
-                    osc.stop(ctx.currentTime + (idx * noteDur) + noteDur);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delays[i] + 0.15);
+                    osc.connect(filter); filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + delays[i]);
+                    osc.stop(ctx.currentTime + delays[i] + 0.2);
                 }
             });
         };
 
-        // OPCIÓN C: Latidos de Adrenalina (Thumps -> Glow)
-        const playFrenzyC = () => {
+        // Opción C: Erupción (Llamarada Espacial)
+        const playFireC = () => {
             const ctx = getCtx();
 
-            const playThump = (time, vol, duration = 0.2) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
+            // 1. Llamarada grave subiendo muchísimo (Whoosh synth)
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
 
-                // Pitch drop rápido emulando un tambor grave o latido
-                osc.frequency.setValueAtTime(150, ctx.currentTime + time);
-                osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + time + 0.1);
+            osc.frequency.setValueAtTime(50, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 0.3); // Zoom enorme
 
-                gain.gain.setValueAtTime(0, ctx.currentTime + time);
-                gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + time + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + time + duration);
+            // Filtro Lowpass que se abre a la par para dar sensación de fuego estallando
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(300, ctx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(5000, ctx.currentTime + 0.3);
 
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(ctx.currentTime + time);
-                osc.stop(ctx.currentTime + time + duration);
-            };
-
-            // Secuencia de latidos acelerándose
-            playThump(0.00, 0.4);
-            playThump(0.40, 0.5);
-            playThump(0.70, 0.6);
-            playThump(0.90, 0.8);
-            playThump(1.05, 1.0); // El pulso de ruptura
-
-            // Campana gloriosa final (Flare / Glow)
-            const oscC = ctx.createOscillator();
-            const gainC = ctx.createGain();
-            oscC.type = 'sine';
-            oscC.frequency.setValueAtTime(659.25, ctx.currentTime + 1.05); // E5 mayor vibrante
-
-            gainC.gain.setValueAtTime(0, ctx.currentTime + 1.05);
-            gainC.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 1.15);
-            gainC.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.5);
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.2); // Sube más lento y épico
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
 
             const echo = createEcho(ctx);
-            echo.delayNode.delayTime.value = 0.3;
+            echo.delayNode.delayTime.value = 0.3; // Mucho eco profundo
 
-            oscC.connect(gainC);
-            gainC.connect(ctx.destination);
-            gainC.connect(echo.delayNode);
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            gain.connect(echo.delayNode);
             echo.outNode.connect(ctx.destination);
 
-            oscC.start(ctx.currentTime + 1.05);
-            oscC.stop(ctx.currentTime + 2.5);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.7);
         };
     </script>
 </body>
