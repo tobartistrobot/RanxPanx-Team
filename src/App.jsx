@@ -1034,7 +1034,9 @@ export default function App() {
         icon: '🏆',
         itemName: `¡${ack.title} Nivel ${newTier}! (+${earned.toFixed(1)} RPC)`,
         owner: userName,
-        redeemedAt: Date.now()
+        redeemedAt: Date.now(),
+        timestamp: Date.now(), // Sort fix
+        badgeProps: { color: ack.color, bg: ack.bg, darkBg: ack.darkBg, border: ack.border, shadow: ack.shadow, icon: ack.icon }
       });
 
       setActiveAchievementModal(null);
@@ -1911,7 +1913,7 @@ export default function App() {
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest pl-2 mb-3 flex items-center gap-2">
                 <Target size={14} /> Mis Insignias
               </h3>
-              <div className="flex overflow-x-auto gap-4 pb-4 -mx-2 px-2 no-scrollbar snap-x">
+              <div className="flex overflow-x-auto gap-4 pb-4 pt-4 -mx-2 px-2 no-scrollbar snap-x">
                 {achievementsState.map((ack) => {
                   const isReady = ack.actual > ack.claimedAt;
                   const currentTier = ack.claimedAt; // Lo que ya tiene asegurado
@@ -1941,7 +1943,7 @@ export default function App() {
                       onClick={() => setActiveAchievementModal(ack)}
                       className="shrink-0 snap-start flex flex-col items-center gap-2 cursor-pointer group"
                     >
-                      <div className={`relative w-20 h-20 rounded-full flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm border ${ack.border} transition-all duration-300 ${isReady ? `scale-110 ${ack.shadow} shadow-lg ring-4 ring-offset-2 ring-orange-400/50 dark:ring-offset-slate-950` : 'hover:scale-105'} ${ack.isAlert && !isReady ? 'animate-pulse ring-4 ring-red-500/50' : ''}`}>
+                      <div className={`relative w-[72px] h-[72px] rounded-full flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm border ${ack.border} transition-all duration-300 ${isReady ? `scale-[1.15] ${ack.shadow} shadow-lg ring-4 ring-offset-2 ring-orange-400/50 dark:ring-offset-slate-950 animate-[pulse_2s_ease-in-out_infinite]` : 'hover:scale-105'} ${ack.isAlert && !isReady ? 'animate-pulse ring-4 ring-red-500/50' : ''}`}>
 
                         {/* SVGs para el anillo de progreso estilo Google Maps */}
                         <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full -rotate-90">
@@ -1956,8 +1958,8 @@ export default function App() {
                           />
                         </svg>
 
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center relative z-10 ${isReady ? ack.bg : 'bg-slate-100 dark:bg-slate-800'} ${isReady ? ack.darkBg : ''}`}>
-                          <IconCmp size={24} className={`${isReady ? ack.color : 'text-slate-400'} ${isReady ? 'animate-bounce' : ''}`} />
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center relative z-10 ${isReady ? ack.bg : 'bg-slate-100 dark:bg-slate-800'} ${isReady ? ack.darkBg : ''}`}>
+                          <IconCmp size={20} className={`${isReady ? ack.color : 'text-slate-400'} ${isReady ? 'animate-[pulse_2s_ease-in-out_infinite]' : ''}`} />
                         </div>
 
                         {/* Alerta Roja si pierde la racha */}
@@ -2099,17 +2101,40 @@ export default function App() {
 
             {rewardsView === 'history' && (
               <div className="space-y-4">
-                {moments.map(moment => (
-                  <div key={moment.id} className="bg-white dark:bg-slate-900 border-[8px] border-white dark:border-slate-800 shadow-xl rounded-sm transform rotate-1 hover:rotate-0 transition-transform max-w-[280px] mx-auto">
-                    <div className="bg-slate-100 dark:bg-slate-800 aspect-square flex items-center justify-center text-8xl border border-slate-200 dark:border-slate-700">
-                      {moment.icon}
+                {moments.map(moment => {
+                  let IconCmp = Award;
+                  if (moment.badgeProps?.icon === 'Flame') IconCmp = Flame;
+                  if (moment.badgeProps?.icon === 'Target') IconCmp = Target;
+                  if (moment.badgeProps?.icon === 'Crosshair') IconCmp = Crosshair;
+                  if (moment.badgeProps?.icon === 'Zap') IconCmp = Zap;
+                  if (moment.badgeProps?.icon === 'HeartHandshake') IconCmp = HeartHandshake;
+
+                  return (
+                    <div key={moment.id} className="bg-white dark:bg-slate-900 border-[8px] border-white dark:border-slate-800 shadow-xl rounded-sm transform rotate-1 hover:rotate-0 transition-transform max-w-[280px] mx-auto">
+                      <div className={`aspect-square flex items-center justify-center text-8xl border border-slate-200 dark:border-slate-700 relative overflow-hidden ${moment.badgeProps ? moment.badgeProps.bg + ' ' + (moment.badgeProps.darkBg || '') : 'bg-slate-100 dark:bg-slate-800'}`}>
+                        {moment.badgeProps ? (
+                          <div className="relative w-32 h-32 flex items-center justify-center">
+                            <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full -rotate-90 opacity-20">
+                              <circle strokeDasharray="100, 100" className={`${moment.badgeProps.color} stroke-current`} strokeWidth="4" fill="none" r="16" cx="18" cy="18" />
+                            </svg>
+                            <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full -rotate-90">
+                              <circle strokeDasharray="100, 100" className={`${moment.badgeProps.color} stroke-current`} strokeWidth="1" fill="none" r="16" cx="18" cy="18" />
+                            </svg>
+                            <div className={`w-20 h-20 rounded-full flex items-center justify-center relative z-10 bg-white/50 dark:bg-black/50 backdrop-blur-sm border-2 ${moment.badgeProps.border} shadow-2xl`}>
+                              <IconCmp size={40} className={`${moment.badgeProps.color}`} />
+                            </div>
+                          </div>
+                        ) : (
+                          moment.icon
+                        )}
+                      </div>
+                      <div className="p-4 text-center">
+                        <h4 className="font-bold font-serif text-lg text-slate-800 dark:text-slate-100 mb-1">{moment.itemName}</h4>
+                        <p className="text-xs text-slate-500 font-medium font-serif italic">Por {moment.owner} • {new Date(moment.redeemedAt).toLocaleDateString()}</p>
+                      </div>
                     </div>
-                    <div className="p-4 text-center">
-                      <h4 className="font-bold font-serif text-lg text-slate-800 dark:text-slate-100 mb-1">{moment.itemName}</h4>
-                      <p className="text-xs text-slate-500 font-medium font-serif italic">Por {moment.owner} • {new Date(moment.redeemedAt).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
                 {moments.length === 0 && (
                   <div className="text-center py-8 text-slate-400 text-xs italic">Aún no hay grandes momentos registrados.</div>
                 )}
