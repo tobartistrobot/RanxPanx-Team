@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Lab - RanxPanx Dopamina</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 2rem; background: #0f172a; color: #f8fafc; }
+        h1 { color: #38bdf8; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 2rem; }
+        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; text-align: center; border: 1px solid #334155; }
+        .card h2 { margin-top: 0; font-size: 1.2rem; color: #e2e8f0; }
+        button { background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #2563eb; }
+        button:active { transform: scale(0.95); }
+        .btn-uncheck { background: #ef4444; }
+        .btn-uncheck:hover { background: #dc2626; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Laboratorio de Sonidos Dopamínicos</h1>
+    <p>Haz clic en los botones para probar distintos prototipos generados con Web Audio API puro. Dime cuál combinación te gusta más para las tareas de la compra.</p>
+
+    <div class="grid">
+        <div class="card">
+            <h2>🛒 Opción A: Gota de Agua (Bubble Pop)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Curva rápida ascendente "blop". Satisfactorio y orgánico.</p>
+            <button onclick="playA()">Probar Check A</button>
+        </div>
+
+        <div class="card">
+            <h2>🛒 Opción B: Marimba Cálida</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Tono de madera redondeado, afinado en una nota dulce y corta.</p>
+            <button onclick="playB()">Probar Check B</button>
+        </div>
+
+        <div class="card">
+            <h2>🛒 Opción C: Campanilla Suave</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Una versión intermedia entre la primera que hicimos y el tronquito de madera.</p>
+            <button onclick="playC()">Probar Check C</button>
+        </div>
+
+        <div class="card" style="border-color: #7f1d1d;">
+            <h2>↩️ Revertir 1: Soplo (Swoosh)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Sonido de viento/ruido estático simulando pasar un papel.</p>
+            <button class="btn-uncheck" onclick="playUncheck1()">Probar Revertir 1</button>
+        </div>
+
+        <div class="card" style="border-color: #7f1d1d;">
+            <h2>↩️ Revertir 2: Bop Profundo</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Onda senoidal pura que cae rápidamente de medio a grave.</p>
+            <button class="btn-uncheck" onclick="playUncheck2()">Probar Revertir 2</button>
+        </div>
+    </div>
+
+    <script>
+        const getCtx = () => {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            return new AudioCtx();
+        };
+
+        const playA = () => {
+            const ctx = getCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.08);
+
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.1);
+        };
+
+        const playB = () => {
+            const ctx = getCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            // Emulando una marimba/xilófono de madera suave (Onda senoidal con ataque percusivo)
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(700, ctx.currentTime);
+
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.005); // Ataque muy rápido
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15); // Release corto
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.15);
+        };
+
+        const playC = () => {
+            const ctx = getCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            // Campanilla no tan aguda
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(900, ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(1000, ctx.currentTime + 0.1);
+
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.2);
+        };
+
+        const playUncheck1 = () => {
+            const ctx = getCtx();
+            // Para ruido blanco usamos un buffer
+            const bufferSize = ctx.sampleRate * 0.1; // 0.1 segundos
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1; // Ruido blanco
+            }
+            
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            // Filtro paso bajo (lowpass)
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1000, ctx.currentTime); // Empieza sordo
+            filter.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.1); // Se apaga más
+
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+
+            noise.start();
+        };
+
+        const playUncheck2 = () => {
+            const ctx = getCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.type = 'sine'; // Menos ronco que el triángulo de antes
+            osc.frequency.setValueAtTime(300, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.08);
+
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.1);
+        };
+    </script>
+</body>
+</html>
