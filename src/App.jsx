@@ -775,10 +775,12 @@ export default function App() {
       // Iniciar nuevo contador
       updatedActiveTask = { name: taskInput, startTime: Date.now(), accumulatedTime: 0, isPaused: false };
       setActiveTask(updatedActiveTask);
+      playTimerStartSound();
     } else if (activeTask.isPaused) {
       // Reanudar
       updatedActiveTask = { ...activeTask, startTime: Date.now(), isPaused: false };
       setActiveTask(updatedActiveTask);
+      playTimerStartSound();
     } else {
       // Pausar
       updatedActiveTask = { ...activeTask, accumulatedTime: elapsed, isPaused: true };
@@ -829,6 +831,32 @@ export default function App() {
       const audio = new Audio('https://cdn.freesound.org/previews/332/332629_5065845-lq.mp3');
       audio.volume = 0.5;
       audio.play().catch(e => console.log('Audio play error:', e));
+    } catch (e) { }
+  };
+
+  const playTimerStartSound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      // Ascending "chime" or "pop"
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
     } catch (e) { }
   };
 
