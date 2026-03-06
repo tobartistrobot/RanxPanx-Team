@@ -756,7 +756,7 @@ export default function App() {
       {
         id: 'total_hours', title: 'Leyenda del Hogar', icon: 'Award', desc: 'Cada 10 horas totales invertidas en hacer de tu hogar un lugar mejor.',
         color: 'text-indigo-500', shadow: 'shadow-indigo-500', bg: 'bg-indigo-100', darkBg: 'dark:bg-indigo-900/30', border: 'border-indigo-500',
-        actual: leyendaNvl, isAlert: false,
+        actual: leyendaNvl, rawTotalHours: totalHours, isAlert: false,
         claimedAt: claimed.total_hours || 0,
         reward: 10.0
       }
@@ -2131,7 +2131,14 @@ export default function App() {
 
                   // Calcular progresión visual
                   let progressPercent = 0;
-                  if (ack.id === 'streak_global' || ack.id === 'streak_specific' || ack.id === 'streak_bounty' || ack.id === 'streak_frenzy' || ack.id === 'total_hours' || ack.id === 'p2p_gifts') {
+                  if (ack.id === 'total_hours') {
+                    if (isReady) {
+                      progressPercent = 100; // Keep it full until claimed
+                    } else {
+                      // Modulo 10 to get hours towards next milestone
+                      progressPercent = ((ack.rawTotalHours % 10) / 10) * 100;
+                    }
+                  } else if (ack.id === 'streak_global' || ack.id === 'streak_specific' || ack.id === 'streak_bounty' || ack.id === 'streak_frenzy' || ack.id === 'p2p_gifts') {
                     progressPercent = (ack.actual / nextGoal) * 100;
                   }
                   if (progressPercent > 100) progressPercent = 100;
