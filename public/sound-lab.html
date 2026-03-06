@@ -14,8 +14,8 @@
         }
 
         h1 {
-            color: #8b5cf6;
-            text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+            color: #10b981;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
         }
 
         .grid {
@@ -42,7 +42,7 @@
         }
 
         button {
-            background: #7c3aed;
+            background: #059669;
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -51,13 +51,13 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
         }
 
         button:hover {
-            background: #8b5cf6;
+            background: #10b981;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         }
 
         button:active {
@@ -68,50 +68,49 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(139, 92, 246, 0.2);
-            color: #c4b5fd;
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
             font-size: 0.7rem;
             padding: 3px 8px;
             border-radius: 10px;
             font-weight: bold;
             text-transform: uppercase;
-            border: 1px solid rgba(139, 92, 246, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
     </style>
 </head>
 
 <body>
-    <h1>👑 Laboratorio: Logro "Leyenda del Hogar"</h1>
-    <p>Este es el logro supremo (Color Morado/Violeta), basado en acumular bloques de 10 horas totales invertidas. Es un
-        hito a largo plazo que rara vez se reclama.
-        El sonido debe evocar <b>gloria, magnitud, estatus legendario y una inmensa recompensa (RPG Loot Epic)</b>.</p>
+    <h1>🛍️ Laboratorio: Compra en la Tienda</h1>
+    <p>Este sonido se reproduce cuando un usuario gasta sus preciados RPC para comprarle una recompensa a su pareja.
+        Debe sonar satisfactorio, como un gasto que duele un poquito (ha costado conseguir la moneda) pero vale la pena.
+        Piensa en transacciones financieras de lujo, cajas registradoras modernas o bolsitas de oro.</p>
 
     <div class="grid">
-        <div class="card" style="border-color: #8b5cf6;">
-            <div class="badge">Épico</div>
-            <h2>👑 Opción A: Despertar Legendario (Gong Brillante)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un impacto profundo, largo y místico (tipo
-                Gong o "Item Legendario" de los RPG). Evoca inmediatamente que acabas de conseguir un rango muy alto.
-            </p>
-            <button onclick="playLegendA()">Cobrar Logro A</button>
+        <div class="card" style="border-color: #10b981;">
+            <div class="badge">Clásico</div>
+            <h2>🛍️ Opción A: Ka-Ching Mecánico (Cash Register)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">El clásico e inconfundible sonido de una
+                caja registradora abriéndose. Empieza con el crujido del muelle/engranaje ("Ka") y termina con la
+                campana ("Ching"). Puro y satisfactorio.</p>
+            <button onclick="playStoreA()">Comprar Premio A</button>
         </div>
 
-        <div class="card" style="border-color: #7c3aed;">
-            <div class="badge">Musical</div>
-            <h2>👑 Opción B: Fanfarria Real (Royal Brass)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Tres notas poderosas anunciando la realeza
-                ("Ta-da-daaaan" ascendente), usando ondas sintetizadas ricas en armónicos simulando vientos-metal
-                gloriosos.</p>
-            <button onclick="playLegendB()">Cobrar Logro B</button>
+        <div class="card" style="border-color: #059669;">
+            <div class="badge">Premium</div>
+            <h2>🛍️ Opción B: Apple Pay / Gasto Digital (Sleek Buy)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Más moderno, rápido y sutil. Dos tonos
+                puros en staccato (Bloop-Bloop) seguidos de un ligero ruido blanco. Suena a terminal de pago sin
+                contacto (NFC) de alto standing.</p>
+            <button onclick="playStoreB()">Comprar Premio B</button>
         </div>
 
-        <div class="card" style="border-color: #5b21b6;">
-            <div class="badge">Cósmico</div>
-            <h2>👑 Opción C: Ascensión Cuántica (Choir Rise)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Sintetizador con filtro ascendente
-                exagerado (como un coro de ángeles que sube de volumen). Termina en un estallido cristalino puro y
-                duradero.</p>
-            <button onclick="playLegendC()">Cobrar Logro C</button>
+        <div class="card" style="border-color: #047857;">
+            <div class="badge">Fantasía</div>
+            <h2>🛍️ Opción C: Lluvia de Monedas (Coin Purse)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Una ráfaga rapidísima de tintineos agudos y
+                metálicos, como si dejaras caer una bolsa llena de monedas de oro macizo sobre una mesa de madera.</p>
+            <button onclick="playStoreC()">Comprar Premio C</button>
         </div>
     </div>
 
@@ -121,7 +120,8 @@
             return new AudioCtx();
         };
 
-        const createEcho = (ctx, time = 0.4, fbk = 0.5) => {
+        // Utilidad genérica de Eco
+        const createEcho = (ctx, time = 0.1, fbk = 0.2) => {
             const delay = ctx.createDelay();
             delay.delayTime.value = time;
             const feedback = ctx.createGain();
@@ -131,174 +131,116 @@
             return { delayNode: delay, outNode: delay };
         };
 
-        // Opción A: Gong Legendario / Impacto Místico (Mucho peso + Brillo sostenido)
-        const playLegendA = () => {
+        // Opción A: Ka-Ching Clásico (Muelle/Ruido Blanco + Campana Fuerte)
+        const playStoreA = () => {
             const ctx = getCtx();
-            const echo = createEcho(ctx, 0.4, 0.6); // Catedral masiva
+            const echo = createEcho(ctx, 0.15, 0.3);
 
-            // 1. El Impacto Grave ("El Peso de las 10 horas")
-            const oscLow = ctx.createOscillator();
-            const gainLow = ctx.createGain();
-            oscLow.type = 'sine';
-            oscLow.frequency.setValueAtTime(150, ctx.currentTime);
-            oscLow.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.5); // Cae profundo
-
-            gainLow.gain.setValueAtTime(0, ctx.currentTime);
-            gainLow.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 0.05); // Golpe
-            gainLow.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
-
-            // 2. Ruido metálico (Fuerte al principio para simular el golpe del gong)
-            const bufferSize = ctx.sampleRate * 1.0;
+            // 1. El "Ka" (Mecánica de resorte)
+            const bufferSize = ctx.sampleRate * 0.1;
             const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
             const data = buffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
-            const noiseGong = ctx.createBufferSource();
-            noiseGong.buffer = buffer;
+            const noiseMuelle = ctx.createBufferSource();
+            noiseMuelle.buffer = buffer;
+            const filterMuelle = ctx.createBiquadFilter();
+            filterMuelle.type = 'highpass';
+            filterMuelle.frequency.value = 4000;
+            const gainMuelle = ctx.createGain();
 
-            const noiseFilter = ctx.createBiquadFilter();
-            noiseFilter.type = 'bandpass';
-            noiseFilter.frequency.setValueAtTime(3000, ctx.currentTime);
-            noiseFilter.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 1.0); // Se apaga la frecuencia
+            gainMuelle.gain.setValueAtTime(0, ctx.currentTime);
+            gainMuelle.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.02);
+            gainMuelle.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08); // Corto y seco
 
-            const gainNoise = ctx.createGain();
-            gainNoise.gain.setValueAtTime(0, ctx.currentTime);
-            gainNoise.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-            gainNoise.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+            noiseMuelle.connect(filterMuelle); filterMuelle.connect(gainMuelle); gainMuelle.connect(ctx.destination);
+            noiseMuelle.start();
 
-            // 3. Resonancia Áurea (Acorde brillante que se queda sonando infinito)
-            const freqs = [392.00, 493.88, 587.33, 783.99]; // Acorde G Major 9 etéreo
+            // 2. El "Ching" (Campana fuerte)
+            const freqs = [1500, 2000, 2500, 3000]; // Armónicos metálicos disonantes pero brillantes
             freqs.forEach(freq => {
-                const oscHigh = ctx.createOscillator();
-                const gainHigh = ctx.createGain();
-                oscHigh.type = 'sine';
-                oscHigh.frequency.setValueAtTime(freq, ctx.currentTime);
+                const oscChing = ctx.createOscillator();
+                const gainChing = ctx.createGain();
+                oscChing.type = 'sine';
+                // Añadir FM (modulación) para sonar a metal puro en lugar de sine simple
+                oscChing.frequency.setValueAtTime(freq, ctx.currentTime + 0.08);
 
-                gainHigh.gain.setValueAtTime(0, ctx.currentTime);
-                gainHigh.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.1);
-                gainHigh.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 3.5); // Cola eternaaaa
+                gainChing.gain.setValueAtTime(0, ctx.currentTime + 0.08);
+                gainChing.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.09); // Golpe tras el "Ka"
+                gainChing.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6); // Cola de bronce
 
-                oscHigh.connect(gainHigh);
-                gainHigh.connect(ctx.destination);
-                gainHigh.connect(echo.delayNode);
+                oscChing.connect(gainChing);
+                gainChing.connect(ctx.destination);
+                gainChing.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
 
-                oscHigh.start(ctx.currentTime);
-                oscHigh.stop(ctx.currentTime + 4.0);
+                oscChing.start(ctx.currentTime + 0.08);
+                oscChing.stop(ctx.currentTime + 0.6);
             });
-
-            oscLow.connect(gainLow); gainLow.connect(ctx.destination); gainLow.connect(echo.delayNode);
-            noiseGong.connect(noiseFilter); noiseFilter.connect(gainNoise); gainNoise.connect(ctx.destination);
-
-            oscLow.start(ctx.currentTime); oscLow.stop(ctx.currentTime + 2.0);
-            noiseGong.start(ctx.currentTime);
-            echo.outNode.connect(ctx.destination);
         };
 
-        // Opción B: Fanfarria Real de Instrumento de Metal Glorioso
-        const playLegendB = () => {
+        // Opción B: Gasto Digital NFC (Apple Pay style)
+        const playStoreB = () => {
             const ctx = getCtx();
-            const echo = createEcho(ctx, 0.2, 0.5); // Sala del trono (Eco de palacio)
+            const echo = createEcho(ctx, 0.2, 0.1); // Eco cortísimo, casi reverb
 
-            // Notas: Sol, C, E, Sol (Arpegio Triunfal Major)
-            // Velocidad: ta - da - da - daaaaaaan
-            const notes = [392.00, 523.25, 659.25, 783.99];
-            const delays = [0.0, 0.15, 0.30, 0.45]; // Rápidas las 3 primeras, la última larga
+            // "Bloop - Bloop" ascendente (Quinta justa pura)
+            const freqs = [880.00, 1318.51]; // A5 -> E6
+            const times = [0, 0.15];
 
-            notes.forEach((freq, index) => {
-                const isLast = index === notes.length - 1;
-                const dur = isLast ? 1.5 : 0.1;
-
-                // Doble oscilador por nota para hacer efecto "Brass" (Viento Metal)
-                const osc1 = ctx.createOscillator();
-                const osc2 = ctx.createOscillator();
-                // Osc2 ligeramente desafinado para dar efecto coro de trompetas
-                osc1.type = 'sawtooth';
-                osc2.type = 'square';
-
-                osc1.frequency.setValueAtTime(freq, ctx.currentTime + delays[index]);
-                osc2.frequency.setValueAtTime(freq * 1.002, ctx.currentTime + delays[index]);
-
-                const filter = ctx.createBiquadFilter();
-                filter.type = 'lowpass';
-                // El famoso "brass swell". Empieza apagado y abre rápido con el soplido de los labios
-                filter.frequency.setValueAtTime(500, ctx.currentTime + delays[index]);
-                filter.frequency.exponentialRampToValueAtTime(4000, ctx.currentTime + delays[index] + 0.05);
-
-                const gain = ctx.createGain();
-                gain.gain.setValueAtTime(0, ctx.currentTime + delays[index]);
-                // Ataque marcado
-                gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + delays[index] + 0.02);
-
-                if (isLast) {
-                    gain.gain.setValueAtTime(0.25, ctx.currentTime + delays[index] + 0.5);
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delays[index] + 1.2);
-                } else {
-                    gain.gain.setValueAtTime(0.25, ctx.currentTime + delays[index] + 0.05);
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delays[index] + 0.1);
-                }
-
-                osc1.connect(filter);
-                osc2.connect(filter);
-                filter.connect(gain);
-                gain.connect(ctx.destination);
-
-                if (isLast) gain.connect(echo.delayNode); // Solo echo en la última para limpieza
-
-                osc1.start(ctx.currentTime + delays[index]);
-                osc2.start(ctx.currentTime + delays[index]);
-                osc1.stop(ctx.currentTime + delays[index] + dur + 0.2);
-                osc2.stop(ctx.currentTime + delays[index] + dur + 0.2);
-            });
-            echo.outNode.connect(ctx.destination);
-        };
-
-        // Opción C: Ascensión Cuántica (Coro Filtro Sweeping)
-        const playLegendC = () => {
-            const ctx = getCtx();
-            const echo = createEcho(ctx, 0.35, 0.4);
-
-            // "Pad de Coro" (Power chord denso que sube)
-            const freqs = [130.81, 196.00, 261.63, 392.00, 523.25]; // C3, G3, C4, G4, C5 (Quintas y Octavas masivas)
-
-            const masterGain = ctx.createGain();
-            masterGain.gain.setValueAtTime(0, ctx.currentTime);
-            masterGain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 1.0); // Sube 1 seg. de construcción de tensión
-            masterGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 3.0); // Baja lento
-            masterGain.connect(ctx.destination);
-
-            // Filtro maestro de Lowpass que se abre progresivamente como una revelación (Ascensión)
-            const masterFilter = ctx.createBiquadFilter();
-            masterFilter.type = 'lowpass';
-            masterFilter.frequency.setValueAtTime(200, ctx.currentTime);
-            masterFilter.frequency.exponentialRampToValueAtTime(8000, ctx.currentTime + 1.0); // Se abre la gloria en el seg 1.0
-            masterFilter.connect(masterGain);
-            masterFilter.connect(echo.delayNode);
-
-            freqs.forEach(freq => {
+            freqs.forEach((freq, idx) => {
                 const osc = ctx.createOscillator();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(freq, ctx.currentTime);
-                osc.connect(masterFilter);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 3.0);
+                const gain = ctx.createGain();
+                osc.type = 'sine'; // Super puro
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + times[idx]);
+
+                gain.gain.setValueAtTime(0, ctx.currentTime + times[idx]);
+                gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + times[idx] + 0.02); // Corto
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + times[idx] + 0.15);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                gain.connect(echo.delayNode);
+
+                osc.start(ctx.currentTime + times[idx]);
+                osc.stop(ctx.currentTime + times[idx] + 0.2);
             });
+            echo.outNode.connect(ctx.destination);
+        };
 
-            // Estallido / Estrella Final al terminar la subida (Segundo 1.0)
-            const oscStar = ctx.createOscillator();
-            const gainStar = ctx.createGain();
-            oscStar.type = 'sine'; // Tono puro como joya
-            oscStar.frequency.setValueAtTime(1046.50, ctx.currentTime + 1.0); // C6 Súper agudo luminoso
+        // Opción C: Lluvia de Monedas (Ráfaga aleatoria súper aguda y corta de FM Synths)
+        const playStoreC = () => {
+            const ctx = getCtx();
+            const numCoins = 12; // Número de monedas cayendo
 
-            gainStar.gain.setValueAtTime(0, ctx.currentTime + 1.0);
-            gainStar.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.05); // Flash instantáneo al tope de la montaña
-            gainStar.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 3.0);
+            for (let i = 0; i < numCoins; i++) {
+                // Tiempos caóticos entre 0 y 0.3 segundos simulando físicas
+                const timeDelay = Math.pow(Math.random(), 1.5) * 0.3; // Físicas: caen rápido y rebotan
+                const exactTime = ctx.currentTime + timeDelay;
 
-            oscStar.connect(gainStar);
-            gainStar.connect(ctx.destination);
-            gainStar.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
+                const oscCoin = ctx.createOscillator();
+                const gainCoin = ctx.createGain();
 
-            oscStar.start(ctx.currentTime + 1.0);
-            oscStar.stop(ctx.currentTime + 3.0);
+                oscCoin.type = 'triangle'; // Brillo tipo oro
+                // Frecuencias entre 4000Hz y 6000Hz (muy de moneda)
+                oscCoin.frequency.value = 4000 + Math.random() * 2000;
+                // Efecto "Drop" (baja un poco al golpear para simular peso)
+                oscCoin.frequency.exponentialRampToValueAtTime(oscCoin.frequency.value * 0.9, exactTime + 0.05);
+
+                gainCoin.gain.setValueAtTime(0, exactTime);
+                gainCoin.gain.linearRampToValueAtTime(0.1 + (Math.random() * 0.1), exactTime + 0.01);
+                gainCoin.gain.exponentialRampToValueAtTime(0.01, exactTime + 0.05 + (Math.random() * 0.1));
+
+                // Pequeño Paneo estéreo aleatorio
+                const panner = ctx.createStereoPanner();
+                panner.pan.value = (Math.random() * 2) - 1;
+
+                oscCoin.connect(gainCoin);
+                gainCoin.connect(panner);
+                panner.connect(ctx.destination);
+
+                oscCoin.start(exactTime);
+                oscCoin.stop(exactTime + 0.2);
+            }
         };
     </script>
 </body>
