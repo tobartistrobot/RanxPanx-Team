@@ -927,6 +927,14 @@ export default function App() {
         sender: userName
       });
 
+      // Log in moments for the receiver
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'moments'), {
+        icon: '🎁',
+        itemName: `${amount} RPC de ${userName}${p2pMessage.trim() ? ` - "${p2pMessage.trim()}"` : ''}`,
+        owner: selectedPeer,
+        redeemedAt: Date.now()
+      });
+
       showToast(`¡Has enviado ${amount} RPC a ${selectedPeer}!`, 'success');
       setShowP2PModal(false);
       setP2pAmount('');
