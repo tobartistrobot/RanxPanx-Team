@@ -14,8 +14,8 @@
         }
 
         h1 {
-            color: #10b981;
-            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            color: #f43f5e;
+            text-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
         }
 
         .grid {
@@ -42,7 +42,7 @@
         }
 
         button {
-            background: #059669;
+            background: #e11d48;
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -51,13 +51,13 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+            box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3);
         }
 
         button:hover {
-            background: #10b981;
+            background: #f43f5e;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
         }
 
         button:active {
@@ -68,51 +68,47 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(16, 185, 129, 0.2);
-            color: #6ee7b7;
+            background: rgba(225, 29, 72, 0.2);
+            color: #fda4af;
             font-size: 0.7rem;
             padding: 3px 8px;
             border-radius: 10px;
             font-weight: bold;
             text-transform: uppercase;
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(225, 29, 72, 0.3);
         }
     </style>
 </head>
 
 <body>
-    <h1>🎯 Laboratorio: Logro "Constancia"</h1>
-    <p>Este logro premia hacer <b>exactamente la misma tarea</b> varios días seguidos (mucha disciplina, foco y
-        repetición rítmica).
-        El sonido debe evocar precisión, metrónomo, encaje perfecto, algo casi matemático y muy pulcro (Color
-        Esmeralda).</p>
+    <h1>🪤 Laboratorio: Logro "Cazarrecompensas"</h1>
+    <p>Este logro (Color Rosa/Rojo) premia el hacer constantemente tareas que estaban marcadas como <b>"En busca y
+            captura" (Recompensa multiplicada)</b>. El sonido debe evocar caza, mecánicas metálicas de atrapar algo, o
+        temática del Lejano Oeste (Bounty).</p>
 
     <div class="grid">
-        <div class="card" style="border-color: #10b981;">
-            <div class="badge">Rítmico</div>
-            <h2>🎯 Opción A: Engranaje Perfecto (Triple Tick)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Tres notas percusivas súper precisas
-                marcando el compás (tic-tac-tic), que desembocan en una armónica campanilla ascendente. Suena a
-                maquinaria que funciona bien.</p>
-            <button onclick="playConstancyA()">Cobrar Logro A</button>
+        <div class="card" style="border-color: #f43f5e;">
+            <div class="badge">Mecánico</div>
+            <h2>🎯 Opción A: Cerrojo de Francotirador (Lock & Load)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Dos chasquidos metálicos súper rápidos y
+                secos (clack-clack) seguidos de una "campana de confirmación de blanco".</p>
+            <button onclick="playBountyA()">Cobrar Logro A</button>
         </div>
 
-        <div class="card" style="border-color: #059669;">
-            <div class="badge">Futurista</div>
-            <h2>🎯 Opción B: Escáner de Precisión</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un sonido puramente electrónico y limpio.
-                Dos pitidos de "confirmación correcta de sistema" (tipo Sci-Fi) seguidos de un destello cristalino
-                largo.</p>
-            <button onclick="playConstancyB()">Cobrar Logro B</button>
+        <div class="card" style="border-color: #be123c;">
+            <div class="badge">Western</div>
+            <h2>🎯 Opción B: Silbido del Oeste (Látigo y Ricochet)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un tono rápido que sube y baja rápido
+                emulando un silbido de vaquero o una bala perdida, y un ruido blanco que simula un latigazo.</p>
+            <button onclick="playBountyB()">Cobrar Logro B</button>
         </div>
 
-        <div class="card" style="border-color: #047857;">
-            <div class="badge">Musical</div>
-            <h2>🎯 Opción C: Acorde Minimalista (Zen)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Inspirado en los sonidos de relajación de
-                meditación. Una nota pedal muy grave y constante debajo (foco), y por encima una quinta musical
-                brillante que se desvanece suavemente.</p>
-            <button onclick="playConstancyC()">Cobrar Logro C</button>
+        <div class="card" style="border-color: #9f1239;">
+            <div class="badge">Institucional</div>
+            <h2>🎯 Opción C: Sello de "Se Busca" (Stamp Boom)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un ruido enérgico y sorpresivo de papel
+                restallando, seguido de un GOLPE GRAVE final (como estampar el sello de "Recompensa Cobrada").</p>
+            <button onclick="playBountyC()">Cobrar Logro C</button>
         </div>
     </div>
 
@@ -124,154 +120,169 @@
 
         const createEcho = (ctx) => {
             const delay = ctx.createDelay();
-            delay.delayTime.value = 0.2;
+            delay.delayTime.value = 0.25;
             const feedback = ctx.createGain();
-            feedback.gain.value = 0.3;
+            feedback.gain.value = 0.25;
             delay.connect(feedback);
             feedback.connect(delay);
             return { delayNode: delay, outNode: delay };
         };
 
-        // Opción A: Engranaje Perfecto (Tres tics de reloj sintético + campana final)
-        const playConstancyA = () => {
+        // Opción A: Cerrojo Metálico (Dos HighPass clicks + Ping de confirmación)
+        const playBountyA = () => {
             const ctx = getCtx();
             const echo = createEcho(ctx);
+            echo.delayNode.delayTime.value = 0.15; // Eco reflectante (montaña)
 
-            // Función para hacer los "Tics" precisos
-            const playTick = (time) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
+            // Función para hacer el clack metálico
+            const playClack = (time) => {
+                const bufferSize = ctx.sampleRate * 0.05;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
-                // Onda cuadrada muy cortita emulando un click métrico
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(800, ctx.currentTime + time);
-                osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + time + 0.05);
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
 
                 const filter = ctx.createBiquadFilter();
-                filter.type = 'lowpass';
+                filter.type = 'highpass';
                 filter.frequency.setValueAtTime(3000, ctx.currentTime + time);
+                filter.frequency.exponentialRampToValueAtTime(8000, ctx.currentTime + time + 0.05);
 
+                const gain = ctx.createGain();
                 gain.gain.setValueAtTime(0, ctx.currentTime + time);
-                gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + time + 0.005);
+                gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + time + 0.005);
                 gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + time + 0.05);
 
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(ctx.destination);
-
-                osc.start(ctx.currentTime + time);
-                osc.stop(ctx.currentTime + time + 0.05);
+                noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+                noise.start(ctx.currentTime + time);
             };
 
-            // Secuencia rítmica
-            playTick(0.0);
-            playTick(0.15);
-            playTick(0.30);
+            // Cerrojo: "Clack, clack"
+            playClack(0.0);
+            playClack(0.12);
 
-            // Campana Final (Resolución esmeralda) a tempo de los tics
+            // Confirmación ("Blanco abatido" / Recompensa conseguida - Armónico brillante)
             const oscEnd = ctx.createOscillator();
             const gainEnd = ctx.createGain();
-            oscEnd.type = 'sine';
-            // C6 (1046.50 Hz) saltando a E6 (1318.51)
-            oscEnd.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.45);
-            oscEnd.frequency.exponentialRampToValueAtTime(1318.51, ctx.currentTime + 0.55);
+            oscEnd.type = 'triangle';
+            oscEnd.frequency.setValueAtTime(880.00, ctx.currentTime + 0.25); // A5
 
-            gainEnd.gain.setValueAtTime(0, ctx.currentTime + 0.45);
-            gainEnd.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.5);
-            gainEnd.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+            gainEnd.gain.setValueAtTime(0, ctx.currentTime + 0.25);
+            gainEnd.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.26);
+            gainEnd.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
 
             oscEnd.connect(gainEnd);
             gainEnd.connect(ctx.destination);
             gainEnd.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
 
-            oscEnd.start(ctx.currentTime + 0.45);
-            oscEnd.stop(ctx.currentTime + 1.2);
+            oscEnd.start(ctx.currentTime + 0.25);
+            oscEnd.stop(ctx.currentTime + 0.8);
         };
 
-        // Opción B: Escáner de Precisión (Sci-Fi beep beep + Flash)
-        const playConstancyB = () => {
+        // Opción B: Silbido del Oeste y Latigazo
+        const playBountyB = () => {
             const ctx = getCtx();
             const echo = createEcho(ctx);
-            echo.delayNode.delayTime.value = 0.15; // Eco más rápido
+            echo.delayNode.delayTime.value = 0.3; // Desierto
 
-            const playBeep = (freq, time, dur) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
+            // 1. Silbido (Glissando arriba y abajo)
+            const oscWhistle = ctx.createOscillator();
+            const gainWhistle = ctx.createGain();
+            oscWhistle.type = 'sine';
 
-                osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
+            oscWhistle.frequency.setValueAtTime(1000, ctx.currentTime);
+            oscWhistle.frequency.linearRampToValueAtTime(2000, ctx.currentTime + 0.15); // Sube rápido
+            oscWhistle.frequency.linearRampToValueAtTime(1500, ctx.currentTime + 0.3); // Baja un poco
+            oscWhistle.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 0.5); // Cae dramático
 
-                gain.gain.setValueAtTime(0, ctx.currentTime + time);
-                gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + time + 0.01);
-                gain.gain.setValueAtTime(0.3, ctx.currentTime + time + dur - 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + time + dur);
+            gainWhistle.gain.setValueAtTime(0, ctx.currentTime);
+            gainWhistle.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.1);
+            gainWhistle.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
 
-                osc.connect(gain);
-                gain.connect(ctx.destination);
+            oscWhistle.connect(gainWhistle);
+            gainWhistle.connect(ctx.destination);
+            gainWhistle.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
 
-                osc.start(ctx.currentTime + time);
-                osc.stop(ctx.currentTime + time + dur);
-            };
+            oscWhistle.start();
+            oscWhistle.stop(ctx.currentTime + 0.5);
 
-            // Doble bleep rápido y computacional (Precisión de datos)
-            playBeep(1800, 0.0, 0.1);
-            playBeep(1800, 0.15, 0.1);
+            // 2. Latigazo (Whip crack) al final del silbido
+            const bufferSize = ctx.sampleRate * 0.15;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
-            // Destello sostenido
-            const oscFlash = ctx.createOscillator();
-            const gainFlash = ctx.createGain();
-            oscFlash.type = 'triangle';
-            oscFlash.frequency.setValueAtTime(2400, ctx.currentTime + 0.3);
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
 
-            gainFlash.gain.setValueAtTime(0, ctx.currentTime + 0.3);
-            gainFlash.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.35);
-            gainFlash.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+            const gainWhip = ctx.createGain();
+            gainWhip.gain.setValueAtTime(0, ctx.currentTime + 0.35);
+            gainWhip.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.36); // Golpe secazo
+            gainWhip.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
 
-            oscFlash.connect(gainFlash);
-            gainFlash.connect(ctx.destination);
-            gainFlash.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
+            noise.connect(gainWhip);
+            gainWhip.connect(ctx.destination);
+            gainWhip.connect(echo.delayNode); // Eco del latigazo
 
-            oscFlash.start(ctx.currentTime + 0.3);
-            oscFlash.stop(ctx.currentTime + 1.0);
+            noise.start(ctx.currentTime + 0.35);
         };
 
-        // Opción C: Acorde Minimalista (Zen Focus, Drone + Armónico Suavizado)
-        const playConstancyC = () => {
+        // Opción C: Sello "WANTED" (Papel + Boom Grave)
+        const playBountyC = () => {
             const ctx = getCtx();
 
             const echo = createEcho(ctx);
-            echo.delayNode.delayTime.value = 0.4; // Eco lento y relajado
+            echo.delayNode.delayTime.value = 0.1; // Impacto fuerte en sala pequeña
 
-            // 1. Dron de Foco (El "cuerpo" de la constancia)
-            const oscDrone = ctx.createOscillator();
-            const gainDrone = ctx.createGain();
-            oscDrone.type = 'sine';
-            oscDrone.frequency.setValueAtTime(130.81 * 2, ctx.currentTime); // C3 grave
+            // 1. Ruido de sacar el cartel o rasgar
+            const bufferSize = ctx.sampleRate * 0.2;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
-            gainDrone.gain.setValueAtTime(0, ctx.currentTime);
-            gainDrone.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.4); // Fade in suave
-            gainDrone.gain.setValueAtTime(0.3, ctx.currentTime + 1.0); // Sostiene la concentración
-            gainDrone.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
 
-            oscDrone.connect(gainDrone);
-            gainDrone.connect(ctx.destination);
+            const filterPaper = ctx.createBiquadFilter();
+            filterPaper.type = 'lowpass';
+            filterPaper.frequency.setValueAtTime(2000, ctx.currentTime);
 
-            // 2. Armónico Brillante (El éxito de la suma de partes)
-            const oscHigh = ctx.createOscillator();
-            const gainHigh = ctx.createGain();
-            oscHigh.type = 'triangle'; // Onda más suave, sin picos
-            oscHigh.frequency.setValueAtTime(392.00 * 2, ctx.currentTime + 0.2); // G4 bajado para no pitar
+            const gainPaper = ctx.createGain();
+            gainPaper.gain.setValueAtTime(0, ctx.currentTime);
+            gainPaper.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05); // Cruje rápido
+            gainPaper.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
 
-            gainHigh.gain.setValueAtTime(0, ctx.currentTime + 0.2);
-            gainHigh.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.4); // Menos volumen
-            gainHigh.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.8);
+            noise.connect(filterPaper);
+            filterPaper.connect(gainPaper);
+            gainPaper.connect(ctx.destination);
+            noise.start();
 
-            oscHigh.connect(gainHigh);
-            gainHigh.connect(ctx.destination);
-            gainHigh.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
+            // 2. El Sello (Thump Gigante)
+            const oscThump = ctx.createOscillator();
+            const gainThump = ctx.createGain();
+            oscThump.type = 'triangle';
 
-            oscDrone.start(ctx.currentTime); oscDrone.stop(ctx.currentTime + 2.0);
-            oscHigh.start(ctx.currentTime + 0.2); oscHigh.stop(ctx.currentTime + 1.8);
+            // Caída de frecuencia muy rápida para peso "físico"
+            oscThump.frequency.setValueAtTime(300, ctx.currentTime + 0.25);
+            oscThump.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.3);
+
+            gainThump.gain.setValueAtTime(0, ctx.currentTime + 0.25);
+            gainThump.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 0.26); // Golpe extremo (Vol 1.0)
+            gainThump.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+            // Reverb del golpe
+            const thumpFilter = ctx.createBiquadFilter();
+            thumpFilter.type = 'lowpass';
+            thumpFilter.frequency.setValueAtTime(1000, ctx.currentTime + 0.25);
+
+            oscThump.connect(thumpFilter);
+            thumpFilter.connect(gainThump);
+            gainThump.connect(ctx.destination);
+            gainThump.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
+
+            oscThump.start(ctx.currentTime + 0.25);
+            oscThump.stop(ctx.currentTime + 0.6);
         };
     </script>
 </body>
