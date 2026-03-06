@@ -983,6 +983,55 @@ export default function App() {
     } catch (e) { }
   };
 
+  const playFrenzySound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const dur = 1.5;
+
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(150, ctx.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + dur - 0.2);
+
+      gain1.gain.setValueAtTime(0, ctx.currentTime);
+      gain1.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.5);
+      gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + dur);
+
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(800, ctx.currentTime + dur - 0.3);
+      osc2.frequency.linearRampToValueAtTime(1600, ctx.currentTime + dur);
+
+      gain2.gain.setValueAtTime(0, ctx.currentTime + dur - 0.3);
+      gain2.gain.linearRampToValueAtTime(0.3, ctx.currentTime + dur - 0.1);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + dur + 0.5);
+
+      // Simple pseudo-echo for the flash
+      const delay = ctx.createDelay();
+      delay.delayTime.value = 0.2;
+      const feedback = ctx.createGain();
+      feedback.gain.value = 0.3;
+      delay.connect(feedback);
+      feedback.connect(delay);
+
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      gain2.connect(delay);
+      delay.connect(ctx.destination);
+
+      osc1.start(); osc1.stop(ctx.currentTime + dur);
+      osc2.start(ctx.currentTime + dur - 0.3); osc2.stop(ctx.currentTime + dur + 0.5);
+    } catch (e) { }
+  };
+
   const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false, targetUser = userName) => {
     if (!targetUser || durationSeconds < 60) return 0; // Menos de 1 min no da RPC
 
@@ -1016,6 +1065,7 @@ export default function App() {
       // Only show confetti / toast if current user is the target user
       if (targetUser === userName) {
         showToast('🔥 ¡MODO FRENESÍ x2 DESATADO HASTA MAÑANA!', 'success');
+        playFrenzySound();
         import('canvas-confetti').then((confetti) => {
           confetti.default({ particleCount: 300, spread: 160, origin: { y: 0.5 }, colors: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'] });
         });
