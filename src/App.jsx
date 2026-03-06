@@ -1135,7 +1135,66 @@ export default function App() {
       gainHigh.connect(delay); delay.connect(ctx.destination);
 
       oscDrone.start(ctx.currentTime); oscDrone.stop(ctx.currentTime + 2.0);
+      oscDrone.start(ctx.currentTime); oscDrone.stop(ctx.currentTime + 2.0);
       oscHigh.start(ctx.currentTime + 0.2); oscHigh.stop(ctx.currentTime + 1.8);
+    } catch (e) { }
+  };
+
+  const playBountySound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      const delay = ctx.createDelay();
+      delay.delayTime.value = 0.15;
+      const feedback = ctx.createGain();
+      feedback.gain.value = 0.25;
+      delay.connect(feedback);
+      feedback.connect(delay);
+
+      const playClack = (time) => {
+        const bufferSize = ctx.sampleRate * 0.05;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(3000, ctx.currentTime + time);
+        filter.frequency.exponentialRampToValueAtTime(8000, ctx.currentTime + time + 0.05);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0, ctx.currentTime + time);
+        gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + time + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + time + 0.05);
+
+        noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+        noise.start(ctx.currentTime + time);
+      };
+
+      playClack(0.0);
+      playClack(0.12);
+
+      const oscEnd = ctx.createOscillator();
+      const gainEnd = ctx.createGain();
+      oscEnd.type = 'triangle';
+      oscEnd.frequency.setValueAtTime(880.00, ctx.currentTime + 0.25); // A5
+
+      gainEnd.gain.setValueAtTime(0, ctx.currentTime + 0.25);
+      gainEnd.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.26);
+      gainEnd.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+
+      oscEnd.connect(gainEnd);
+      gainEnd.connect(ctx.destination);
+      gainEnd.connect(delay); delay.connect(ctx.destination);
+
+      oscEnd.start(ctx.currentTime + 0.25);
+      oscEnd.stop(ctx.currentTime + 0.8);
     } catch (e) { }
   };
 
@@ -1555,6 +1614,8 @@ export default function App() {
         playFireSound();
       } else if (ack.id === 'streak_specific') {
         playConstancySound();
+      } else if (ack.id === 'streak_bounty') {
+        playBountySound();
       } else {
         playCashSound();
       }
