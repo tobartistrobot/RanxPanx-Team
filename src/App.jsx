@@ -785,6 +785,7 @@ export default function App() {
       // Pausar
       updatedActiveTask = { ...activeTask, accumulatedTime: elapsed, isPaused: true };
       setActiveTask(updatedActiveTask);
+      playTimerPauseSound();
     }
 
     // SYNC a Firestore para mostrar en tiempo real a los demás
@@ -857,6 +858,32 @@ export default function App() {
 
       osc.start();
       osc.stop(ctx.currentTime + 0.2);
+    } catch (e) { }
+  };
+
+  const playTimerPauseSound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      // Descending "bop" or "swoosh"
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.15);
+
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
     } catch (e) { }
   };
 
