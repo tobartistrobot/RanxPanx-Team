@@ -14,8 +14,8 @@
         }
 
         h1 {
-            color: #eab308;
-            text-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+            color: #f472b6;
+            text-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
         }
 
         .grid {
@@ -42,7 +42,7 @@
         }
 
         button {
-            background: #ca8a04;
+            background: #db2777;
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -51,13 +51,13 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(202, 138, 4, 0.3);
+            box-shadow: 0 4px 15px rgba(219, 39, 119, 0.3);
         }
 
         button:hover {
-            background: #eab308;
+            background: #f472b6;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(234, 179, 8, 0.4);
+            box-shadow: 0 6px 20px rgba(244, 114, 182, 0.4);
         }
 
         button:active {
@@ -68,50 +68,47 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(234, 179, 8, 0.2);
-            color: #fde047;
+            background: rgba(244, 114, 182, 0.2);
+            color: #fbcfe8;
             font-size: 0.7rem;
             padding: 3px 8px;
             border-radius: 10px;
             font-weight: bold;
             text-transform: uppercase;
-            border: 1px solid rgba(234, 179, 8, 0.3);
+            border: 1px solid rgba(244, 114, 182, 0.3);
         }
     </style>
 </head>
 
 <body>
-    <h1>⚡ Laboratorio: Logro "Avalancha Doméstica"</h1>
-    <p>Este logro (Color Amarillo / Rayo) premia el encadenar días seguidos superando la hora de tareas (activar Modo
-        Frenesí repetidamente).
-        El sonido debe evocar <b>velocidad extrema, alto voltaje, estática acumulada que explota, o un láser rompiendo
-            la barrera del sonido</b>.</p>
+    <h1>🤝 Laboratorio: Logro "Alma Caritativa"</h1>
+    <p>Este logro premia la generosidad: enviar regalos o RPC a otros integrantes en distintas semanas.
+        El sonido debe evocar <b>agradecimiento, calidez, amor, magia celestial y conexión humana</b>.</p>
 
     <div class="grid">
-        <div class="card" style="border-color: #eab308;">
-            <div class="badge">Eléctrico</div>
-            <h2>⚡ Opción A: Sobrecarga del Motor (Spin-up & Zap)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Como un motor de plasma que revoluciona
-                rapidísimo hacia agudos y explota en un arco eléctrico (ZAP). Muy sci-fi y frenético.</p>
-            <button onclick="playAvalancheA()">Cobrar Logro A</button>
+        <div class="card" style="border-color: #f472b6;">
+            <div class="badge">Mágico</div>
+            <h2>🤝 Opción A: Polvo de Hadas (Fairy Dust)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Una rápida y delicada cascada descendente
+                de campanillas brillantes. Suena a un hechizo de magia curativa en un juego clásico.</p>
+            <button onclick="playCharityA()">Cobrar Logro A</button>
         </div>
 
-        <div class="card" style="border-color: #ca8a04;">
-            <div class="badge">Aceleración</div>
-            <h2>⚡ Opción B: Derrape Estelar (Warp Speed)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Puro movimiento. Un ruido continuo de
-                sintetizador que se acelera con glissando exagerado subiendo escalas y explota en un eco gigante. Suena
-                loco y muy dopamínico.</p>
-            <button onclick="playAvalancheB()">Cobrar Logro B</button>
+        <div class="card" style="border-color: #ec4899;">
+            <div class="badge">Cálido</div>
+            <h2>🤝 Opción B: Abrazo Armónico (Warm Swell)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un suave y profundo acorde mayor de
+                sintetizador "pad" que crece lentamente y te envuelve, terminando en un ligero destello reconfortante.
+            </p>
+            <button onclick="playCharityB()">Cobrar Logro B</button>
         </div>
 
-        <div class="card" style="border-color: #a16207;">
-            <div class="badge">Explosivo</div>
-            <h2>⚡ Opción C: Impacto de Rayo (Thunder Strike)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Poder puro y de la naturaleza. Empieza con
-                un látigo agudo fulgurante (el rayo cayendo) e inmediatamente revienta en un grave estruendo de trueno
-                prolongado.</p>
-            <button onclick="playAvalancheC()">Cobrar Logro C</button>
+        <div class="card" style="border-color: #be185d;">
+            <div class="badge">Jubiloso</div>
+            <h2>🤝 Opción C: Sorpresa de Regalo (Gift Box)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Dos campanas grandes y alegres tocando en
+                intervalo de tercera (sonido clásico de "Ding-Dong" festivo) con mucho eco. Muy nostálgico.</p>
+            <button onclick="playCharityC()">Cobrar Logro C</button>
         </div>
     </div>
 
@@ -121,172 +118,132 @@
             return new AudioCtx();
         };
 
-        const createEcho = (ctx) => {
+        const createEcho = (ctx, time = 0.3, fbk = 0.3) => {
             const delay = ctx.createDelay();
-            delay.delayTime.value = 0.2;
+            delay.delayTime.value = time;
             const feedback = ctx.createGain();
-            feedback.gain.value = 0.4;
+            feedback.gain.value = fbk;
             delay.connect(feedback);
             feedback.connect(delay);
             return { delayNode: delay, outNode: delay };
         };
 
-        // Opción A: Sobrecarga (Ramp-up corto + ZAP eléctrico rápido)
-        const playAvalancheA = () => {
+        // Opción A: Polvo de Hadas (Arpegio C5, A4, F4, D4, B3 rápido con triángulo)
+        const playCharityA = () => {
             const ctx = getCtx();
-            const echo = createEcho(ctx);
+            const echo = createEcho(ctx, 0.15, 0.4); // Eco chispeante
 
-            // 1. Spin-up del motor (Acelerando rápido en 0.2s)
-            const oscMotor = ctx.createOscillator();
-            const gainMotor = ctx.createGain();
-            oscMotor.type = 'sawtooth';
+            // Notas pentatónicas descendentes mágicas
+            // C6, A5, G5, E5, C5, A4
+            const notes = [1046.50, 880.00, 783.99, 659.25, 523.25, 440.00];
+            const dropDuration = 0.08;
 
-            oscMotor.frequency.setValueAtTime(100, ctx.currentTime);
-            oscMotor.frequency.exponentialRampToValueAtTime(3000, ctx.currentTime + 0.2); // Sube loco
+            notes.forEach((freq, index) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
 
-            gainMotor.gain.setValueAtTime(0, ctx.currentTime);
-            gainMotor.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.1);
-            gainMotor.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                osc.type = 'triangle'; // Suave y limpio tipo campanilla
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + index * dropDuration);
 
-            const motorFilter = ctx.createBiquadFilter();
-            motorFilter.type = 'lowpass';
-            motorFilter.frequency.setValueAtTime(200, ctx.currentTime);
-            motorFilter.frequency.exponentialRampToValueAtTime(5000, ctx.currentTime + 0.2);
+                const time = ctx.currentTime + index * dropDuration;
 
-            oscMotor.connect(motorFilter);
-            motorFilter.connect(gainMotor);
-            gainMotor.connect(ctx.destination);
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(0.2, time + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3); // Cola brillante
 
-            oscMotor.start();
-            oscMotor.stop(ctx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
 
-            // 2. El "ZAP" (Ruido blanco fuertemente filtrado bajando, tipo láser retro)
-            const bufferSize = ctx.sampleRate * 0.3;
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-            const noiseZap = ctx.createBufferSource();
-            noiseZap.buffer = buffer;
-
-            const zapFilter = ctx.createBiquadFilter();
-            zapFilter.type = 'bandpass';
-            zapFilter.Q.value = 8; // Muy resonante
-            zapFilter.frequency.setValueAtTime(8000, ctx.currentTime + 0.2); // Súper agudo picudo
-            zapFilter.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3); // Cae a plomo
-
-            const gainZap = ctx.createGain();
-            gainZap.gain.setValueAtTime(0, ctx.currentTime + 0.2);
-            gainZap.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 0.21); // Golpe
-            gainZap.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-
-            noiseZap.connect(zapFilter);
-            zapFilter.connect(gainZap);
-            gainZap.connect(ctx.destination);
-            gainZap.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
-
-            noiseZap.start(ctx.currentTime + 0.2);
+                osc.start(time);
+                osc.stop(time + 0.35);
+            });
         };
 
-        // Opción B: Warp Speed (Arpegio rotísimo rapidísimo que difumina en ruido)
-        const playAvalancheB = () => {
+        // Opción B: Abrazo Armónico (Acorde mayor lento Cmaj7)
+        const playCharityB = () => {
             const ctx = getCtx();
-            const echo = createEcho(ctx);
-            echo.delayNode.delayTime.value = 0.1; // Eco súper corto dando sensación de tubo
-            echo.delayNode.connect(echo.outNode); // Mucho feedback para cola larga
+            const echo = createEcho(ctx, 0.4, 0.3); // Eco largo y espacioso
 
-            // "Blur" tonal de sintetizador acelerando de 0 a 100
-            const oscWarp = ctx.createOscillator();
-            const gainWarp = ctx.createGain();
-            oscWarp.type = 'square'; // Muy 8-bit / arcady
+            // Acorde de C Major 7 (C3, E3, G3, B3) para máxima calidez y nostalgia
+            const chord = [130.81, 164.81, 196.00, 246.94];
 
-            // Frecuencia que se vuelve loca hacia arriba
-            oscWarp.frequency.setValueAtTime(200, ctx.currentTime);
-            oscWarp.frequency.exponentialRampToValueAtTime(4000, ctx.currentTime + 0.3);
+            chord.forEach((freq, index) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
 
-            // Un LFO brutal afectando a la frecuencia para que suene "rugoso" (fm)
-            const lfo = ctx.createOscillator();
-            const lfoGain = ctx.createGain();
-            lfo.type = 'sine';
-            lfo.frequency.setValueAtTime(10, ctx.currentTime);
-            lfo.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3); // LFO que acelera también
-            lfoGain.gain.setValueAtTime(1000, ctx.currentTime);
+                osc.type = 'sine'; // Super suave (Pad synth)
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
 
-            lfo.connect(lfoGain);
-            lfoGain.connect(oscWarp.frequency);
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                // Crece lentamente "como un abrazo"
+                gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.6);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.5);
 
-            // Filtro que se abre (WahWah ultra fast)
-            const filterWarp = ctx.createBiquadFilter();
-            filterWarp.type = 'lowpass';
-            filterWarp.frequency.setValueAtTime(500, ctx.currentTime);
-            filterWarp.frequency.exponentialRampToValueAtTime(8000, ctx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
 
-            gainWarp.gain.setValueAtTime(0, ctx.currentTime);
-            gainWarp.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.1);
-            gainWarp.gain.setValueAtTime(0.3, ctx.currentTime + 0.3);
-            gainWarp.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8); // Desvanece en tubo
+                osc.start();
+                osc.stop(ctx.currentTime + 3.0);
+            });
 
-            oscWarp.connect(filterWarp);
-            filterWarp.connect(gainWarp);
-            gainWarp.connect(ctx.destination);
-            gainWarp.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
+            // Pequeña "sonrisa" final aguda (Chime)
+            const oscSmile = ctx.createOscillator();
+            const gainSmile = ctx.createGain();
+            oscSmile.type = 'triangle';
+            oscSmile.frequency.setValueAtTime(523.25 * 2, ctx.currentTime + 0.8); // C5
 
-            lfo.start();
-            lfo.stop(ctx.currentTime + 0.8);
-            oscWarp.start();
-            oscWarp.stop(ctx.currentTime + 0.8);
+            gainSmile.gain.setValueAtTime(0, ctx.currentTime + 0.8);
+            gainSmile.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.9);
+            gainSmile.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
+
+            oscSmile.connect(gainSmile);
+            gainSmile.connect(ctx.destination);
+            gainSmile.connect(echo.delayNode);
+
+            oscSmile.start(ctx.currentTime + 0.8);
+            oscSmile.stop(ctx.currentTime + 2.5);
         };
 
-        // Opción C: Impacto de Trueno (Látigo agudísimo + Estruendo grave y ruidoso)
-        const playAvalancheC = () => {
+        // Opción C: Sorpresa de Regalo (Ding-Dong Festivo)
+        const playCharityC = () => {
             const ctx = getCtx();
-            const echo = createEcho(ctx);
-            echo.delayNode.delayTime.value = 0.4;
+            const echo = createEcho(ctx, 0.25, 0.2); // Sala mediana
 
-            // 1. Chispa del Relámpago (High Frequency transient)
-            const oscSpark = ctx.createOscillator();
-            const gainSpark = ctx.createGain();
-            oscSpark.type = 'triangle';
-            oscSpark.frequency.setValueAtTime(8000, ctx.currentTime);
-            oscSpark.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 0.1);
+            // Ding (C5)
+            const oscDing = ctx.createOscillator();
+            const gainDing = ctx.createGain();
+            oscDing.type = 'sine';
+            oscDing.frequency.setValueAtTime(523.25, ctx.currentTime);
 
-            gainSpark.gain.setValueAtTime(0, ctx.currentTime);
-            gainSpark.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.01);
-            gainSpark.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+            gainDing.gain.setValueAtTime(0, ctx.currentTime);
+            gainDing.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+            gainDing.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
 
-            oscSpark.connect(gainSpark);
-            gainSpark.connect(ctx.destination);
-            gainSpark.connect(echo.delayNode);
-            oscSpark.start();
-            oscSpark.stop(ctx.currentTime + 0.2);
+            oscDing.connect(gainDing);
+            gainDing.connect(ctx.destination);
+            gainDing.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
 
-            // 2. Estruendo / Trueno
-            // Generador de ruido profundo (Lowpass muy fuerte)
-            const bufferSize = ctx.sampleRate * 2.0; // Largo
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            oscDing.start();
+            oscDing.stop(ctx.currentTime + 0.8);
 
-            const noiseRumble = ctx.createBufferSource();
-            noiseRumble.buffer = buffer;
+            // Dong (E5) una tercera mayor
+            const oscDong = ctx.createOscillator();
+            const gainDong = ctx.createGain();
+            oscDong.type = 'sine';
+            oscDong.frequency.setValueAtTime(659.25, ctx.currentTime + 0.2); // Retrasado un poco
 
-            const filterRumble = ctx.createBiquadFilter();
-            filterRumble.type = 'lowpass';
-            filterRumble.frequency.setValueAtTime(100, ctx.currentTime + 0.05); // Empieza retumbando
-            filterRumble.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.2); // Crece
-            filterRumble.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 1.5); // Muere
+            gainDong.gain.setValueAtTime(0, ctx.currentTime + 0.2);
+            gainDong.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.25);
+            gainDong.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
 
-            const gainRumble = ctx.createGain();
-            gainRumble.gain.setValueAtTime(0, ctx.currentTime + 0.05);
-            gainRumble.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.1); // El boom a destiempo del destello
-            gainRumble.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
+            oscDong.connect(gainDong);
+            gainDong.connect(ctx.destination);
+            gainDong.connect(echo.delayNode);
 
-            noiseRumble.connect(filterRumble);
-            filterRumble.connect(gainRumble);
-            gainRumble.connect(ctx.destination);
-            gainRumble.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
-
-            noiseRumble.start(ctx.currentTime + 0.05);
+            oscDong.start(ctx.currentTime + 0.2);
+            oscDong.stop(ctx.currentTime + 1.2);
         };
     </script>
 </body>
