@@ -539,7 +539,8 @@ export default function App() {
   }, [activeTask]);
 
   const suggestions = useMemo(() => {
-    const names = chores.map(c => c.taskName);
+    const validChores = chores.filter(c => !c.isGift);
+    const names = validChores.map(c => c.taskName);
     return [...new Set(names)].slice(0, 6);
   }, [chores]);
 
@@ -552,15 +553,17 @@ export default function App() {
     if (!taskInput || activeTask) return [];
     const lowerInput = taskInput.toLowerCase().trim();
     if (!lowerInput) return [];
-    const uniqueTasks = [...new Set(chores.map(c => c.taskName))];
+    const validChores = chores.filter(c => !c.isGift);
+    const uniqueTasks = [...new Set(validChores.map(c => c.taskName))];
     const matches = uniqueTasks.filter(t => t.toLowerCase().includes(lowerInput) && t.toLowerCase() !== lowerInput);
     return matches.slice(0, 5);
   }, [taskInput, activeTask, chores]);
 
   const hotTasks = useMemo(() => {
-    const uniqueTasks = [...new Set(chores.map(c => c.taskName))];
+    const validChores = chores.filter(c => !c.isGift);
+    const uniqueTasks = [...new Set(validChores.map(c => c.taskName))];
     return uniqueTasks.map(t => {
-      const taskChores = chores.filter(c => c.taskName === t);
+      const taskChores = validChores.filter(c => c.taskName === t);
       return taskChores.sort((a, b) => b.timestamp - a.timestamp)[0];
     }).filter(c => c && c.timestamp < Date.now() - 60000).map(c => {
       const daysSince = (Date.now() - c.timestamp) / (1000 * 3600 * 24);
