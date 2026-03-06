@@ -6,7 +6,8 @@ import {
   Plus, User, CheckCircle2, X, Check, Moon, Sun, Edit2, Trash2, History,
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
   Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause, ShoppingCart,
-  GripVertical, Store, Gift, Flame, Zap, Star, Tag, ShoppingBag, Settings, Shield, Swords
+  GripVertical, Store, Gift, Flame, Zap, Star, Tag, ShoppingBag, Settings, Shield, Swords,
+  Target, Crosshair, HeartHandshake
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { initializeApp } from 'firebase/app';
@@ -260,6 +261,7 @@ export default function App() {
   const [p2pWagerDeadline, setP2pWagerDeadline] = useState('');
   const [showActiveWagerModal, setShowActiveWagerModal] = useState(null);
   const [wagerWinner, setWagerWinner] = useState('');
+  const [activeAchievementModal, setActiveAchievementModal] = useState(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -437,6 +439,132 @@ export default function App() {
   }, [chores, userName]);
   const frenzyProgress = Math.min((userTotalToday / 3600) * 100, 100);
   const inFrenzyMode = userTotalToday >= 3600;
+
+  const achievementsState = useMemo(() => {
+    if (!userName || !chores.length) return [];
+    const claimed = usersData[userName]?.achievements || {};
+    const userChores = chores.filter(c => c.userName === userName && !c.isGift);
+    const chronoChores = [...userChores].sort((a, b) => a.timestamp - b.timestamp);
+
+    const getStreak = (byDayMap) => {
+      let streak = 0;
+      let d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      d.setDate(d.getDate() - 1);
+      const yesterday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+      let current = new Date();
+      if (!byDayMap[today]) current.setDate(current.getDate() - 1);
+
+      while (true) {
+        const ds = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+        if (byDayMap[ds]) {
+          streak++;
+          current.setDate(current.getDate() - 1);
+        } else break;
+      }
+      return { streak, isAlert: !byDayMap[today] && byDayMap[yesterday] };
+    };
+
+    // 1. Fuego Inextinguible
+    const daysGlobal = {};
+    chronoChores.forEach(c => { daysGlobal[c.dateString] = true; });
+    const fuego = getStreak(daysGlobal);
+
+    // 2. Constancia
+    let constancia = { streak: 0, isAlert: false };
+    const tasksByName = {};
+    chronoChores.forEach(c => {
+      if (!tasksByName[c.taskName]) tasksByName[c.taskName] = {};
+      tasksByName[c.taskName][c.dateString] = true;
+    });
+    for (const tName in tasksByName) {
+      const s = getStreak(tasksByName[tName]);
+      if (s.streak > constancia.streak) constancia = s;
+    }
+
+    // 3. Cazarrecompensas (Multiplier inference)
+    const daysBounty = {};
+    chronoChores.forEach(c => {
+      const ratio = c.durationSeconds > 0 ? c.rpcEarned / (c.durationSeconds / 900) : 0;
+      if ((ratio >= 1.05 && ratio <= 1.95) || ratio >= 2.05) daysBounty[c.dateString] = true;
+    });
+    const caza = getStreak(daysBounty);
+
+    // 4. Avalancha Doméstica (Frenzy >= 3600s/day)
+    const durByDay = {};
+    chronoChores.forEach(c => {
+      durByDay[c.dateString] = (durByDay[c.dateString] || 0) + c.durationSeconds;
+    });
+    const daysFrenzy = {};
+    for (const d in durByDay) { if (durByDay[d] >= 3600) daysFrenzy[d] = true; }
+    const avalancha = getStreak(daysFrenzy);
+
+    // 5. Alma Caritativa (P2P Gifts based on distinct weeks)
+    const giftsSent = chores.filter(c => c.isGift && c.sender === userName);
+    const weeksWithGifts = new Set();
+    giftsSent.forEach(c => {
+      const d = new Date(c.timestamp);
+      // get complete week string e.g. "2023-W45"
+      const dCopy = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      dCopy.setUTCDate(dCopy.getUTCDate() + 4 - (dCopy.getUTCDay() || 7));
+      const yearStart = new Date(Date.UTC(dCopy.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil((((dCopy - yearStart) / 86400000) + 1) / 7);
+      weeksWithGifts.add(`${dCopy.getUTCFullYear()}-W${weekNo}`);
+    });
+    const almaNvl = weeksWithGifts.size;
+
+    // 6. Leyenda del Hogar (10h blocks)
+    const totalHours = chronoChores.reduce((sum, c) => sum + c.durationSeconds, 0) / 3600;
+    const leyendaNvl = Math.floor(totalHours / 10);
+
+    const calcRewardScale = (streak) => Math.min(0.1 * streak, 1.0);
+
+    return [
+      {
+        id: 'streak_global', title: 'Fuego Inextinguible', icon: 'Flame', desc: 'Días consecutivos completando al menos 1 tarea.',
+        color: 'text-orange-500', shadow: 'shadow-orange-500', bg: 'bg-orange-100', darkBg: 'dark:bg-orange-900/30', border: 'border-orange-500',
+        actual: fuego.streak, isAlert: fuego.isAlert,
+        claimedAt: claimed.streak_global || 0,
+        reward: calcRewardScale(fuego.streak)
+      },
+      {
+        id: 'streak_specific', title: 'Constancia', icon: 'Target', desc: 'Días consecutivos completando exactamente la misma tarea.',
+        color: 'text-emerald-500', shadow: 'shadow-emerald-500', bg: 'bg-emerald-100', darkBg: 'dark:bg-emerald-900/30', border: 'border-emerald-500',
+        actual: constancia.streak, isAlert: constancia.isAlert,
+        claimedAt: claimed.streak_specific || 0,
+        reward: calcRewardScale(constancia.streak)
+      },
+      {
+        id: 'streak_bounty', title: 'Cazarrecompensas', icon: 'Crosshair', desc: 'Días consecutivos completando tareas que estaban "En busca y captura".',
+        color: 'text-rose-500', shadow: 'shadow-rose-500', bg: 'bg-rose-100', darkBg: 'dark:bg-rose-900/30', border: 'border-rose-500',
+        actual: caza.streak, isAlert: caza.isAlert,
+        claimedAt: claimed.streak_bounty || 0,
+        reward: calcRewardScale(caza.streak)
+      },
+      {
+        id: 'streak_frenzy', title: 'Avalancha Doméstica', icon: 'Zap', desc: 'Días consecutivos activando el "Modo Frenesí" (+60 mins/día).',
+        color: 'text-yellow-500', shadow: 'shadow-yellow-500', bg: 'bg-yellow-100', darkBg: 'dark:bg-yellow-900/30', border: 'border-yellow-500',
+        actual: avalancha.streak, isAlert: avalancha.isAlert,
+        claimedAt: claimed.streak_frenzy || 0,
+        reward: calcRewardScale(avalancha.streak)
+      },
+      {
+        id: 'p2p_gifts', title: 'Alma Caritativa', icon: 'HeartHandshake', desc: 'Semanas distintas en las que has enviado al menos un regalo de RPC.',
+        color: 'text-pink-500', shadow: 'shadow-pink-500', bg: 'bg-pink-100', darkBg: 'dark:bg-pink-900/30', border: 'border-pink-500',
+        actual: almaNvl, isAlert: false,
+        claimedAt: claimed.p2p_gifts || 0,
+        reward: 2.0
+      },
+      {
+        id: 'total_hours', title: 'Leyenda del Hogar', icon: 'Award', desc: 'Cada 10 horas totales invertidas en hacer de tu hogar un lugar mejor.',
+        color: 'text-indigo-500', shadow: 'shadow-indigo-500', bg: 'bg-indigo-100', darkBg: 'dark:bg-indigo-900/30', border: 'border-indigo-500',
+        actual: leyendaNvl, isAlert: false,
+        claimedAt: claimed.total_hours || 0,
+        reward: 10.0
+      }
+    ];
+  }, [chores, userName, usersData]);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type, visible: true });
@@ -882,6 +1010,42 @@ export default function App() {
     if (window.confirm(`¿Añadir/Quitar ${delta > 0 ? '+' + delta : delta} RPC a ${targetUser}? (Nuevo balance: ${newVal.toFixed(2)})`)) {
       await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', targetUser), { rpcBalance: newVal }, { merge: true });
       showToast('Balance actualizado.', 'success');
+      setShowP2PModal(true);
+    }
+  };
+
+  const claimAchievement = async (ack) => {
+    if (!userName || !ack || ack.actual <= ack.claimedAt) return;
+
+    // We are passing directly the object from achievementsState
+    const newTier = ack.claimedAt + 1;
+    let earned = ack.reward;
+    if (ack.id === 'total_hours') earned = 10.0;
+    if (ack.id === 'p2p_gifts') earned = 2.0;
+
+    try {
+      const myBalance = usersData[userName]?.rpcBalance || 0;
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName), {
+        rpcBalance: myBalance + earned,
+        achievements: { [`${ack.id}`]: newTier }
+      }, { merge: true });
+
+      await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'moments'), {
+        icon: '🏆',
+        itemName: `¡${ack.title} Nivel ${newTier}! (+${earned.toFixed(1)} RPC)`,
+        owner: userName,
+        redeemedAt: Date.now()
+      });
+
+      setActiveAchievementModal(null);
+      playCashSound();
+      showToast(`¡Insignia reclamada! +${earned.toFixed(1)} RPC`, 'success');
+      import('canvas-confetti').then((confetti) => {
+        confetti.default({ particleCount: 400, spread: 180, origin: { y: 0.5 }, colors: ['#f59e0b', '#fbbf24', '#fcd34d', '#ffffff'], zIndex: 1200 });
+      });
+    } catch (err) {
+      console.error("Error claiming achievement:", err);
+      showToast('Error al reclamar la insignia', 'error');
     }
   };
 
@@ -1742,6 +1906,75 @@ export default function App() {
               )}
             </div>
 
+            {/* CARRUSEL INFINITO DE INSIGNIAS (Google Maps Style) */}
+            <div className="mt-2">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest pl-2 mb-3 flex items-center gap-2">
+                <Target size={14} /> Mis Insignias
+              </h3>
+              <div className="flex overflow-x-auto gap-4 pb-4 -mx-2 px-2 no-scrollbar snap-x">
+                {achievementsState.map((ack) => {
+                  const isReady = ack.actual > ack.claimedAt;
+                  const currentTier = ack.claimedAt; // Lo que ya tiene asegurado
+                  let nextGoal = currentTier + 1;
+                  if (ack.id === 'total_hours' && ack.actual === 0 && ack.claimedAt === 0) nextGoal = 1;
+
+                  // Calcular progresión visual
+                  let progressPercent = 0;
+                  if (ack.id === 'streak_global' || ack.id === 'streak_specific' || ack.id === 'streak_bounty' || ack.id === 'streak_frenzy' || ack.id === 'total_hours' || ack.id === 'p2p_gifts') {
+                    progressPercent = (ack.actual / nextGoal) * 100;
+                  }
+                  if (progressPercent > 100) progressPercent = 100;
+
+                  // Icon Component
+                  let IconCmp = Award;
+                  if (ack.icon === 'Flame') IconCmp = Flame;
+                  if (ack.icon === 'Target') IconCmp = Target;
+                  if (ack.icon === 'Crosshair') IconCmp = Crosshair;
+                  if (ack.icon === 'Zap') IconCmp = Zap;
+                  if (ack.icon === 'HeartHandshake') IconCmp = HeartHandshake;
+
+                  const dashArray = `${progressPercent}, 100`;
+
+                  return (
+                    <div
+                      key={ack.id}
+                      onClick={() => setActiveAchievementModal(ack)}
+                      className="shrink-0 snap-start flex flex-col items-center gap-2 cursor-pointer group"
+                    >
+                      <div className={`relative w-20 h-20 rounded-full flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm border ${ack.border} transition-all duration-300 ${isReady ? `scale-110 ${ack.shadow} shadow-lg ring-4 ring-offset-2 ring-orange-400/50 dark:ring-offset-slate-950` : 'hover:scale-105'} ${ack.isAlert && !isReady ? 'animate-pulse ring-4 ring-red-500/50' : ''}`}>
+
+                        {/* SVGs para el anillo de progreso estilo Google Maps */}
+                        <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full -rotate-90">
+                          <circle strokeDasharray="100, 100" className="text-slate-100 dark:text-slate-800 stroke-current" strokeWidth="2.5" fill="none" r="16" cx="18" cy="18" />
+                          <circle
+                            strokeDasharray={dashArray}
+                            className={`${ack.color} stroke-current transition-all duration-1000 ease-out`}
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            fill="none"
+                            r="16" cx="18" cy="18"
+                          />
+                        </svg>
+
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center relative z-10 ${isReady ? ack.bg : 'bg-slate-100 dark:bg-slate-800'} ${isReady ? ack.darkBg : ''}`}>
+                          <IconCmp size={24} className={`${isReady ? ack.color : 'text-slate-400'} ${isReady ? 'animate-bounce' : ''}`} />
+                        </div>
+
+                        {/* Alerta Roja si pierde la racha */}
+                        {ack.isAlert && !isReady && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] text-white font-bold animate-pulse z-20">!</div>
+                        )}
+                      </div>
+                      <div className="text-center w-24">
+                        <p className={`text-[9px] font-bold uppercase truncate ${isReady ? ack.color : 'text-slate-500'}`}>{ack.title}</p>
+                        <p className="text-[10px] font-black text-slate-400">Nvl. {currentTier}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Navegación de sección */}
             <div className={`flex rounded-xl p-1.5 ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-white shadow-sm border border-slate-100'}`}>
               {[
@@ -1883,56 +2116,59 @@ export default function App() {
               </div>
             )}
           </div>
-        )}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6 animate-in fade-in">
-            <div className="bg-gradient-to-br from-indigo-600 to-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
-              <Award className="absolute -top-4 -right-4 text-white/10" size={120} />
+        )
+        }
+        {
+          activeTab === 'dashboard' && (
+            <div className="space-y-6 animate-in fade-in">
+              <div className="bg-gradient-to-br from-indigo-600 to-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
+                <Award className="absolute -top-4 -right-4 text-white/10" size={120} />
 
-              <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-2">Esfuerzo del Mes (Equipo)</p>
-              <h2 className="text-4xl font-bold mb-6">{formatTime(stats.total)}</h2>
-              <div className="space-y-5 relative z-10">
-                {stats.personData.map((p) => (
-                  <div key={p.name} className="cursor-pointer" onClick={() => setExpandedUser(expandedUser === p.name ? null : p.name)}>
-                    <div className="flex justify-between text-xs mb-2 font-bold uppercase tracking-tight">
-                      <span className="flex items-center gap-1">{p.name} {expandedUser === p.name ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
-                      <span>{formatTime(p.seconds)} ({p.percentage}%)</span>
-                    </div>
-                    <div className="h-2.5 bg-white/20 rounded-full overflow-hidden mb-1">
-                      <div className="h-full bg-white transition-all duration-1000 shadow-sm" style={{ width: `${p.percentage}%` }}></div>
-                    </div>
-                    {expandedUser === p.name && (
-                      <div className="mt-4 bg-black/20 rounded-2xl p-4 space-y-3 animate-in slide-in-from-top-2">
-                        {p.tasks.map(t => (
-                          <div key={t.name} className="flex justify-between text-[10px] items-center uppercase font-bold tracking-tight">
-                            <span className="text-white/80 truncate w-32">{t.name}</span>
-                            <span className="font-mono">{formatTime(t.seconds)}</span>
-                          </div>
-                        ))}
+                <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-2">Esfuerzo del Mes (Equipo)</p>
+                <h2 className="text-4xl font-bold mb-6">{formatTime(stats.total)}</h2>
+                <div className="space-y-5 relative z-10">
+                  {stats.personData.map((p) => (
+                    <div key={p.name} className="cursor-pointer" onClick={() => setExpandedUser(expandedUser === p.name ? null : p.name)}>
+                      <div className="flex justify-between text-xs mb-2 font-bold uppercase tracking-tight">
+                        <span className="flex items-center gap-1">{p.name} {expandedUser === p.name ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
+                        <span>{formatTime(p.seconds)} ({p.percentage}%)</span>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-3xl border shadow-sm`}>
-              <h3 className="text-sm font-bold mb-6 flex items-center gap-2 uppercase tracking-widest"><BarChart3 size={18} className="text-indigo-500" /> Distribución Global</h3>
-              <div className="space-y-6">
-                {stats.taskDistribution.length === 0 ? <p className="text-center text-xs text-slate-500 italic py-4">Sin datos.</p> : stats.taskDistribution.map(task => (
-                  <div key={task.name} className="flex items-center gap-4">
-                    <div className="w-24 shrink-0"><p className="text-xs font-bold truncate leading-none mb-1">{task.name}</p><p className="text-[10px] text-slate-500">{formatTime(task.seconds)}</p></div>
-                    <div className="flex-1 h-4 bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden flex">
-                      <div className="h-full bg-indigo-500/80 transition-all duration-1000" style={{ width: `${task.percentage}%` }}></div>
+                      <div className="h-2.5 bg-white/20 rounded-full overflow-hidden mb-1">
+                        <div className="h-full bg-white transition-all duration-1000 shadow-sm" style={{ width: `${p.percentage}%` }}></div>
+                      </div>
+                      {expandedUser === p.name && (
+                        <div className="mt-4 bg-black/20 rounded-2xl p-4 space-y-3 animate-in slide-in-from-top-2">
+                          {p.tasks.map(t => (
+                            <div key={t.name} className="flex justify-between text-[10px] items-center uppercase font-bold tracking-tight">
+                              <span className="text-white/80 truncate w-32">{t.name}</span>
+                              <span className="font-mono">{formatTime(t.seconds)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <span className="w-8 text-right text-[10px] font-bold text-slate-400">{task.percentage}%</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-6 rounded-3xl border shadow-sm`}>
+                <h3 className="text-sm font-bold mb-6 flex items-center gap-2 uppercase tracking-widest"><BarChart3 size={18} className="text-indigo-500" /> Distribución Global</h3>
+                <div className="space-y-6">
+                  {stats.taskDistribution.length === 0 ? <p className="text-center text-xs text-slate-500 italic py-4">Sin datos.</p> : stats.taskDistribution.map(task => (
+                    <div key={task.name} className="flex items-center gap-4">
+                      <div className="w-24 shrink-0"><p className="text-xs font-bold truncate leading-none mb-1">{task.name}</p><p className="text-[10px] text-slate-500">{formatTime(task.seconds)}</p></div>
+                      <div className="flex-1 h-4 bg-slate-100 dark:bg-slate-800 rounded-md overflow-hidden flex">
+                        <div className="h-full bg-indigo-500/80 transition-all duration-1000" style={{ width: `${task.percentage}%` }}></div>
+                      </div>
+                      <span className="w-8 text-right text-[10px] font-bold text-slate-400">{task.percentage}%</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
+          )
+        }
+      </main >
 
       <nav className={`${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-lg fixed bottom-0 w-full border-t flex justify-around p-3 pb-safe z-30`}>
         {[
@@ -1953,447 +2189,549 @@ export default function App() {
       </nav>
 
       {/* MODALS */}
-      {modalMode && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8 max-h-[90vh] overflow-y-auto pb-safe`}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="font-bold text-xl">{modalMode === 'edit' ? 'Editar Registro' : 'Entrada Manual'}</h2>
-              <button onClick={() => setModalMode(null)} className="p-2 text-slate-400"><X size={20} /></button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tarea</label>
-                <input type="text" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all`} value={manualData.name} onChange={(e) => setManualData({ ...manualData, name: e.target.value })} />
-
-                {suggestions.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
-                    <div className="flex flex-wrap gap-2">
-                      {suggestions.map(s => <button key={s} onClick={() => setManualData({ ...manualData, name: s })} className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>{s}</button>)}
-                    </div>
-                  </div>
-                )}
+      {
+        modalMode && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8 max-h-[90vh] overflow-y-auto pb-safe`}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="font-bold text-xl">{modalMode === 'edit' ? 'Editar Registro' : 'Entrada Manual'}</h2>
+                <button onClick={() => setModalMode(null)} className="p-2 text-slate-400"><X size={20} /></button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Horas</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.hours} onChange={(e) => setManualData({ ...manualData, hours: e.target.value })} /></div>
-                <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Minutos</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.minutes} onChange={(e) => setManualData({ ...manualData, minutes: e.target.value })} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Realizado por:</label>
-                  <select className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all`} value={manualData.author || userName} onChange={(e) => setManualData({ ...manualData, author: e.target.value })}>
-                    {Object.keys(usersData).map(u => <option key={u} value={u}>{u}</option>)}
-                  </select>
-                </div>
-                <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha</label><input type="date" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.date} onChange={(e) => setManualData({ ...manualData, date: e.target.value })} /></div>
-              </div>
-              <div className="flex gap-2 w-full mt-4">
-                {modalMode === 'edit' && editingItem && (
-                  <button onClick={() => deleteChore(editingItem.id)} className="w-16 bg-red-100 text-red-600 rounded-2xl flex justify-center items-center hover:bg-red-200 active:scale-95 transition-all shrink-0">
-                    <Trash2 size={20} />
-                  </button>
-                )}
-                <button onClick={handleSaveManual} className="flex-1 bg-indigo-600 text-white font-bold py-4 rounded-2xl hover:bg-indigo-700 active:scale-95 transition-all">Guardar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showAdminModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-md rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8 max-h-[90vh] overflow-y-auto no-scrollbar`}>
-            <div className="flex justify-between items-center mb-6 sticky top-0 bg-inherit py-2 z-10">
-              <h2 className="font-black text-xl flex items-center gap-2"><Shield size={22} className="text-indigo-500" /> Configuración Admin</h2>
-              <button onClick={() => setShowAdminModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
-            </div>
-
-            <div className="space-y-6">
-              <section>
-                <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Carteras Locales</h3>
-                  <button onClick={handleAdminAddUser} className="text-[10px] font-bold uppercase text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-1 transition-colors"><Plus size={10} strokeWidth={3} /> Añadir Cuenta</button>
-                </div>
-                <div className="space-y-2">
-                  {Object.keys(usersData).map(u => (
-                    <div key={u} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                      <div>
-                        <p className="font-bold text-sm tracking-tight">{u}</p>
-                        <p className="text-[10px] text-orange-500 font-bold">{usersData[u].rpcBalance?.toFixed(2) || 0} RPC</p>
-                      </div>
-                      <div className="flex gap-1">
-                        <button onClick={() => handleAdminRPC(u)} className="px-3 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center transition-colors hover:bg-indigo-200 dark:hover:bg-indigo-900/50"><Edit2 size={12} className="mr-1" /> Editar RPC</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">Tienda de Premios</h3>
-                <div className="space-y-2">
-                  {storeItems.map(item => (
-                    <div key={item.id} className={`p-3 rounded-xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                      {editingStoreItem?.id === item.id ? (
-                        <div className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
-                          <div className="flex gap-2">
-                            <input type="text" maxLength="2" className={`w-12 text-center rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.icon} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, icon: e.target.value })} />
-                            <input type="text" className={`flex-1 min-w-0 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.name} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, name: e.target.value })} />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input type="number" min="1" className={`w-20 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600 text-orange-400' : 'bg-white border-slate-300 text-orange-600'} px-2 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.cost} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, cost: e.target.value })} />
-                            <span className="text-[10px] uppercase font-bold text-slate-400 mr-auto">RPC</span>
-
-                            <button onClick={() => setEditingStoreItem(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Cancelar</button>
-                            <button onClick={handleUpdateStoreItem} className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 transition shadow-sm">Guardar</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between">
-                          {editingStoreItem?.id === item.id ? (
-                            <div className="flex-1 space-y-3 animate-in fade-in zoom-in-95 duration-200">
-                              <div className="flex gap-2">
-                                <input type="text" maxLength="2" className={`w-12 text-center rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.icon} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, icon: e.target.value })} />
-                                <input type="text" className={`flex-1 min-w-0 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.name} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, name: e.target.value })} />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <input type="number" min="1" className={`w-20 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600 text-orange-400' : 'bg-white border-slate-300 text-orange-600'} px-2 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.cost} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, cost: e.target.value })} />
-                                <span className="text-[10px] uppercase font-bold text-slate-400 mr-auto">RPC</span>
-
-                                <button onClick={() => setEditingStoreItem(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Cancelar</button>
-                                <button onClick={handleUpdateStoreItem} className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 transition shadow-sm">Guardar</button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex items-center gap-3">
-                                <span className="text-2xl">{item.icon}</span>
-                                <div>
-                                  <p className="font-bold text-sm leading-tight">{item.name}</p>
-                                  <p className="text-[10px] font-medium text-slate-500">{item.costRPC} RPC</p>
-                                </div>
-                              </div>
-                              <div className="flex gap-1">
-                                <button onClick={() => setEditingStoreItem({ id: item.id, name: item.name, cost: item.costRPC, icon: item.icon })} className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"><Edit2 size={16} /></button>
-                                <button onClick={() => handleAdminDeleteStoreItem(item.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><Trash2 size={16} /></button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {storeItems.length === 0 && <p className="text-xs text-slate-500 italic">No hay premios creados.</p>}
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">Cupones Activos (Toda la familia)</h3>
-                <div className="space-y-2">
-                  {coupons.map(coupon => (
-                    <div key={coupon.id} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                      <div className="flex items-center gap-3 w-3/4">
-                        <span className="text-xl">{coupon.icon}</span>
-                        <div className="truncate">
-                          <p className="font-bold text-sm tracking-tight truncate">{coupon.itemName}</p>
-                          <p className="text-[10px] font-bold text-slate-500">Pertenece a {coupon.owner}</p>
-                        </div>
-                      </div>
-                      <button onClick={() => handleAdminDeleteCoupon(coupon.id)} className="text-[10px] font-bold uppercase text-red-500 px-2 py-1 rounded bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors">Revocar</button>
-                    </div>
-                  ))}
-                  {coupons.length === 0 && <p className="text-xs text-slate-500 italic">Nadie tiene cupones activos.</p>}
-                </div>
-              </section>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showItemModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8`}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="font-bold text-xl flex items-center gap-2"><Plus size={20} className="text-orange-500" /> Añadir a la Tienda</h2>
-              <button onClick={() => setShowItemModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Nombre del Favor / Premio</label>
-                <input type="text" placeholder="Ej: Especial Desayuno" className={`w-full p-4 rounded-2xl border mt-1 text-base font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Coste (RPC)</label>
-                  <input type="number" min="1" className={`w-full p-4 rounded-2xl border mt-1 text-base font-bold text-orange-500 ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={newItem.cost} onChange={(e) => setNewItem({ ...newItem, cost: e.target.value })} />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Emoji / Icono</label>
-                  <input type="text" maxLength="2" placeholder="🎁" className={`w-full p-4 rounded-2xl border mt-1 text-center text-2xl ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={newItem.icon} onChange={(e) => setNewItem({ ...newItem, icon: e.target.value })} />
-                </div>
-              </div>
-
-              <button onClick={handleSaveStoreItem} className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl mt-6 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-[1.02] active:scale-95 transition-all">
-                Publicar en Tienda
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showSupermarketModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8 overflow-y-auto max-h-[80vh] no-scrollbar`}>
-            <div className="flex justify-between items-center mb-6 sticky top-0 bg-inherit z-20 pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h2 className="font-bold text-xl flex items-center gap-2"><Store size={20} className="text-indigo-500" /> Supermercados</h2>
-              <button onClick={() => setShowSupermarketModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
-            </div>
-
-            <button onClick={addSupermarket} className="w-full mb-6 border-2 border-dashed border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-500 font-bold py-3 rounded-2xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-2">
-              <Plus size={16} strokeWidth={3} /> Añadir Nueva Tienda
-            </button>
-
-            <DragDropContext onDragEnd={handleDragEndSupermarkets}>
-              <Droppable droppableId="supermarkets-list">
-                {(provided) => (
-                  <div className="space-y-3" {...provided.droppableProps} ref={provided.innerRef}>
-                    {supermarkets.length === 0 && <p className="text-center text-xs text-slate-400 italic py-4">No hay tiendas.</p>}
-                    {supermarkets.map((store, index) => (
-                      <Draggable key={store.id} draggableId={store.id} index={index}>
-                        {(provided) => {
-                          const activeColor = store.color || 'slate';
-                          return (
-                            <div ref={provided.innerRef} {...provided.draggableProps} className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} p-3 rounded-2xl border flex flex-col gap-3 group relative`}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div {...provided.dragHandleProps} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 active:cursor-grabbing cursor-grab touch-none p-1">
-                                    <GripVertical size={16} />
-                                  </div>
-                                  <span className="font-bold text-sm truncate uppercase tracking-widest">{store.name}</span>
-                                </div>
-                                <button onClick={(e) => deleteSupermarket(e, store.id)} className="p-1.5 text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
-                              </div>
-
-                              <div className="flex items-center justify-between pl-8 pr-1">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">Color:</p>
-                                <div className="flex gap-2">
-                                  {['slate', ...USER_COLORS.map(c => c.id)].map(c => {
-                                    const uiColor = c === 'slate' ? (isDarkMode ? 'bg-slate-600' : 'bg-slate-400') : USER_COLORS.find(uc => uc.id === c)?.bg;
-                                    return (
-                                      <button
-                                        key={c}
-                                        onClick={() => updateSupermarketColor(store.id, c)}
-                                        className={`w-5 h-5 rounded-full ${uiColor} transition-transform ${activeColor === c ? 'scale-125 ring-2 ring-offset-1 ' + (isDarkMode ? 'ring-offset-slate-800 ring-white' : 'ring-offset-slate-50 ring-slate-400') : 'opacity-50 hover:opacity-100 hover:scale-110'}`}
-                                      />
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        }}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-          </div>
-        </div>
-      )}
-
-      {showP2PModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8`}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="font-bold text-xl flex items-center gap-2">Interactuar con {selectedPeer}</h2>
-              <button onClick={() => { setShowP2PModal(false); setP2pMode(null); }} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
-            </div>
-
-            {!p2pMode ? (
               <div className="space-y-4">
-                <button onClick={() => setP2pMode('send')} className="w-full p-4 rounded-2xl border-2 border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 font-bold transition-colors flex items-center justify-center gap-2 text-lg">
-                  💸 Enviar RPC
-                </button>
-                <button onClick={() => setP2pMode('wager')} className="w-full p-4 rounded-2xl border-2 border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold transition-colors flex items-center justify-center gap-2 text-lg">
-                  🤝 Proponer Apuesta
-                </button>
-              </div>
-            ) : p2pMode === 'send' ? (
-              <form onSubmit={handleSendRPC} className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Cantidad de RPC a enviar</label>
-                  <input type="number" min="0.5" step="0.5" autoFocus className={`w-full p-4 rounded-2xl border mt-1 text-2xl text-center font-black text-orange-500 ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={p2pAmount} onChange={e => setP2pAmount(e.target.value)} />
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tarea</label>
+                  <input type="text" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all`} value={manualData.name} onChange={(e) => setManualData({ ...manualData, name: e.target.value })} />
+
+                  {suggestions.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Frecuentes</p>
+                      <div className="flex flex-wrap gap-2">
+                        {suggestions.map(s => <button key={s} onClick={() => setManualData({ ...manualData, name: s })} className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-100'}`}>{s}</button>)}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Mensaje (Opcional)</label>
-                  <input type="text" placeholder="Ej: Por ayudarme hoy..." className={`w-full p-3 rounded-2xl border mt-1 font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={p2pMessage} onChange={e => setP2pMessage(e.target.value)} />
-                </div>
-                <button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-lg mt-2">
-                  Enviar RPC
-                </button>
-                <button type="button" onClick={() => setP2pMode(null)} className="w-full py-2 text-xs text-slate-400 font-bold uppercase tracking-widest hover:text-slate-600">Volver</button>
-              </form>
-            ) : (
-              <form onSubmit={handleProposeWager} className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Condición de la apuesta</label>
-                  <input type="text" placeholder="Ej: Quién saca la basura un mes..." className={`w-full p-4 rounded-2xl border mt-1 text-base font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all`} value={p2pWagerDesc} onChange={e => setP2pWagerDesc(e.target.value)} />
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Horas</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.hours} onChange={(e) => setManualData({ ...manualData, hours: e.target.value })} /></div>
+                  <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Minutos</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.minutes} onChange={(e) => setManualData({ ...manualData, minutes: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">RPC en juego</label>
-                    <input type="number" min="0" placeholder="0" className={`w-full p-3 rounded-2xl border mt-1 text-lg font-bold text-center ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'}`} value={p2pAmount} onChange={e => setP2pAmount(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">O Artículo de Tienda</label>
-                    <select className={`w-full p-3 rounded-2xl border mt-1 text-xs font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'}`} value={p2pWagerStoreItem} onChange={e => setP2pWagerStoreItem(e.target.value)}>
-                      <option value="">Ninguno</option>
-                      {storeItems.map(i => <option key={i.id} value={i.id}>{i.icon} {i.name}</option>)}
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Realizado por:</label>
+                    <select className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all`} value={manualData.author || userName} onChange={(e) => setManualData({ ...manualData, author: e.target.value })}>
+                      {Object.keys(usersData).map(u => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </div>
+                  <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha</label><input type="date" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.date} onChange={(e) => setManualData({ ...manualData, date: e.target.value })} /></div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha Límite (Opcional)</label>
-                  <input type="datetime-local" className={`w-full p-3 rounded-2xl border mt-1 text-sm font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all`} value={p2pWagerDeadline} onChange={e => setP2pWagerDeadline(e.target.value)} />
+                <div className="flex gap-2 w-full mt-4">
+                  {modalMode === 'edit' && editingItem && (
+                    <button onClick={() => deleteChore(editingItem.id)} className="w-16 bg-red-100 text-red-600 rounded-2xl flex justify-center items-center hover:bg-red-200 active:scale-95 transition-all shrink-0">
+                      <Trash2 size={20} />
+                    </button>
+                  )}
+                  <button onClick={handleSaveManual} className="flex-1 bg-indigo-600 text-white font-bold py-4 rounded-2xl hover:bg-indigo-700 active:scale-95 transition-all">Guardar</button>
                 </div>
-                <button type="submit" className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 transition-all text-lg mt-2">
-                  Lanzar Apuesta
-                </button>
-                <button type="button" onClick={() => setP2pMode(null)} className="w-full py-2 text-xs text-slate-400 font-bold uppercase tracking-widest hover:text-slate-600">Volver</button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-
-      {showActiveWagerModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8`}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="font-bold text-xl flex items-center gap-2">Resolver Apuesta</h2>
-              <button onClick={() => setShowActiveWagerModal(null)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
-            </div>
-
-            <div className="text-center mb-6">
-              <p className="text-2xl font-black mb-2">{showActiveWagerModal.description}</p>
-              {showActiveWagerModal.amountRPC > 0 && <p className="text-orange-500 font-bold">{showActiveWagerModal.amountRPC} RPC en juego</p>}
-              {showActiveWagerModal.storeItemId && storeItems.find(i => i.id === showActiveWagerModal.storeItemId) && (
-                <p className="text-indigo-500 font-bold">Premio: {storeItems.find(i => i.id === showActiveWagerModal.storeItemId).icon} {storeItems.find(i => i.id === showActiveWagerModal.storeItemId).name}</p>
-              )}
-              {showActiveWagerModal.deadline && (
-                <p className="text-red-500 font-bold mt-2 text-sm uppercase tracking-widest">
-                  ⏳ Límite: {new Date(showActiveWagerModal.deadline).toLocaleDateString()} {new Date(showActiveWagerModal.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase text-center mb-4">¿Quién ha ganado?</p>
-              <div className="space-y-3">
-                <button onClick={() => handleResolveWager(showActiveWagerModal, showActiveWagerModal.proposer)} className="w-full py-4 rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/20 transition-all text-lg">
-                  🏆 {showActiveWagerModal.proposer}
-                </button>
-                <button onClick={() => handleResolveWager(showActiveWagerModal, showActiveWagerModal.receiver)} className="w-full py-4 rounded-2xl border-2 border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-500/20 transition-all text-lg">
-                  🏆 {showActiveWagerModal.receiver}
-                </button>
-                <button onClick={() => handleResolveWager(showActiveWagerModal, 'Empate')} className="w-full py-3 rounded-2xl border-2 border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-500/20 transition-all">
-                  🤝 Empate / Cancelar
-                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-      {showProfileModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[60] flex items-center justify-center p-6">
-          <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl`}>
-            <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter">Bienvenid@s</h2>
-            <p className={`text-sm mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Sincroniza el RanxPanx Team con tu maravillosa esposa. ¿Quién eres?</p>
-            <div className="space-y-4">
-              <input type="text" placeholder="Tu nombre..." className={`w-full text-xl font-bold p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={userName} onChange={(e) => setUserName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && userName) { localStorage.setItem('hometeam_username', userName); localStorage.setItem('hometeam_usercolor', userColor); setShowProfileModal(false); } }} />
-
-              <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Elige un color visual</p>
-                <div className="flex justify-between px-2">
-                  {USER_COLORS.map(c => (
-                    <button key={c.id} onClick={() => setUserColor(c.id)} className={`w-10 h-10 rounded-full ${c.bg} transition-all ${userColor === c.id ? `ring-4 ring-offset-2 ${c.ring} ${isDarkMode ? 'ring-offset-slate-900' : 'ring-offset-white'} scale-110` : 'opacity-40 hover:opacity-100 scale-90'}`} />
-                  ))}
-                </div>
+      {
+        showAdminModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-md rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8 max-h-[90vh] overflow-y-auto no-scrollbar`}>
+              <div className="flex justify-between items-center mb-6 sticky top-0 bg-inherit py-2 z-10">
+                <h2 className="font-black text-xl flex items-center gap-2"><Shield size={22} className="text-indigo-500" /> Configuración Admin</h2>
+                <button onClick={() => setShowAdminModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
               </div>
 
-              <button onClick={() => { if (userName) { localStorage.setItem('hometeam_username', userName); localStorage.setItem('hometeam_usercolor', userColor); setShowProfileModal(false); } }} className={`w-full text-white font-bold py-4 rounded-2xl mt-4 transition-all ${userName ? USER_COLORS.find(c => c.id === userColor)?.bg + ' hover:opacity-90 active:scale-95' : 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed text-slate-400'}`}>
-                Entrar al Equipo
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL REGALO RECIBIDO */}
-      {activeGiftModal && document.body && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 pointer-events-auto" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-          <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border animate-in zoom-in-95 duration-300 relative overflow-hidden text-center mx-auto`}>
-            {/* Fondo de brillo */}
-            <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-amber-500/20 to-transparent pointer-events-none"></div>
-
-            <div className="relative z-10">
-              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/40 mb-6 animate-bounce">
-                <Gift size={40} className="text-white" />
-              </div>
-
-              <h2 className="text-2xl font-black mb-2">¡Un Regalo!</h2>
-              <p className={`text-sm mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                <span className="font-bold text-amber-500">{activeGiftModal.from}</span> te ha enviado algo especial.
-              </p>
-
-              <div className={`p-6 rounded-2xl mb-6 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-orange-50 border-orange-100'} border`}>
-                <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500 mb-2">
-                  {activeGiftModal.amount} <span className="text-2xl tracking-tighter">RPC</span>
-                </div>
-                {activeGiftModal.message && (
-                  <div className="mt-4 pt-4 border-t border-orange-200/20">
-                    <p className={`text-sm italic font-medium ${isDarkMode ? 'text-slate-300' : 'text-orange-900'}`}>"{activeGiftModal.message}"</p>
+              <div className="space-y-6">
+                <section>
+                  <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Carteras Locales</h3>
+                    <button onClick={handleAdminAddUser} className="text-[10px] font-bold uppercase text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-1 transition-colors"><Plus size={10} strokeWidth={3} /> Añadir Cuenta</button>
                   </div>
+                  <div className="space-y-2">
+                    {Object.keys(usersData).map(u => (
+                      <div key={u} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                        <div>
+                          <p className="font-bold text-sm tracking-tight">{u}</p>
+                          <p className="text-[10px] text-orange-500 font-bold">{usersData[u].rpcBalance?.toFixed(2) || 0} RPC</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <button onClick={() => handleAdminRPC(u)} className="px-3 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center transition-colors hover:bg-indigo-200 dark:hover:bg-indigo-900/50"><Edit2 size={12} className="mr-1" /> Editar RPC</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">Tienda de Premios</h3>
+                  <div className="space-y-2">
+                    {storeItems.map(item => (
+                      <div key={item.id} className={`p-3 rounded-xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                        {editingStoreItem?.id === item.id ? (
+                          <div className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex gap-2">
+                              <input type="text" maxLength="2" className={`w-12 text-center rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.icon} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, icon: e.target.value })} />
+                              <input type="text" className={`flex-1 min-w-0 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.name} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, name: e.target.value })} />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input type="number" min="1" className={`w-20 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600 text-orange-400' : 'bg-white border-slate-300 text-orange-600'} px-2 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.cost} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, cost: e.target.value })} />
+                              <span className="text-[10px] uppercase font-bold text-slate-400 mr-auto">RPC</span>
+
+                              <button onClick={() => setEditingStoreItem(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Cancelar</button>
+                              <button onClick={handleUpdateStoreItem} className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 transition shadow-sm">Guardar</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            {editingStoreItem?.id === item.id ? (
+                              <div className="flex-1 space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="flex gap-2">
+                                  <input type="text" maxLength="2" className={`w-12 text-center rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.icon} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, icon: e.target.value })} />
+                                  <input type="text" className={`flex-1 min-w-0 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600' : 'bg-white border-slate-300'} px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.name} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, name: e.target.value })} />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <input type="number" min="1" className={`w-20 rounded-lg border ${isDarkMode ? 'bg-slate-900 border-slate-600 text-orange-400' : 'bg-white border-slate-300 text-orange-600'} px-2 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500`} value={editingStoreItem.cost} onChange={(e) => setEditingStoreItem({ ...editingStoreItem, cost: e.target.value })} />
+                                  <span className="text-[10px] uppercase font-bold text-slate-400 mr-auto">RPC</span>
+
+                                  <button onClick={() => setEditingStoreItem(null)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Cancelar</button>
+                                  <button onClick={handleUpdateStoreItem} className="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-500 hover:bg-indigo-600 transition shadow-sm">Guardar</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl">{item.icon}</span>
+                                  <div>
+                                    <p className="font-bold text-sm leading-tight">{item.name}</p>
+                                    <p className="text-[10px] font-medium text-slate-500">{item.costRPC} RPC</p>
+                                  </div>
+                                </div>
+                                <div className="flex gap-1">
+                                  <button onClick={() => setEditingStoreItem({ id: item.id, name: item.name, cost: item.costRPC, icon: item.icon })} className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"><Edit2 size={16} /></button>
+                                  <button onClick={() => handleAdminDeleteStoreItem(item.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {storeItems.length === 0 && <p className="text-xs text-slate-500 italic">No hay premios creados.</p>}
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">Cupones Activos (Toda la familia)</h3>
+                  <div className="space-y-2">
+                    {coupons.map(coupon => (
+                      <div key={coupon.id} className={`p-3 rounded-xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                        <div className="flex items-center gap-3 w-3/4">
+                          <span className="text-xl">{coupon.icon}</span>
+                          <div className="truncate">
+                            <p className="font-bold text-sm tracking-tight truncate">{coupon.itemName}</p>
+                            <p className="text-[10px] font-bold text-slate-500">Pertenece a {coupon.owner}</p>
+                          </div>
+                        </div>
+                        <button onClick={() => handleAdminDeleteCoupon(coupon.id)} className="text-[10px] font-bold uppercase text-red-500 px-2 py-1 rounded bg-red-50 dark:bg-red-900/20 hover:bg-red-100 transition-colors">Revocar</button>
+                      </div>
+                    ))}
+                    {coupons.length === 0 && <p className="text-xs text-slate-500 italic">Nadie tiene cupones activos.</p>}
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {
+        showItemModal && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8`}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="font-bold text-xl flex items-center gap-2"><Plus size={20} className="text-orange-500" /> Añadir a la Tienda</h2>
+                <button onClick={() => setShowItemModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Nombre del Favor / Premio</label>
+                  <input type="text" placeholder="Ej: Especial Desayuno" className={`w-full p-4 rounded-2xl border mt-1 text-base font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Coste (RPC)</label>
+                    <input type="number" min="1" className={`w-full p-4 rounded-2xl border mt-1 text-base font-bold text-orange-500 ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={newItem.cost} onChange={(e) => setNewItem({ ...newItem, cost: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Emoji / Icono</label>
+                    <input type="text" maxLength="2" placeholder="🎁" className={`w-full p-4 rounded-2xl border mt-1 text-center text-2xl ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={newItem.icon} onChange={(e) => setNewItem({ ...newItem, icon: e.target.value })} />
+                  </div>
+                </div>
+
+                <button onClick={handleSaveStoreItem} className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl mt-6 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-[1.02] active:scale-95 transition-all">
+                  Publicar en Tienda
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {
+        showSupermarketModal && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8 overflow-y-auto max-h-[80vh] no-scrollbar`}>
+              <div className="flex justify-between items-center mb-6 sticky top-0 bg-inherit z-20 pb-2 border-b border-slate-100 dark:border-slate-800">
+                <h2 className="font-bold text-xl flex items-center gap-2"><Store size={20} className="text-indigo-500" /> Supermercados</h2>
+                <button onClick={() => setShowSupermarketModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
+              </div>
+
+              <button onClick={addSupermarket} className="w-full mb-6 border-2 border-dashed border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-500 font-bold py-3 rounded-2xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-2">
+                <Plus size={16} strokeWidth={3} /> Añadir Nueva Tienda
+              </button>
+
+              <DragDropContext onDragEnd={handleDragEndSupermarkets}>
+                <Droppable droppableId="supermarkets-list">
+                  {(provided) => (
+                    <div className="space-y-3" {...provided.droppableProps} ref={provided.innerRef}>
+                      {supermarkets.length === 0 && <p className="text-center text-xs text-slate-400 italic py-4">No hay tiendas.</p>}
+                      {supermarkets.map((store, index) => (
+                        <Draggable key={store.id} draggableId={store.id} index={index}>
+                          {(provided) => {
+                            const activeColor = store.color || 'slate';
+                            return (
+                              <div ref={provided.innerRef} {...provided.draggableProps} className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} p-3 rounded-2xl border flex flex-col gap-3 group relative`}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div {...provided.dragHandleProps} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 active:cursor-grabbing cursor-grab touch-none p-1">
+                                      <GripVertical size={16} />
+                                    </div>
+                                    <span className="font-bold text-sm truncate uppercase tracking-widest">{store.name}</span>
+                                  </div>
+                                  <button onClick={(e) => deleteSupermarket(e, store.id)} className="p-1.5 text-red-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                                </div>
+
+                                <div className="flex items-center justify-between pl-8 pr-1">
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase">Color:</p>
+                                  <div className="flex gap-2">
+                                    {['slate', ...USER_COLORS.map(c => c.id)].map(c => {
+                                      const uiColor = c === 'slate' ? (isDarkMode ? 'bg-slate-600' : 'bg-slate-400') : USER_COLORS.find(uc => uc.id === c)?.bg;
+                                      return (
+                                        <button
+                                          key={c}
+                                          onClick={() => updateSupermarketColor(store.id, c)}
+                                          className={`w-5 h-5 rounded-full ${uiColor} transition-transform ${activeColor === c ? 'scale-125 ring-2 ring-offset-1 ' + (isDarkMode ? 'ring-offset-slate-800 ring-white' : 'ring-offset-slate-50 ring-slate-400') : 'opacity-50 hover:opacity-100 hover:scale-110'}`}
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            </div>
+          </div>
+        )
+      }
+
+      {
+        showP2PModal && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8`}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="font-bold text-xl flex items-center gap-2">Interactuar con {selectedPeer}</h2>
+                <button onClick={() => { setShowP2PModal(false); setP2pMode(null); }} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
+              </div>
+
+              {!p2pMode ? (
+                <div className="space-y-4">
+                  <button onClick={() => setP2pMode('send')} className="w-full p-4 rounded-2xl border-2 border-orange-500/30 bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 font-bold transition-colors flex items-center justify-center gap-2 text-lg">
+                    💸 Enviar RPC
+                  </button>
+                  <button onClick={() => setP2pMode('wager')} className="w-full p-4 rounded-2xl border-2 border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold transition-colors flex items-center justify-center gap-2 text-lg">
+                    🤝 Proponer Apuesta
+                  </button>
+                </div>
+              ) : p2pMode === 'send' ? (
+                <form onSubmit={handleSendRPC} className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Cantidad de RPC a enviar</label>
+                    <input type="number" min="0.5" step="0.5" autoFocus className={`w-full p-4 rounded-2xl border mt-1 text-2xl text-center font-black text-orange-500 ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={p2pAmount} onChange={e => setP2pAmount(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Mensaje (Opcional)</label>
+                    <input type="text" placeholder="Ej: Por ayudarme hoy..." className={`w-full p-3 rounded-2xl border mt-1 font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-200 focus:border-orange-400'} focus:outline-none focus:ring-4 focus:ring-orange-500/10 transition-all`} value={p2pMessage} onChange={e => setP2pMessage(e.target.value)} />
+                  </div>
+                  <button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-lg mt-2">
+                    Enviar RPC
+                  </button>
+                  <button type="button" onClick={() => setP2pMode(null)} className="w-full py-2 text-xs text-slate-400 font-bold uppercase tracking-widest hover:text-slate-600">Volver</button>
+                </form>
+              ) : (
+                <form onSubmit={handleProposeWager} className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Condición de la apuesta</label>
+                    <input type="text" placeholder="Ej: Quién saca la basura un mes..." className={`w-full p-4 rounded-2xl border mt-1 text-base font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all`} value={p2pWagerDesc} onChange={e => setP2pWagerDesc(e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">RPC en juego</label>
+                      <input type="number" min="0" placeholder="0" className={`w-full p-3 rounded-2xl border mt-1 text-lg font-bold text-center ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'}`} value={p2pAmount} onChange={e => setP2pAmount(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">O Artículo de Tienda</label>
+                      <select className={`w-full p-3 rounded-2xl border mt-1 text-xs font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'}`} value={p2pWagerStoreItem} onChange={e => setP2pWagerStoreItem(e.target.value)}>
+                        <option value="">Ninguno</option>
+                        {storeItems.map(i => <option key={i.id} value={i.id}>{i.icon} {i.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha Límite (Opcional)</label>
+                    <input type="datetime-local" className={`w-full p-3 rounded-2xl border mt-1 text-sm font-medium ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-400'} focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all`} value={p2pWagerDeadline} onChange={e => setP2pWagerDeadline(e.target.value)} />
+                  </div>
+                  <button type="submit" className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-500/30 hover:scale-[1.02] active:scale-95 transition-all text-lg mt-2">
+                    Lanzar Apuesta
+                  </button>
+                  <button type="button" onClick={() => setP2pMode(null)} className="w-full py-2 text-xs text-slate-400 font-bold uppercase tracking-widest hover:text-slate-600">Volver</button>
+                </form>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      {
+        showActiveWagerModal && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border animate-in slide-in-from-bottom-8`}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="font-bold text-xl flex items-center gap-2">Resolver Apuesta</h2>
+                <button onClick={() => setShowActiveWagerModal(null)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20} /></button>
+              </div>
+
+              <div className="text-center mb-6">
+                <p className="text-2xl font-black mb-2">{showActiveWagerModal.description}</p>
+                {showActiveWagerModal.amountRPC > 0 && <p className="text-orange-500 font-bold">{showActiveWagerModal.amountRPC} RPC en juego</p>}
+                {showActiveWagerModal.storeItemId && storeItems.find(i => i.id === showActiveWagerModal.storeItemId) && (
+                  <p className="text-indigo-500 font-bold">Premio: {storeItems.find(i => i.id === showActiveWagerModal.storeItemId).icon} {storeItems.find(i => i.id === showActiveWagerModal.storeItemId).name}</p>
+                )}
+                {showActiveWagerModal.deadline && (
+                  <p className="text-red-500 font-bold mt-2 text-sm uppercase tracking-widest">
+                    ⏳ Límite: {new Date(showActiveWagerModal.deadline).toLocaleDateString()} {new Date(showActiveWagerModal.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
                 )}
               </div>
 
-              <button
-                onClick={async () => {
-                  try {
-                    await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'p2p_notifications', activeGiftModal.id), { read: true }, { merge: true });
-                    setActiveGiftModal(null);
-                    playCashSound();
-                    import('canvas-confetti').then((confetti) => {
-                      confetti.default({ particleCount: 200, spread: 120, origin: { y: 0.6 }, colors: ['#fbbf24', '#f59e0b', '#d97706'], zIndex: 1000 });
-                    });
-                  } catch (err) {
-                    console.error("Error accepting gift:", err);
-                    setActiveGiftModal(null);
-                  }
-                }}
-                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-xl uppercase tracking-widest pointer-events-auto"
-              >
-                Aceptar Regalo
-              </button>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase text-center mb-4">¿Quién ha ganado?</p>
+                <div className="space-y-3">
+                  <button onClick={() => handleResolveWager(showActiveWagerModal, showActiveWagerModal.proposer)} className="w-full py-4 rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/20 transition-all text-lg">
+                    🏆 {showActiveWagerModal.proposer}
+                  </button>
+                  <button onClick={() => handleResolveWager(showActiveWagerModal, showActiveWagerModal.receiver)} className="w-full py-4 rounded-2xl border-2 border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-500/20 transition-all text-lg">
+                    🏆 {showActiveWagerModal.receiver}
+                  </button>
+                  <button onClick={() => handleResolveWager(showActiveWagerModal, 'Empate')} className="w-full py-3 rounded-2xl border-2 border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-500/20 transition-all">
+                    🤝 Empate / Cancelar
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>,
-        document.body
-      )}
+        )
+      }
+
+      {
+        showProfileModal && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[60] flex items-center justify-center p-6">
+            <div className={`${isDarkMode ? 'bg-slate-900' : 'bg-white'} rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl`}>
+              <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter">Bienvenid@s</h2>
+              <p className={`text-sm mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Sincroniza el RanxPanx Team con tu maravillosa esposa. ¿Quién eres?</p>
+              <div className="space-y-4">
+                <input type="text" placeholder="Tu nombre..." className={`w-full text-xl font-bold p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={userName} onChange={(e) => setUserName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && userName) { localStorage.setItem('hometeam_username', userName); localStorage.setItem('hometeam_usercolor', userColor); setShowProfileModal(false); } }} />
+
+                <div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Elige un color visual</p>
+                  <div className="flex justify-between px-2">
+                    {USER_COLORS.map(c => (
+                      <button key={c.id} onClick={() => setUserColor(c.id)} className={`w-10 h-10 rounded-full ${c.bg} transition-all ${userColor === c.id ? `ring-4 ring-offset-2 ${c.ring} ${isDarkMode ? 'ring-offset-slate-900' : 'ring-offset-white'} scale-110` : 'opacity-40 hover:opacity-100 scale-90'}`} />
+                    ))}
+                  </div>
+                </div>
+
+                <button onClick={() => { if (userName) { localStorage.setItem('hometeam_username', userName); localStorage.setItem('hometeam_usercolor', userColor); setShowProfileModal(false); } }} className={`w-full text-white font-bold py-4 rounded-2xl mt-4 transition-all ${userName ? USER_COLORS.find(c => c.id === userColor)?.bg + ' hover:opacity-90 active:scale-95' : 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed text-slate-400'}`}>
+                  Entrar al Equipo
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* MODAL REGALO RECIBIDO */}
+      {
+        activeGiftModal && document.body && createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 pointer-events-auto" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border animate-in zoom-in-95 duration-300 relative overflow-hidden text-center mx-auto`}>
+              {/* Fondo de brillo */}
+              <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-amber-500/20 to-transparent pointer-events-none"></div>
+
+              <div className="relative z-10">
+                <div className="w-20 h-20 mx-auto bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/40 mb-6 animate-bounce">
+                  <Gift size={40} className="text-white" />
+                </div>
+
+                <h2 className="text-2xl font-black mb-2">¡Un Regalo!</h2>
+                <p className={`text-sm mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <span className="font-bold text-amber-500">{activeGiftModal.from}</span> te ha enviado algo especial.
+                </p>
+
+                <div className={`p-6 rounded-2xl mb-6 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-orange-50 border-orange-100'} border`}>
+                  <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500 mb-2">
+                    {activeGiftModal.amount} <span className="text-2xl tracking-tighter">RPC</span>
+                  </div>
+                  {activeGiftModal.message && (
+                    <div className="mt-4 pt-4 border-t border-orange-200/20">
+                      <p className={`text-sm italic font-medium ${isDarkMode ? 'text-slate-300' : 'text-orange-900'}`}>"{activeGiftModal.message}"</p>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={async () => {
+                    try {
+                      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'p2p_notifications', activeGiftModal.id), { read: true }, { merge: true });
+                      setActiveGiftModal(null);
+                      playCashSound();
+                      import('canvas-confetti').then((confetti) => {
+                        confetti.default({ particleCount: 200, spread: 120, origin: { y: 0.6 }, colors: ['#fbbf24', '#f59e0b', '#d97706'], zIndex: 1000 });
+                      });
+                    } catch (err) {
+                      console.error("Error accepting gift:", err);
+                      setActiveGiftModal(null);
+                    }
+                  }}
+                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all text-xl uppercase tracking-widest pointer-events-auto"
+                >
+                  Aceptar Regalo
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      }
+
+      {/* MODAL INSIGNIA (ACHIEVEMENT) */}
+      {
+        activeAchievementModal && document.body && createPortal(
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 pointer-events-auto" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border animate-in zoom-in-95 duration-300 relative overflow-hidden text-center mx-auto`}>
+
+              <button onClick={() => setActiveAchievementModal(null)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full hover:bg-slate-200 transition-colors z-20">
+                <X size={16} strokeWidth={3} />
+              </button>
+
+              {/* Brillo de fondo estético */}
+              <div className={`absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-white/10 to-transparent pointer-events-none ${activeAchievementModal.bg}`}></div>
+
+              <div className="relative z-10">
+                {(() => {
+                  const isReady = activeAchievementModal.actual > activeAchievementModal.claimedAt;
+                  const currentTier = activeAchievementModal.claimedAt;
+                  let nextGoal = currentTier + 1;
+                  if (activeAchievementModal.id === 'total_hours' && activeAchievementModal.actual === 0 && currentTier === 0) nextGoal = 1;
+
+                  let progressPercent = (activeAchievementModal.actual / nextGoal) * 100;
+                  if (progressPercent > 100) progressPercent = 100;
+
+                  let IconCmp = Award;
+                  if (activeAchievementModal.icon === 'Flame') IconCmp = Flame;
+                  if (activeAchievementModal.icon === 'Target') IconCmp = Target;
+                  if (activeAchievementModal.icon === 'Crosshair') IconCmp = Crosshair;
+                  if (activeAchievementModal.icon === 'Zap') IconCmp = Zap;
+                  if (activeAchievementModal.icon === 'HeartHandshake') IconCmp = HeartHandshake;
+
+                  return (
+                    <>
+                      <div className="w-24 h-24 mx-auto mb-6 relative">
+                        <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full -rotate-90">
+                          <circle strokeDasharray="100, 100" className="text-slate-100 dark:text-slate-800 stroke-current" strokeWidth="2.5" fill="none" r="16" cx="18" cy="18" />
+                          <circle strokeDasharray={`${progressPercent}, 100`} className={`${activeAchievementModal.color} stroke-current`} strokeWidth="2.5" strokeLinecap="round" fill="none" r="16" cx="18" cy="18" />
+                        </svg>
+                        <div className={`absolute inset-2 rounded-full flex items-center justify-center ${activeAchievementModal.bg} ${activeAchievementModal.darkBg}`}>
+                          <IconCmp size={32} className={`${activeAchievementModal.color} ${isReady ? 'animate-bounce' : ''}`} />
+                        </div>
+                      </div>
+
+                      <h2 className={`text-2xl font-black mb-1 uppercase tracking-tight ${activeAchievementModal.color}`}>{activeAchievementModal.title}</h2>
+                      <p className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Nivel {currentTier} {isReady ? '→ ' + nextGoal : ''}</p>
+
+                      <p className={`text-sm mb-6 pb-6 border-b font-medium italic ${isDarkMode ? 'text-slate-300 border-slate-800' : 'text-slate-600 border-slate-100'}`}>
+                        "{activeAchievementModal.desc}"
+                      </p>
+
+                      <div className="space-y-2 mb-6 text-left bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl">
+                        <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-1">
+                          <span className="text-slate-500">Progreso actual</span>
+                          <span className={activeAchievementModal.color}>{Math.floor(activeAchievementModal.actual)} / {nextGoal}</span>
+                        </div>
+                        <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
+                          <div className={`h-full ${activeAchievementModal.color.replace('text-', 'bg-')} transition-all duration-1000`} style={{ width: `${progressPercent}%` }}></div>
+                        </div>
+                      </div>
+
+                      {isReady ? (
+                        <button
+                          onClick={() => claimAchievement(activeAchievementModal)}
+                          className={`w-full text-white font-black py-4 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all text-lg uppercase tracking-widest ${activeAchievementModal.color.replace('text-', 'bg-')} ${activeAchievementModal.shadow}`}
+                        >
+                          Reclamar +{activeAchievementModal.id === 'total_hours' ? '10.0' : activeAchievementModal.id === 'p2p_gifts' ? '2.0' : activeAchievementModal.reward.toFixed(1)} RPC
+                        </button>
+                      ) : (
+                        <button
+                          disabled
+                          className="w-full bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold py-4 rounded-2xl text-sm uppercase tracking-widest cursor-not-allowed border dark:border-slate-700"
+                        >
+                          Sigue esforzándote
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      }
 
       {/* TOAST SYSTEM */}
-      {toast.visible && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className={`px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 font-bold text-sm ${toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
-            {toast.type === 'success' ? <CheckCircle2 size={18} /> : <WifiOff size={18} />}
-            {toast.msg}
+      {
+        toast.visible && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className={`px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 font-bold text-sm ${toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
+              {toast.type === 'success' ? <CheckCircle2 size={18} /> : <WifiOff size={18} />}
+              {toast.msg}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       <style>{`
         .safe-top { padding-top: env(safe-area-inset-top); }
@@ -2402,7 +2740,7 @@ export default function App() {
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-    </div>
+    </div >
   );
 }
 
