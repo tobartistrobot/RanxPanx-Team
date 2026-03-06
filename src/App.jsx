@@ -1041,13 +1041,13 @@ export default function App() {
 
       setActiveAchievementModal(null);
       playCashSound();
-      showToast(`¡Insignia reclamada! +${earned.toFixed(1)} RPC`, 'success');
+      showToast(`¡Logro reclamado! +${earned.toFixed(1)} RPC`, 'success');
       import('canvas-confetti').then((confetti) => {
         confetti.default({ particleCount: 400, spread: 180, origin: { y: 0.5 }, colors: ['#f59e0b', '#fbbf24', '#fcd34d', '#ffffff'], zIndex: 1200 });
       });
     } catch (err) {
       console.error("Error claiming achievement:", err);
-      showToast('Error al reclamar la insignia', 'error');
+      showToast('Error al reclamar el logro', 'error');
     }
   };
 
@@ -1405,6 +1405,15 @@ export default function App() {
 
   return (
     <div className={`${isDarkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'} min-h-screen font-sans pb-24 transition-colors duration-300 antialiased`}>
+      <style>{`
+        @keyframes soft-glow {
+          0%, 100% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 15px rgba(251, 146, 60, 0.4); }
+          50% { opacity: 0.9; transform: scale(1.12); box-shadow: 0 0 5px rgba(251, 146, 60, 0.1); }
+        }
+        .animate-soft-glow {
+          animation: soft-glow 3s ease-in-out infinite;
+        }
+      `}</style>
       {!isOnline && (
         <div className="bg-red-500 text-white text-[10px] font-bold py-1 text-center sticky top-0 z-50 animate-pulse flex items-center justify-center gap-2">
           <WifiOff size={12} /> MODO SIN CONEXIÓN
@@ -1908,10 +1917,10 @@ export default function App() {
               )}
             </div>
 
-            {/* CARRUSEL INFINITO DE INSIGNIAS (Google Maps Style) */}
+            {/* CARRUSEL INFINITO DE LOGROS (Google Maps Style) */}
             <div className="mt-2">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest pl-2 mb-3 flex items-center gap-2">
-                <Target size={14} /> Mis Insignias
+                <Target size={14} /> Mis Logros
               </h3>
               <div className="flex overflow-x-auto gap-4 pb-4 pt-4 -mx-2 px-2 no-scrollbar snap-x">
                 {achievementsState.map((ack) => {
@@ -1943,14 +1952,14 @@ export default function App() {
                       onClick={() => setActiveAchievementModal(ack)}
                       className="shrink-0 snap-start flex flex-col items-center gap-2 cursor-pointer group"
                     >
-                      <div className={`relative w-[72px] h-[72px] rounded-full flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm border ${ack.border} transition-all duration-300 ${isReady ? `scale-[1.15] ${ack.shadow} shadow-lg ring-4 ring-offset-2 ring-orange-400/50 dark:ring-offset-slate-950 animate-[pulse_2s_ease-in-out_infinite]` : 'hover:scale-105'} ${ack.isAlert && !isReady ? 'animate-pulse ring-4 ring-red-500/50' : ''}`}>
+                      <div className={`relative w-[72px] h-[72px] rounded-full flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm border ${ack.isAlert && !isReady ? 'border-red-500' : ack.border} transition-all duration-300 ${isReady ? `scale-[1.15] ${ack.shadow} shadow-lg ring-4 ring-offset-2 ring-orange-400/50 dark:ring-offset-slate-950 animate-soft-glow` : 'hover:scale-105'} ${ack.isAlert && !isReady ? 'ring-4 ring-red-500/30' : ''}`}>
 
                         {/* SVGs para el anillo de progreso estilo Google Maps */}
                         <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full -rotate-90">
-                          <circle strokeDasharray="100, 100" className="text-slate-100 dark:text-slate-800 stroke-current" strokeWidth="2.5" fill="none" r="16" cx="18" cy="18" />
+                          <circle strokeDasharray="100, 100" className={`${ack.isAlert && !isReady ? 'text-red-100 dark:text-red-950' : 'text-slate-100 dark:text-slate-800'} stroke-current`} strokeWidth="2.5" fill="none" r="16" cx="18" cy="18" />
                           <circle
                             strokeDasharray={dashArray}
-                            className={`${ack.color} stroke-current transition-all duration-1000 ease-out`}
+                            className={`${ack.isAlert && !isReady ? 'text-red-500' : ack.color} stroke-current transition-all duration-1000 ease-out`}
                             strokeWidth="2.5"
                             strokeLinecap="round"
                             fill="none"
@@ -1958,13 +1967,13 @@ export default function App() {
                           />
                         </svg>
 
-                        <div className={`w-11 h-11 rounded-full flex items-center justify-center relative z-10 ${isReady ? ack.bg : 'bg-slate-100 dark:bg-slate-800'} ${isReady ? ack.darkBg : ''}`}>
-                          <IconCmp size={20} className={`${isReady ? ack.color : 'text-slate-400'} ${isReady ? 'animate-[pulse_2s_ease-in-out_infinite]' : ''}`} />
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center relative z-10 ${isReady ? ack.bg : (ack.isAlert && !isReady ? 'bg-red-50 dark:bg-red-900/20' : 'bg-slate-100 dark:bg-slate-800')} ${isReady ? ack.darkBg : ''}`}>
+                          <IconCmp size={20} className={`${isReady ? ack.color : (ack.isAlert && !isReady ? 'text-red-400' : 'text-slate-400')} ${isReady ? 'animate-soft-glow' : ''}`} />
                         </div>
 
                         {/* Alerta Roja si pierde la racha */}
                         {ack.isAlert && !isReady && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] text-white font-bold animate-pulse z-20">!</div>
+                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-[9px] text-white font-black uppercase tracking-wider shadow-md animate-pulse z-20 whitespace-nowrap">⏳ 24h</div>
                         )}
                       </div>
                       <div className="text-center w-24">
@@ -2110,7 +2119,7 @@ export default function App() {
                   if (moment.badgeProps?.icon === 'HeartHandshake') IconCmp = HeartHandshake;
 
                   return (
-                    <div key={moment.id} className="bg-white dark:bg-slate-900 border-[8px] border-white dark:border-slate-800 shadow-xl rounded-sm transform rotate-1 hover:rotate-0 transition-transform max-w-[280px] mx-auto">
+                    <div key={moment.id} className="bg-white dark:bg-slate-900 border-[8px] border-white dark:border-slate-800 shadow-xl rounded-sm transition-transform hover:-translate-y-1 hover:shadow-2xl max-w-[280px] mx-auto">
                       <div className={`aspect-square flex items-center justify-center text-8xl border border-slate-200 dark:border-slate-700 relative overflow-hidden ${moment.badgeProps ? moment.badgeProps.bg + ' ' + (moment.badgeProps.darkBg || '') : 'bg-slate-100 dark:bg-slate-800'}`}>
                         {moment.badgeProps ? (
                           <div className="relative w-32 h-32 flex items-center justify-center">
