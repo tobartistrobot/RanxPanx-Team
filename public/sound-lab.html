@@ -14,8 +14,8 @@
         }
 
         h1 {
-            color: #f472b6;
-            text-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
+            color: #8b5cf6;
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
         }
 
         .grid {
@@ -42,7 +42,7 @@
         }
 
         button {
-            background: #db2777;
+            background: #7c3aed;
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -51,13 +51,13 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(219, 39, 119, 0.3);
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
         }
 
         button:hover {
-            background: #f472b6;
+            background: #8b5cf6;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(244, 114, 182, 0.4);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
         }
 
         button:active {
@@ -68,47 +68,50 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(244, 114, 182, 0.2);
-            color: #fbcfe8;
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
             font-size: 0.7rem;
             padding: 3px 8px;
             border-radius: 10px;
             font-weight: bold;
             text-transform: uppercase;
-            border: 1px solid rgba(244, 114, 182, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.3);
         }
     </style>
 </head>
 
 <body>
-    <h1>🤝 Laboratorio: Logro "Alma Caritativa"</h1>
-    <p>Este logro premia la generosidad: enviar regalos o RPC a otros integrantes en distintas semanas.
-        El sonido debe evocar <b>agradecimiento, calidez, amor, magia celestial y conexión humana</b>.</p>
+    <h1>👑 Laboratorio: Logro "Leyenda del Hogar"</h1>
+    <p>Este es el logro supremo (Color Morado/Violeta), basado en acumular bloques de 10 horas totales invertidas. Es un
+        hito a largo plazo que rara vez se reclama.
+        El sonido debe evocar <b>gloria, magnitud, estatus legendario y una inmensa recompensa (RPG Loot Epic)</b>.</p>
 
     <div class="grid">
-        <div class="card" style="border-color: #f472b6;">
-            <div class="badge">Mágico</div>
-            <h2>🤝 Opción A: Polvo de Hadas (Fairy Dust)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Una rápida y delicada cascada descendente
-                de campanillas brillantes. Suena a un hechizo de magia curativa en un juego clásico.</p>
-            <button onclick="playCharityA()">Cobrar Logro A</button>
-        </div>
-
-        <div class="card" style="border-color: #ec4899;">
-            <div class="badge">Cálido</div>
-            <h2>🤝 Opción B: Abrazo Armónico (Warm Swell)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un suave y profundo acorde mayor de
-                sintetizador "pad" que crece lentamente y te envuelve, terminando en un ligero destello reconfortante.
+        <div class="card" style="border-color: #8b5cf6;">
+            <div class="badge">Épico</div>
+            <h2>👑 Opción A: Despertar Legendario (Gong Brillante)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un impacto profundo, largo y místico (tipo
+                Gong o "Item Legendario" de los RPG). Evoca inmediatamente que acabas de conseguir un rango muy alto.
             </p>
-            <button onclick="playCharityB()">Cobrar Logro B</button>
+            <button onclick="playLegendA()">Cobrar Logro A</button>
         </div>
 
-        <div class="card" style="border-color: #be185d;">
-            <div class="badge">Jubiloso</div>
-            <h2>🤝 Opción C: Sorpresa de Regalo (Gift Box)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Dos campanas grandes y alegres tocando en
-                intervalo de tercera (sonido clásico de "Ding-Dong" festivo) con mucho eco. Muy nostálgico.</p>
-            <button onclick="playCharityC()">Cobrar Logro C</button>
+        <div class="card" style="border-color: #7c3aed;">
+            <div class="badge">Musical</div>
+            <h2>👑 Opción B: Fanfarria Real (Royal Brass)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Tres notas poderosas anunciando la realeza
+                ("Ta-da-daaaan" ascendente), usando ondas sintetizadas ricas en armónicos simulando vientos-metal
+                gloriosos.</p>
+            <button onclick="playLegendB()">Cobrar Logro B</button>
+        </div>
+
+        <div class="card" style="border-color: #5b21b6;">
+            <div class="badge">Cósmico</div>
+            <h2>👑 Opción C: Ascensión Cuántica (Choir Rise)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Sintetizador con filtro ascendente
+                exagerado (como un coro de ángeles que sube de volumen). Termina en un estallido cristalino puro y
+                duradero.</p>
+            <button onclick="playLegendC()">Cobrar Logro C</button>
         </div>
     </div>
 
@@ -118,7 +121,7 @@
             return new AudioCtx();
         };
 
-        const createEcho = (ctx, time = 0.3, fbk = 0.3) => {
+        const createEcho = (ctx, time = 0.4, fbk = 0.5) => {
             const delay = ctx.createDelay();
             delay.delayTime.value = time;
             const feedback = ctx.createGain();
@@ -128,122 +131,174 @@
             return { delayNode: delay, outNode: delay };
         };
 
-        // Opción A: Polvo de Hadas (Arpegio C5, A4, F4, D4, B3 rápido con triángulo)
-        const playCharityA = () => {
+        // Opción A: Gong Legendario / Impacto Místico (Mucho peso + Brillo sostenido)
+        const playLegendA = () => {
             const ctx = getCtx();
-            const echo = createEcho(ctx, 0.15, 0.4); // Eco chispeante
+            const echo = createEcho(ctx, 0.4, 0.6); // Catedral masiva
 
-            // Notas pentatónicas descendentes mágicas
-            // C6, A5, G5, E5, C5, A4
-            const notes = [1046.50, 880.00, 783.99, 659.25, 523.25, 440.00];
-            const dropDuration = 0.08;
+            // 1. El Impacto Grave ("El Peso de las 10 horas")
+            const oscLow = ctx.createOscillator();
+            const gainLow = ctx.createGain();
+            oscLow.type = 'sine';
+            oscLow.frequency.setValueAtTime(150, ctx.currentTime);
+            oscLow.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.5); // Cae profundo
 
-            notes.forEach((freq, index) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
+            gainLow.gain.setValueAtTime(0, ctx.currentTime);
+            gainLow.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 0.05); // Golpe
+            gainLow.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
 
-                osc.type = 'triangle'; // Suave y limpio tipo campanilla
-                osc.frequency.setValueAtTime(freq, ctx.currentTime + index * dropDuration);
+            // 2. Ruido metálico (Fuerte al principio para simular el golpe del gong)
+            const bufferSize = ctx.sampleRate * 1.0;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
-                const time = ctx.currentTime + index * dropDuration;
+            const noiseGong = ctx.createBufferSource();
+            noiseGong.buffer = buffer;
 
-                gain.gain.setValueAtTime(0, time);
-                gain.gain.linearRampToValueAtTime(0.2, time + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3); // Cola brillante
+            const noiseFilter = ctx.createBiquadFilter();
+            noiseFilter.type = 'bandpass';
+            noiseFilter.frequency.setValueAtTime(3000, ctx.currentTime);
+            noiseFilter.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 1.0); // Se apaga la frecuencia
 
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
+            const gainNoise = ctx.createGain();
+            gainNoise.gain.setValueAtTime(0, ctx.currentTime);
+            gainNoise.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+            gainNoise.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
 
-                osc.start(time);
-                osc.stop(time + 0.35);
+            // 3. Resonancia Áurea (Acorde brillante que se queda sonando infinito)
+            const freqs = [392.00, 493.88, 587.33, 783.99]; // Acorde G Major 9 etéreo
+            freqs.forEach(freq => {
+                const oscHigh = ctx.createOscillator();
+                const gainHigh = ctx.createGain();
+                oscHigh.type = 'sine';
+                oscHigh.frequency.setValueAtTime(freq, ctx.currentTime);
+
+                gainHigh.gain.setValueAtTime(0, ctx.currentTime);
+                gainHigh.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.1);
+                gainHigh.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 3.5); // Cola eternaaaa
+
+                oscHigh.connect(gainHigh);
+                gainHigh.connect(ctx.destination);
+                gainHigh.connect(echo.delayNode);
+
+                oscHigh.start(ctx.currentTime);
+                oscHigh.stop(ctx.currentTime + 4.0);
             });
+
+            oscLow.connect(gainLow); gainLow.connect(ctx.destination); gainLow.connect(echo.delayNode);
+            noiseGong.connect(noiseFilter); noiseFilter.connect(gainNoise); gainNoise.connect(ctx.destination);
+
+            oscLow.start(ctx.currentTime); oscLow.stop(ctx.currentTime + 2.0);
+            noiseGong.start(ctx.currentTime);
+            echo.outNode.connect(ctx.destination);
         };
 
-        // Opción B: Abrazo Armónico (Acorde mayor lento Cmaj7)
-        const playCharityB = () => {
+        // Opción B: Fanfarria Real de Instrumento de Metal Glorioso
+        const playLegendB = () => {
             const ctx = getCtx();
-            const echo = createEcho(ctx, 0.4, 0.3); // Eco largo y espacioso
+            const echo = createEcho(ctx, 0.2, 0.5); // Sala del trono (Eco de palacio)
 
-            // Acorde de C Major 7 (C3, E3, G3, B3) para máxima calidez y nostalgia
-            const chord = [130.81, 164.81, 196.00, 246.94];
+            // Notas: Sol, C, E, Sol (Arpegio Triunfal Major)
+            // Velocidad: ta - da - da - daaaaaaan
+            const notes = [392.00, 523.25, 659.25, 783.99];
+            const delays = [0.0, 0.15, 0.30, 0.45]; // Rápidas las 3 primeras, la última larga
 
-            chord.forEach((freq, index) => {
-                const osc = ctx.createOscillator();
+            notes.forEach((freq, index) => {
+                const isLast = index === notes.length - 1;
+                const dur = isLast ? 1.5 : 0.1;
+
+                // Doble oscilador por nota para hacer efecto "Brass" (Viento Metal)
+                const osc1 = ctx.createOscillator();
+                const osc2 = ctx.createOscillator();
+                // Osc2 ligeramente desafinado para dar efecto coro de trompetas
+                osc1.type = 'sawtooth';
+                osc2.type = 'square';
+
+                osc1.frequency.setValueAtTime(freq, ctx.currentTime + delays[index]);
+                osc2.frequency.setValueAtTime(freq * 1.002, ctx.currentTime + delays[index]);
+
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                // El famoso "brass swell". Empieza apagado y abre rápido con el soplido de los labios
+                filter.frequency.setValueAtTime(500, ctx.currentTime + delays[index]);
+                filter.frequency.exponentialRampToValueAtTime(4000, ctx.currentTime + delays[index] + 0.05);
+
                 const gain = ctx.createGain();
+                gain.gain.setValueAtTime(0, ctx.currentTime + delays[index]);
+                // Ataque marcado
+                gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + delays[index] + 0.02);
 
-                osc.type = 'sine'; // Super suave (Pad synth)
-                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                if (isLast) {
+                    gain.gain.setValueAtTime(0.25, ctx.currentTime + delays[index] + 0.5);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delays[index] + 1.2);
+                } else {
+                    gain.gain.setValueAtTime(0.25, ctx.currentTime + delays[index] + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delays[index] + 0.1);
+                }
 
-                gain.gain.setValueAtTime(0, ctx.currentTime);
-                // Crece lentamente "como un abrazo"
-                gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.6);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.5);
-
-                osc.connect(gain);
+                osc1.connect(filter);
+                osc2.connect(filter);
+                filter.connect(gain);
                 gain.connect(ctx.destination);
-                gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
 
-                osc.start();
+                if (isLast) gain.connect(echo.delayNode); // Solo echo en la última para limpieza
+
+                osc1.start(ctx.currentTime + delays[index]);
+                osc2.start(ctx.currentTime + delays[index]);
+                osc1.stop(ctx.currentTime + delays[index] + dur + 0.2);
+                osc2.stop(ctx.currentTime + delays[index] + dur + 0.2);
+            });
+            echo.outNode.connect(ctx.destination);
+        };
+
+        // Opción C: Ascensión Cuántica (Coro Filtro Sweeping)
+        const playLegendC = () => {
+            const ctx = getCtx();
+            const echo = createEcho(ctx, 0.35, 0.4);
+
+            // "Pad de Coro" (Power chord denso que sube)
+            const freqs = [130.81, 196.00, 261.63, 392.00, 523.25]; // C3, G3, C4, G4, C5 (Quintas y Octavas masivas)
+
+            const masterGain = ctx.createGain();
+            masterGain.gain.setValueAtTime(0, ctx.currentTime);
+            masterGain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 1.0); // Sube 1 seg. de construcción de tensión
+            masterGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 3.0); // Baja lento
+            masterGain.connect(ctx.destination);
+
+            // Filtro maestro de Lowpass que se abre progresivamente como una revelación (Ascensión)
+            const masterFilter = ctx.createBiquadFilter();
+            masterFilter.type = 'lowpass';
+            masterFilter.frequency.setValueAtTime(200, ctx.currentTime);
+            masterFilter.frequency.exponentialRampToValueAtTime(8000, ctx.currentTime + 1.0); // Se abre la gloria en el seg 1.0
+            masterFilter.connect(masterGain);
+            masterFilter.connect(echo.delayNode);
+
+            freqs.forEach(freq => {
+                const osc = ctx.createOscillator();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                osc.connect(masterFilter);
+                osc.start(ctx.currentTime);
                 osc.stop(ctx.currentTime + 3.0);
             });
 
-            // Pequeña "sonrisa" final aguda (Chime)
-            const oscSmile = ctx.createOscillator();
-            const gainSmile = ctx.createGain();
-            oscSmile.type = 'triangle';
-            oscSmile.frequency.setValueAtTime(523.25 * 2, ctx.currentTime + 0.8); // C5
+            // Estallido / Estrella Final al terminar la subida (Segundo 1.0)
+            const oscStar = ctx.createOscillator();
+            const gainStar = ctx.createGain();
+            oscStar.type = 'sine'; // Tono puro como joya
+            oscStar.frequency.setValueAtTime(1046.50, ctx.currentTime + 1.0); // C6 Súper agudo luminoso
 
-            gainSmile.gain.setValueAtTime(0, ctx.currentTime + 0.8);
-            gainSmile.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.9);
-            gainSmile.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
+            gainStar.gain.setValueAtTime(0, ctx.currentTime + 1.0);
+            gainStar.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.05); // Flash instantáneo al tope de la montaña
+            gainStar.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 3.0);
 
-            oscSmile.connect(gainSmile);
-            gainSmile.connect(ctx.destination);
-            gainSmile.connect(echo.delayNode);
+            oscStar.connect(gainStar);
+            gainStar.connect(ctx.destination);
+            gainStar.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
 
-            oscSmile.start(ctx.currentTime + 0.8);
-            oscSmile.stop(ctx.currentTime + 2.5);
-        };
-
-        // Opción C: Sorpresa de Regalo (Ding-Dong Festivo)
-        const playCharityC = () => {
-            const ctx = getCtx();
-            const echo = createEcho(ctx, 0.25, 0.2); // Sala mediana
-
-            // Ding (C5)
-            const oscDing = ctx.createOscillator();
-            const gainDing = ctx.createGain();
-            oscDing.type = 'sine';
-            oscDing.frequency.setValueAtTime(523.25, ctx.currentTime);
-
-            gainDing.gain.setValueAtTime(0, ctx.currentTime);
-            gainDing.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-            gainDing.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
-
-            oscDing.connect(gainDing);
-            gainDing.connect(ctx.destination);
-            gainDing.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
-
-            oscDing.start();
-            oscDing.stop(ctx.currentTime + 0.8);
-
-            // Dong (E5) una tercera mayor
-            const oscDong = ctx.createOscillator();
-            const gainDong = ctx.createGain();
-            oscDong.type = 'sine';
-            oscDong.frequency.setValueAtTime(659.25, ctx.currentTime + 0.2); // Retrasado un poco
-
-            gainDong.gain.setValueAtTime(0, ctx.currentTime + 0.2);
-            gainDong.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.25);
-            gainDong.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
-
-            oscDong.connect(gainDong);
-            gainDong.connect(ctx.destination);
-            gainDong.connect(echo.delayNode);
-
-            oscDong.start(ctx.currentTime + 0.2);
-            oscDong.stop(ctx.currentTime + 1.2);
+            oscStar.start(ctx.currentTime + 1.0);
+            oscStar.stop(ctx.currentTime + 3.0);
         };
     </script>
 </body>
