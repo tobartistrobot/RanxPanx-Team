@@ -130,6 +130,141 @@ const DAILY_QUOTES = {
   ]
 };
 
+const MOTIVATIONAL_QUOTES = {
+  streak_global: [
+    "Un pequeño paso cada día construye el camino a la grandeza.",
+    "La constancia vence a la resistencia. Sigue ardiendo.",
+    "No es la fuerza, sino la perseverancia lo que hace al maestro.",
+    "El fuego más intenso comienza con una pequeña chispa cuidada a diario.",
+    "Tu dedicación incesante es el faro que ilumina tu hogar.",
+    "Cada día que mantienes la llama, forjas una voluntad de hierro.",
+    "La disciplina de hoy es la recompensa de mañana.",
+    "Roma no se construyó en un día, pero se ponían ladrillos cada hora.",
+    "La grandeza no es un acto, es un hábito inquebrantable.",
+    "Eres la prueba viva de que el esfuerzo continuado mueve montañas.",
+    "No midas el progreso por el tamaño del paso, sino por no detenerte.",
+    "Tu fuego inextinguible inspira a otros a encender su propia llama.",
+    "La motivación te hace empezar, el hábito te mantiene en marcha.",
+    "El río corta la roca no por su fuerza, sino por su persistencia.",
+    "Has convertido la rutina en una obra de arte deslumbrante.",
+    "Tus acciones diarias son los cimientos de una fortaleza inexpugnable.",
+    "La victoria pertenece al más perseverante.",
+    "Eres un huracán de energía que no conoce el reposo.",
+    "Las cadenas del hábito son demasiado ligeras hasta que son demasiado pesadas para romperlas.",
+    "Tu constancia global desafía los límites de lo posible."
+  ],
+  streak_specific: [
+    "La maestría se encuentra en la repetición consciente.",
+    "Dominar una tarea es dominar una parte de ti mismo.",
+    "La especialización es el camino hacia la perfección impecable.",
+    "Cada vez que repites esta acción, te vuelves más fuerte e imparable.",
+    "La gota de agua horada la piedra por su caída constante.",
+    "Eres el artesano de tu propia disciplina. Puliendo los detalles.",
+    "La excelencia es hacer algo ordinario de manera extraordinariamente consistente.",
+    "La dedicación a un solo propósito es el secreto del éxito.",
+    "Has convertido una simple tarea en un ritual de poder.",
+    "Eres el guardián absoluto de este dominio.",
+    "La concentración en un único objetivo divide la resistencia.",
+    "La repetición constante es la madre del aprendizaje y la perfección.",
+    "Tu lealtad a esta tarea es digna de las más altas leyendas.",
+    "La brillantez no es un acto aislado, es la ejecución repetida de fundamentos.",
+    "No hay rival para quien domina un arte a través de la constancia.",
+    "La semilla regada cada día florece con el color más intenso.",
+    "Has domesticado el caos enfocado en una sola meta incansable.",
+    "El verdadero poder reside en dominar lo cotidiano.",
+    "Tú no haces esta tarea, tú ERES esta tarea.",
+    "Tu devoción específica ha moldeado el universo a tu favor."
+  ],
+  streak_bounty: [
+    "Allí donde hay un desafío, tú ves una oportunidad brillante.",
+    "Los tesoros más grandes aguardan a los que tienen valor para buscarlos.",
+    "Tienes un ojo certero para cazar recompensas donde otros ven problemas.",
+    "Tu instinto de cazador de recompensas afila el progreso del equipo.",
+    "No hay botín que se escape a tu audacia incansable.",
+    "Eres el solucionador de problemas por excelencia. La élite del hogar.",
+    "Tu nombre es sinónimo de eficiencia y determinación implacable.",
+    "Las recompensas no se otorgan, se conquistan. Y tú eres el conquistador.",
+    "Donde otros dudan, tú atacas y te llevas la gloria y el botín.",
+    "El instinto de caza se ha despertado y no hay presa que se resista.",
+    "Los desafíos difíciles son solo el calentamiento para alguien de tu calibre.",
+    "Has vaciado la lista de Se Busca con una precisión letal.",
+    "Tu reputación como cazarrecompensas precede tus grandes logros.",
+    "La recompensa es grande, pero tu determinación es aún mayor.",
+    "Transformas las tareas olvidadas en relucientes trofeos de victoria.",
+    "No persigues el premio, devoras el esfuerzo hasta alcanzarlo.",
+    "Eres el lobo solitario que vuelve a la manada cargado de victorias.",
+    "Has dominado el arte de hacer que lo difícil parezca fácil y rentable.",
+    "Ninguna tarea permanece ignorada bajo tu vigilancia extrema.",
+    "El gremio de cazarrecompensas corea tu nombre como una leyenda."
+  ],
+  streak_frenzy: [
+    "Cuando entras en la zona, el caos se ordena a tu voluntad.",
+    "Tu energía desbordante arrasa con la apatía y construye imperios.",
+    "Eres una tormenta de productividad imposible de detener.",
+    "El Modo Frenesí no es un estado, es tu firma personal en el campo de batalla.",
+    "Velocidad, precisión y determinación. Eres una máquina perfecta.",
+    "Has provocado una avalancha de resultados que deja a todos sin aliento.",
+    "El reloj no te controla, tú controlas el tiempo comprimiéndolo a tu favor.",
+    "La inercia de tus logros empuja al resto del equipo hacia adelante.",
+    "Eres la definición misma de fluir en un estado de concentración absoluta.",
+    "Tus picos de energía son dignos de estudio. Eres imparable.",
+    "Donde había tareas, ahora solo queda el eco de tu velocidad ultrasónica.",
+    "Activaste el turbo y el hogar entero respira tu aire revitalizado.",
+    "Eres como un rayo: rápido, deslumbrante y cargado de poder puro.",
+    "El frenesí es tu hábitat natural, donde devoras el tiempo.",
+    "Tu ráfaga de actividad limpia, ordena y purifica el ambiente.",
+    "Cuando aceleras, el mundo a tu alrededor parece ir a cámara lenta.",
+    "Has trascendido el límite de la velocidad humana ordinaria.",
+    "Eres un torbellino de eficiencia que no deja prisioneros.",
+    "El fuego del frenesí corre por tus venas alimentando esta avalancha.",
+    "Tu capacidad de trabajo intenso es el arma definitiva para cualquier desafío."
+  ],
+  p2p_gifts: [
+    "La generosidad es la única inversión que nunca quiebra.",
+    "Tu corazón noble enriquece tanto a quien recibe como a quien da.",
+    "Compartir el éxito es la verdadera definición de alma caritativa.",
+    "Tus regalos no son solo números, son gestos profundos de aprecio.",
+    "La alegría que repartes se multiplica y vuelve a ti con mayor fuerza.",
+    "Eres el pilar emocional que sustenta la confianza del equipo.",
+    "Dar sin recordar, recibir sin olvidar. Ese es tu lema implícito.",
+    "Tus manos abiertas son el símbolo de una abundancia infinita.",
+    "Cada regalo es un puente de unión indestructible hacia los tuyos.",
+    "La solidaridad que muestras ilumina hasta los días más grises.",
+    "No hay mayor poder que el de elevar a los demás contigo.",
+    "Tu desapego material demuestra la enorme riqueza de tu espíritu.",
+    "Eres la chispa de bondad que enciende cadenas de favores infinitas.",
+    "El eco de tu generosidad resuena en las sonrisas de tu familia.",
+    "Dar es respirar para tu alma caritativa que no conoce el egoísmo.",
+    "El valor de tu regalo palidece ante el valor de tu intención pura.",
+    "Has instaurado la ley del amor y la entrega como norma inquebrantiable.",
+    "Las verdaderas riquezas se miden por lo mucho que damos a quienes nos rodean.",
+    "Tu caridad ha creado una red de seguridad emocional inestimable.",
+    "Eres la leyenda viviente de que existe esperanza brillante en el corazón humano."
+  ],
+  total_hours: [
+    "El tiempo invertido en mejorar es tiempo robado a la mortalidad.",
+    "Tus horas son ladrillos dorados en la construcción de este templo familiar.",
+    "Las grandes obras requieren paciencia, tiempo y un esfuerzo como el tuyo.",
+    "Cada hora sumada es un testimonio irrefutable de tu legendario compromiso.",
+    "El sudor de tus horas ha cristalizado en una medalla de puro orgullo.",
+    "Una leyenda no nace de la suerte, se fabrica hora tras hora en la sombra.",
+    "Has sacrificado tu tiempo, el bien más preciado, por el bienestar común.",
+    "El valor de tus horas trasciende las agujas frías del simple reloj.",
+    "Eres un coloso sosteniendo el cielo del hogar con tus propios hombros.",
+    "Las horas pasan, pero el impacto de tu dedicación resonará para siempre.",
+    "Tu resistencia es digna de los relatos épicos más grandiosos de la historia.",
+    "Cada tic-tac te acerca más al trono de la maestría absoluta.",
+    "Diez mil horas hacen al maestro, y tú avanzas a pasos de gigante.",
+    "Tu esfuerzo silente y continuo habla con más fuerza que cualquier discurso.",
+    "Has entregado fragmentos invaluables de tu vida para embellecer la de los demás.",
+    "El respeto del equipo hacia ti se acumula con cada segundo que regalas.",
+    "Eres el ancla que da firmeza y seguridad al barco en medio de la tormenta.",
+    "Tu contribución es una obra de arte pintada con los hilos invisibles del tiempo.",
+    "La eternidad recordará la dedicación silenciosa de un héroe como tú.",
+    "Alcanzar el estatus de Leyenda no es el final, es tu consagración eterna."
+  ]
+};
+
 // --- DATOS: ESTILOS AUTOMÁTICOS DE TAREAS ---
 const TASK_STYLES = [
   { icon: Sparkles, color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -339,7 +474,7 @@ export default function App() {
     const momentsRef = collection(db, 'artifacts', safeAppId, 'public', 'data', 'moments');
     const unsubscribeMoments = onSnapshot(query(momentsRef), (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      data.sort((a, b) => b.timestamp - a.timestamp);
+      data.sort((a, b) => (b.timestamp || b.redeemedAt || 0) - (a.timestamp || a.redeemedAt || 0));
       setMoments(data);
     });
 
@@ -452,18 +587,77 @@ export default function App() {
       const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       d.setDate(d.getDate() - 1);
       const yesterday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      d.setDate(d.getDate() - 1);
+      const dayBeforeYesterday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+      // Grace period dynamics (1 missed day allowed)
       let current = new Date();
-      if (!byDayMap[today]) current.setDate(current.getDate() - 1);
+      let isAlertState = false;
+
+      if (!byDayMap[today]) {
+        if (!byDayMap[yesterday]) {
+          // Si faltó ayer y hoy, la alerta 24h es hoy (en realidad es el último día antes de perderla).
+          // Wait, if it allows EXACTLY 1 missed day without breaking.
+          // That means if I do it Monday, miss Tuesday, Wednesday is the alert day. If I miss Wednesday, Thursday it resets.
+          // Let's count backwards. 
+          // If we missed today, let's step back.
+          current.setDate(current.getDate() - 1); // start checking from yesterday
+          if (byDayMap[yesterday]) {
+            // did yesterday, so we are on our first missed day (today). No alert.
+          } else if (byDayMap[dayBeforeYesterday]) {
+            // missed today, missed yesterday, but did the day before. ALARM! Last day to save it is today implicitly.
+            isAlertState = true;
+            // But wait, the streak continues counting backwards from the day we did it
+            current.setDate(current.getDate() - 1);
+          } else {
+            // missed 3 days... streak is broken completely. streak = 0.
+            return { streak: 0, isAlert: false };
+          }
+        }
+      }
+
+      // Count streak backwards looking for consecutive blocks, allowing 1 hole at most.
+      // Wait, standard Duolingo style: if you miss yesterday, you're in the alert today.
+      // E.g. did Monday. Tuesday skipped. Wednesday (today) -> Alert!
+      // If we did it today, no alert.
+      // Let's implement EXACTLY:
+      // If today is active -> streak includes today, current goes backwards. No alert.
+      // If today is inactive -> check if yesterday active. If yes -> streak includes yesterday backwards, NO alert today (grace).
+      // If today inactive AND yesterday inactive -> check if dayBefore active. If yes -> streak includes dayBefore backwards, ALERT today.
+      // If none, streak is 0.
+
+      if (byDayMap[today]) {
+        isAlertState = false;
+        // start counting from today
+      } else if (byDayMap[yesterday]) {
+        isAlertState = false; // first day skipped, grace period
+        current.setDate(current.getDate() - 1); // start from yesterday
+      } else if (byDayMap[dayBeforeYesterday]) {
+        isAlertState = true; // second day skipped, ALARM
+        current.setDate(current.getDate() - 2); // start from daybefore
+      } else {
+        return { streak: 0, isAlert: false };
+      }
 
       while (true) {
         const ds = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
         if (byDayMap[ds]) {
           streak++;
           current.setDate(current.getDate() - 1);
-        } else break;
+        } else {
+          // Let's check if there is a 1-day hole to bridge
+          let tempD = new Date(current);
+          tempD.setDate(tempD.getDate() - 1);
+          const gapDs = `${tempD.getFullYear()}-${String(tempD.getMonth() + 1).padStart(2, '0')}-${String(tempD.getDate()).padStart(2, '0')}`;
+          if (byDayMap[gapDs]) {
+            // bridged the gap
+            current.setDate(current.getDate() - 2); // skip the hole
+          } else {
+            break;
+          }
+        }
       }
-      return { streak, isAlert: !byDayMap[today] && byDayMap[yesterday] };
+      return { streak, isAlert: isAlertState };
     };
 
     // 1. Fuego Inextinguible
@@ -1030,13 +1224,16 @@ export default function App() {
         achievements: { [`${ack.id}`]: newTier }
       }, { merge: true });
 
+      const quoteList = MOTIVATIONAL_QUOTES[ack.id] || MOTIVATIONAL_QUOTES['streak_global'];
+      const randomQuote = quoteList[Math.floor(Math.random() * quoteList.length)];
+
       await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'moments'), {
         icon: '🏆',
         itemName: `¡${ack.title} Nivel ${newTier}! (+${earned.toFixed(1)} RPC)`,
         owner: userName,
         redeemedAt: Date.now(),
         timestamp: Date.now(), // Sort fix
-        badgeProps: { color: ack.color, bg: ack.bg, darkBg: ack.darkBg, border: ack.border, shadow: ack.shadow, icon: ack.icon, tier: newTier }
+        badgeProps: { color: ack.color, bg: ack.bg, darkBg: ack.darkBg, border: ack.border, shadow: ack.shadow, icon: ack.icon, tier: newTier, quote: randomQuote }
       });
 
       setActiveAchievementModal(null);
@@ -1952,14 +2149,14 @@ export default function App() {
                       onClick={() => setActiveAchievementModal(ack)}
                       className="shrink-0 snap-start flex flex-col items-center gap-2 cursor-pointer group"
                     >
-                      <div className={`relative w-[72px] h-[72px] rounded-full flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm border ${ack.isAlert && !isReady ? 'border-red-500' : ack.border} transition-all duration-300 ${isReady ? `scale-[1.15] ${ack.shadow} shadow-lg ring-4 ring-offset-2 ring-orange-400/50 dark:ring-offset-slate-950 animate-soft-glow` : 'hover:scale-105'} ${ack.isAlert && !isReady ? 'ring-4 ring-red-500/30' : ''}`}>
+                      <div className={`relative w-[72px] h-[72px] rounded-full flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm border ${ack.isAlert && !isReady ? 'ring-2 ring-red-500/80 shadow-red-500/20' : ''} ${ack.border} transition-all duration-300 ${isReady ? `scale-[1.15] ${ack.shadow} shadow-lg ring-4 ring-offset-2 ring-orange-400/50 dark:ring-offset-slate-950 animate-soft-glow` : 'hover:scale-105'}`}>
 
                         {/* SVGs para el anillo de progreso estilo Google Maps */}
                         <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full -rotate-90">
-                          <circle strokeDasharray="100, 100" className={`${ack.isAlert && !isReady ? 'text-red-100 dark:text-red-950' : 'text-slate-100 dark:text-slate-800'} stroke-current`} strokeWidth="2.5" fill="none" r="16" cx="18" cy="18" />
+                          <circle strokeDasharray="100, 100" className="text-slate-100 dark:text-slate-800 stroke-current" strokeWidth="2.5" fill="none" r="16" cx="18" cy="18" />
                           <circle
                             strokeDasharray={dashArray}
-                            className={`${ack.isAlert && !isReady ? 'text-red-500' : ack.color} stroke-current transition-all duration-1000 ease-out`}
+                            className={`${ack.color} stroke-current transition-all duration-1000 ease-out`}
                             strokeWidth="2.5"
                             strokeLinecap="round"
                             fill="none"
@@ -1967,13 +2164,13 @@ export default function App() {
                           />
                         </svg>
 
-                        <div className={`w-11 h-11 rounded-full flex items-center justify-center relative z-10 ${isReady ? ack.bg : (ack.isAlert && !isReady ? 'bg-red-50 dark:bg-red-900/20' : 'bg-slate-100 dark:bg-slate-800')} ${isReady ? ack.darkBg : ''}`}>
-                          <IconCmp size={20} className={`${isReady ? ack.color : (ack.isAlert && !isReady ? 'text-red-400' : 'text-slate-400')} ${isReady ? 'animate-soft-glow' : ''}`} />
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center relative z-10 ${isReady ? ack.bg : 'bg-slate-100 dark:bg-slate-800'} ${isReady ? ack.darkBg : ''}`}>
+                          <IconCmp size={20} className={`${isReady ? ack.color : 'text-slate-400'} ${isReady ? 'animate-soft-glow' : ''}`} />
                         </div>
 
-                        {/* Alerta Roja si pierde la racha */}
+                        {/* Alarma muy sutil si está a punto de perder la racha */}
                         {ack.isAlert && !isReady && (
-                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-[9px] text-white font-black uppercase tracking-wider shadow-md animate-pulse z-20 whitespace-nowrap">⏳ 24h</div>
+                          <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-slate-950 animate-pulse z-20 shadow-sm shadow-red-500/50"></div>
                         )}
                       </div>
                       <div className="text-center w-24">
@@ -2123,10 +2320,10 @@ export default function App() {
                       <div className={`aspect-square flex items-center justify-center text-8xl border border-slate-200 dark:border-slate-700 relative overflow-hidden ${moment.badgeProps ? moment.badgeProps.bg + ' ' + (moment.badgeProps.darkBg || '') : 'bg-slate-100 dark:bg-slate-800'}`}>
                         {moment.badgeProps ? (() => {
                           const tier = moment.badgeProps.tier || 1;
-                          const isUncommon = tier >= 2;
-                          const isRare = tier >= 3;
-                          const isEpic = tier >= 5;
-                          const isLegendary = tier >= 10;
+                          const isUncommon = tier >= 5;
+                          const isRare = tier >= 10;
+                          const isEpic = tier >= 20;
+                          const isLegendary = tier >= 50;
 
                           const baseSize = isLegendary ? 'w-48 h-48' : isEpic ? 'w-44 h-44' : isRare ? 'w-40 h-40' : isUncommon ? 'w-36 h-36' : 'w-32 h-32';
                           const iconSize = isLegendary ? 72 : isEpic ? 64 : isRare ? 56 : isUncommon ? 48 : 40;
@@ -2165,9 +2362,14 @@ export default function App() {
                           moment.icon
                         )}
                       </div>
-                      <div className="p-4 text-center">
-                        <h4 className="font-bold font-serif text-lg text-slate-800 dark:text-slate-100 mb-1">{moment.itemName}</h4>
-                        <p className="text-xs text-slate-500 font-medium font-serif italic">Por {moment.owner} • {new Date(moment.redeemedAt).toLocaleDateString()}</p>
+                      <div className="p-4 text-center mt-2">
+                        <h4 className="font-bold font-serif text-sm text-slate-800 dark:text-slate-100 mb-1 leading-tight">{moment.itemName}</h4>
+                        <p className="text-[10px] text-slate-400 font-medium font-serif italic mb-3">Por {moment.owner} • {new Date(moment.timestamp || moment.redeemedAt).toLocaleDateString()}</p>
+                        {moment.badgeProps?.quote && (
+                          <div className="pt-3 border-t border-slate-100 dark:border-slate-800/60 transition-all">
+                            <p className="text-xs italic text-slate-500 dark:text-slate-400 font-serif leading-relaxed px-2">"{moment.badgeProps.quote}"</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
