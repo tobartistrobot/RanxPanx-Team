@@ -1430,6 +1430,56 @@ export default function App() {
     } catch (e) { }
   };
 
+  const playCouponRedeemSound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const start = ctx.currentTime;
+      // 1. Golpe sordo (Impacto)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, start);
+      osc.frequency.exponentialRampToValueAtTime(40, start + 0.1);
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(1, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.12);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(start); osc.stop(start + 0.13);
+
+      // 2. Fsssh Mágico (Combustión)
+      const bufferSize = ctx.sampleRate * 0.3;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      const noise = ctx.createBufferSource(); noise.buffer = buffer;
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'highpass';
+      noiseFilter.frequency.setValueAtTime(1000, start + 0.05);
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0, start + 0.05);
+      noiseGain.gain.linearRampToValueAtTime(0.3, start + 0.1);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+      noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(ctx.destination);
+      noise.start(start + 0.05);
+
+      // 3. Acorde Cristalino (Brillo)
+      [523.25, 659.25, 1046.50].forEach((freq, idx) => {
+        const sOsc = ctx.createOscillator();
+        const sGain = ctx.createGain();
+        sOsc.type = 'sine';
+        sOsc.frequency.setValueAtTime(freq, start + 0.08);
+        sGain.gain.setValueAtTime(0, start + 0.08);
+        sGain.gain.linearRampToValueAtTime(0.15, start + 0.1 + (idx * 0.02));
+        sGain.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
+        sOsc.connect(sGain); sGain.connect(ctx.destination);
+        sOsc.start(start + 0.08); sOsc.stop(start + 0.55);
+      });
+    } catch (e) { }
+  };
+
   const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false, targetUser = userName) => {
     if (!targetUser || durationSeconds < 60) return 0; // Menos de 1 min no da RPC
 
@@ -1720,7 +1770,7 @@ export default function App() {
 
       const confetti = (await import('canvas-confetti')).default;
       confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#fffc00', '#ff008d', '#00e5ff', '#ff5100', '#56ff00'] });
-      playCashSound();
+      playCouponRedeemSound();
 
       showToast('¡Premio canjeado! Disfruta tu momento.', 'success');
       setRewardsView('history');
