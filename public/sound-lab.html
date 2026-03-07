@@ -116,133 +116,15 @@
     </div>
 
     <script>
-        const getCtx = () => {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            return new AudioCtx();
+        const getAudio = (num) => {
+            const audio = new Audio(`./sounds/shotgun_${num}.mp3`);
+            audio.volume = 1.0;
+            return audio;
         };
 
-        // Utilidad para crear ruido blanco
-        const createNoiseBuffer = (ctx, duration) => {
-            const bufferSize = ctx.sampleRate * duration;
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            return buffer;
-        };
-
-        // Función para crear un "clanc" de metal pesado (graves percusivos + ruido raspado)
-        const createMetalImpact = (ctx, time, isHeavy = true) => {
-            // El impacto grave del metal
-            const bodyOsc = ctx.createOscillator();
-            const bodyGain = ctx.createGain();
-            bodyOsc.type = 'triangle';
-            bodyOsc.frequency.setValueAtTime(isHeavy ? 200 : 300, time);
-            bodyOsc.frequency.exponentialRampToValueAtTime(80, time + 0.05);
-
-            bodyGain.gain.setValueAtTime(0, time);
-            bodyGain.gain.linearRampToValueAtTime(isHeavy ? 0.7 : 0.4, time + 0.005);
-            bodyGain.gain.exponentialRampToValueAtTime(0.01, time + 0.06);
-
-            bodyOsc.connect(bodyGain);
-            bodyGain.connect(ctx.destination);
-            bodyOsc.start(time);
-            bodyOsc.stop(time + 0.07);
-
-            // El roce del metal deslizándose (ruido agudo bandpass)
-            const noise = ctx.createBufferSource();
-            noise.buffer = createNoiseBuffer(ctx, 0.1);
-            const noiseFilter = ctx.createBiquadFilter();
-            noiseFilter.type = 'bandpass';
-            noiseFilter.frequency.setValueAtTime(1500, time);
-            noiseFilter.frequency.linearRampToValueAtTime(4000, time + 0.05); // deslizamiento rápido de fricción
-            noiseFilter.Q.value = 5;
-
-            const noiseGain = ctx.createGain();
-            noiseGain.gain.setValueAtTime(0, time);
-            noiseGain.gain.linearRampToValueAtTime(0.5, time + 0.005);
-            noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
-
-            noise.connect(noiseFilter);
-            noiseFilter.connect(noiseGain);
-            noiseGain.connect(ctx.destination);
-            noise.start(time);
-        };
-
-        // Opción A: Pump-Action Doble (Chck-Chck)
-        const playShotgunA = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
-            // Adelante (Chck)
-            createMetalImpact(ctx, start, true);
-            // Atrás (Chck)
-            createMetalImpact(ctx, start + 0.08, true);
-        };
-
-        // Opción B: Recarga Táctica Rápida (Un golpe y roce)
-        const playShotgunB = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
-
-            // Impacto percusivo de meter el cartucho y cerrar (clack)
-            createMetalImpact(ctx, start, true);
-
-            // Ruido residual fino de cierre (metálico y fino)
-            const noise = ctx.createBufferSource();
-            noise.buffer = createNoiseBuffer(ctx, 0.1);
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'highpass';
-            filter.frequency.setValueAtTime(4000, start + 0.03);
-
-            const gain = ctx.createGain();
-            gain.gain.setValueAtTime(0, start + 0.03);
-            gain.gain.linearRampToValueAtTime(0.2, start + 0.04);
-            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.08);
-
-            noise.connect(filter);
-            filter.connect(gain);
-            gain.connect(ctx.destination);
-            noise.start(start + 0.03);
-        };
-
-        // Opción C: Cerrojo Metálico Clic (Más agudo y rápido)
-        const playShotgunC = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
-
-            // Clac muy corto, metálico puro (oscilador sawtooth agresivo)
-            const clacOsc = ctx.createOscillator();
-            const clacGain = ctx.createGain();
-            clacOsc.type = 'sawtooth';
-            clacOsc.frequency.setValueAtTime(800, start);
-            clacOsc.frequency.exponentialRampToValueAtTime(200, start + 0.03);
-
-            clacGain.gain.setValueAtTime(0, start);
-            clacGain.gain.linearRampToValueAtTime(0.15, start + 0.002);
-            clacGain.gain.exponentialRampToValueAtTime(0.001, start + 0.04);
-
-            clacOsc.connect(clacGain);
-            clacGain.connect(ctx.destination);
-            clacOsc.start(start);
-            clacOsc.stop(start + 0.05);
-
-            // Reverb de cerrojo
-            const noise = ctx.createBufferSource();
-            noise.buffer = createNoiseBuffer(ctx, 0.1);
-            const noiseFilter = ctx.createBiquadFilter();
-            noiseFilter.type = 'bandpass';
-            noiseFilter.frequency.setValueAtTime(3000, start);
-            noiseFilter.Q.value = 10; // Muy resonante, suena as como campana/metal
-
-            const noiseGain = ctx.createGain();
-            noiseGain.gain.setValueAtTime(0, start);
-            noiseGain.gain.linearRampToValueAtTime(0.6, start + 0.005);
-            noiseGain.gain.exponentialRampToValueAtTime(0.001, start + 0.05);
-
-            noise.connect(noiseFilter);
-            noiseFilter.connect(noiseGain);
-            noiseGain.connect(ctx.destination);
-            noise.start(start);
-        };
+        const playShotgunA = () => { getAudio(1).play().catch(console.error); };
+        const playShotgunB = () => { getAudio(2).play().catch(console.error); };
+        const playShotgunC = () => { getAudio(3).play().catch(console.error); };
     </script>
 </body>
 
