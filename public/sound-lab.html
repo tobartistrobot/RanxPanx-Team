@@ -11,80 +11,221 @@
             padding: 2rem;
             background: #0f172a;
             color: #f8fafc;
-            text-align: center;
         }
 
         h1 {
-            color: #10b981;
-            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            color: #f97316;
+            text-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
         }
 
         .card {
             background: #1e293b;
             border-radius: 12px;
-            padding: 3rem;
+            padding: 1.5rem;
             text-align: center;
-            border: 2px solid #10b981;
-            max-width: 500px;
-            margin: 2rem auto;
+            border: 1px solid #334155;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #e2e8f0;
         }
 
         button {
-            background: #059669;
+            background: #ea580c;
             color: white;
             border: none;
-            padding: 1rem 2rem;
+            padding: 0.75rem 1.5rem;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
         }
 
         button:hover {
-            background: #10b981;
+            background: #f97316;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
         }
 
         button:active {
             transform: translateY(1px);
         }
+
+        .badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(249, 115, 22, 0.2);
+            color: #fdba74;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
     </style>
 </head>
 
 <body>
-    <h1>🛍️ Ka-Ching Auténtico (MyInstants)</h1>
-    <p>Has pedido exactamente el sonido "Generic Ka-Ching" de MyInstants. Lo he descargado y preparado como archivo
-        nativo (.mp3) para integrarlo tal cual.</p>
+    <h1>🎁 Laboratorio: Enviar Regalo P2P</h1>
+    <p>Momento: el usuario pulsa "Enviar Regalo" y sus RPC salen volando hacia la otra persona. El sonido debe dar esa
+        sensación de <b>algo que se lanza al aire felizmente y se va</b>. Swoosh ascendente, ligero y optimista.</p>
 
-    <div class="card">
-        <h2>💰 Play Ka-Ching.mp3</h2>
-        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">
-            Este es el archivo mp3 original reproducido directamente desde la carpeta local (ruta relativa corregida).
-        </p>
-        <button onclick="playMyInstantsKaching()">Reproducir Ka-Ching Original</button>
+    <div class="grid">
+        <div class="card" style="border-color: #f97316;">
+            <div class="badge">Cohete</div>
+            <h2>🎁 Opción A: Whoosh Directo (Fast Launch)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un ruido de viento muy rápido que sube
+                instantáneamente de grave a agudo en 0.3s y desaparece con un "pop" limpio al final. Como lanzar un
+                avión de papel con toda tu alma.</p>
+            <button onclick="playSendA()">Enviar A</button>
+        </div>
+
+        <div class="card" style="border-color: #ea580c;">
+            <div class="badge">Cohete 2</div>
+            <h2>🎁 Opción B: Swoosh con Brillo Final (Magic Throw)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Igual de rápido pero al terminar el
+                "whoosh" hay una pequeña estrella (nota aguda breve) que destella, como si el regalo llegara con una
+                chispa de magia.</p>
+            <button onclick="playSendB()">Enviar B</button>
+        </div>
+
+        <div class="card" style="border-color: #c2410c;">
+            <div class="badge">Campana</div>
+            <h2>🎁 Opción C: Tono Ascendente (Happy Rise)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Más musical. Una nota sinusoidal pura que
+                sube rápidamente dos octavas y se desvanece. Como en los videojuegos retro cuando mandas algo especial a
+                un amigo. Muy limpio.</p>
+            <button onclick="playSendC()">Enviar C</button>
+        </div>
     </div>
 
-    <!-- Referencia de fallback visual -->
-    <div id="status" style="margin-top:20px; color:#f59e0b;"></div>
-
     <script>
-        const playMyInstantsKaching = () => {
-            const statusDiv = document.getElementById('status');
-            statusDiv.innerText = "Reproduciendo...";
+        const getCtx = () => {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            return new AudioCtx();
+        };
 
-            // Usamos ruta relativa "./sounds/" para que funcione al abrir el HTML en local sin servidor
-            const audio = new Audio('./sounds/kaching.mp3');
+        // Opción A: Whoosh puro ascendente (Ruido filtrado)
+        const playSendA = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
 
-            audio.play().then(() => {
-                setTimeout(() => { statusDiv.innerText = ""; }, 1500);
-            }).catch(e => {
-                statusDiv.innerText = "Error: " + e.message;
-                console.error("Error reproduciendo el audio:", e);
-                alert("Asegúrate de que estás abriendo el archivo con acceso a carpetas locales o mediante un servidor como Vite (npm run dev). Detalles del error: " + e.message);
+            // Ruido blanco que pasa por un filtro bandpass que sube muy rápido
+            const bufferSize = ctx.sampleRate * 0.35;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.Q.value = 3;
+            // Sube de 200 a 6000Hz en 0.3s = efecto de salir volando
+            filter.frequency.setValueAtTime(200, start);
+            filter.frequency.exponentialRampToValueAtTime(6000, start + 0.3);
+
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0, start);
+            gain.gain.linearRampToValueAtTime(0.35, start + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35); // Desaparece volando
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            noise.start(start);
+        };
+
+        // Opción B: Whoosh + Estrella final
+        const playSendB = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+
+            // PARTE 1: El Whoosh (igual que A pero un poco más corto)
+            const bufferSize = ctx.sampleRate * 0.25;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.Q.value = 2;
+            filter.frequency.setValueAtTime(300, start);
+            filter.frequency.exponentialRampToValueAtTime(5000, start + 0.22);
+
+            const gainNoise = ctx.createGain();
+            gainNoise.gain.setValueAtTime(0, start);
+            gainNoise.gain.linearRampToValueAtTime(0.3, start + 0.05);
+            gainNoise.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+
+            noise.connect(filter);
+            filter.connect(gainNoise);
+            gainNoise.connect(ctx.destination);
+            noise.start(start);
+
+            // PARTE 2: La Estrella (nota aguda y corta al final del whoosh)
+            const starTime = start + 0.22; // Justo cuando el whoosh se apaga
+            const freqs = [1760, 2637]; // A6, E7 (brillo de estrella)
+
+            freqs.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gainStar = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, starTime + idx * 0.02);
+
+                gainStar.gain.setValueAtTime(0, starTime + idx * 0.02);
+                gainStar.gain.linearRampToValueAtTime(0.2, starTime + idx * 0.02 + 0.01);
+                gainStar.gain.exponentialRampToValueAtTime(0.001, starTime + idx * 0.02 + 0.15);
+
+                osc.connect(gainStar);
+                gainStar.connect(ctx.destination);
+                osc.start(starTime + idx * 0.02);
+                osc.stop(starTime + idx * 0.02 + 0.2);
             });
+        };
+
+        // Opción C: Tono Sine ascendente (Puro y Musical)
+        const playSendC = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+
+            // Onda pura que sube dos octavas en 0.25s
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            // Sube de C4 (261Hz) a C6 (1047Hz) = 2 octavas=
+            osc.frequency.setValueAtTime(261.63, start);
+            osc.frequency.exponentialRampToValueAtTime(1046.50, start + 0.25);
+
+            gain.gain.setValueAtTime(0, start);
+            gain.gain.linearRampToValueAtTime(0.3, start + 0.02);
+            gain.gain.setValueAtTime(0.3, start + 0.2);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35); // Fade al final
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(start);
+            osc.stop(start + 0.4);
         };
     </script>
 </body>
