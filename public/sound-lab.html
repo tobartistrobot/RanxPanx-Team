@@ -11,6 +11,7 @@
             padding: 2rem;
             background: #0f172a;
             color: #f8fafc;
+            text-align: center;
         }
 
         h1 {
@@ -18,37 +19,24 @@
             text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
         .card {
             background: #1e293b;
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 3rem;
             text-align: center;
-            border: 1px solid #334155;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card h2 {
-            margin-top: 0;
-            font-size: 1.2rem;
-            color: #e2e8f0;
+            border: 2px solid #10b981;
+            max-width: 500px;
+            margin: 2rem auto;
         }
 
         button {
             background: #059669;
             color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
+            padding: 1rem 2rem;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 1.2rem;
             cursor: pointer;
             transition: all 0.2s;
             box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
@@ -63,234 +51,31 @@
         button:active {
             transform: translateY(1px);
         }
-
-        .badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(16, 185, 129, 0.2);
-            color: #6ee7b7;
-            font-size: 0.7rem;
-            padding: 3px 8px;
-            border-radius: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
     </style>
 </head>
 
 <body>
-    <h1>🛍️ Laboratorio: El Sonido Premium Definitivo</h1>
-    <p>Olvidemos las cajas registradoras ruidosas y las monedas medievales. RanxPanx Team es una app moderna y elegante.
-        Gastar tus puntos debe sonar como un <b>"Desbloqueo Premium"</b>, una confirmación digital hiper-satisfactoria,
-        limpia y alegre. Aquí tienes tres enfoques de UI Sound Design de alto nivel.</p>
+    <h1>🛍️ Ka-Ching Auténtico (MyInstants)</h1>
+    <p>Has pedido exactamente el sonido "Generic Ka-Ching" de MyInstants. Lo he descargado y preparado como archivo
+        nativo (.mp3) para integrarlo tal cual.</p>
 
-    <div class="grid">
-        <div class="card" style="border-color: #10b981;">
-            <div class="badge">Elegante</div>
-            <h2>🛍️ Opción A: Confirmación Apple (Sleek Pay)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Inspirado en los pagos sin contacto de gama
-                alta (Apple Pay). Dos tonos puros y redondos que ascienden suavemente, terminando con un levísimo
-                "click" de validación. Cero estridencias, 100% estatus.</p>
-            <button onclick="playPremiumA()">Comprar Opción A</button>
-        </div>
-
-        <div class="card" style="border-color: #059669;">
-            <div class="badge">Mágico</div>
-            <h2>🛍️ Opción B: Síntesis de Recompensa (Crafting)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Suena a "fabricar" un objeto valioso. Un
-                soplido limpio invertido (swoosh) que culmina en una nota gruesa y brillante (campanilla de cristal).
-                Transforma el esfuerzo digital en un premio real.</p>
-            <button onclick="playPremiumB()">Comprar Opción B</button>
-        </div>
-
-        <div class="card" style="border-color: #047857;">
-            <div class="badge">Burbuja</div>
-            <h2>🛍️ Opción C: Unboxing Feliz (Happy Pop)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Físico pero moderno. El sonido literal de
-                abrir una gruesa caja de cartón de diseño ("Pop" grave con ataque rápido), seguido de un mini acorde muy
-                cortito y alegre. Como destapar un regalo sorpresa.</p>
-            <button onclick="playPremiumC()">Comprar Opción C</button>
-        </div>
+    <div class="card">
+        <h2>💰 Play Ka-Ching.mp3</h2>
+        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">
+            Este es el archivo mp3 original reproducido directamente desde la carpeta public/sounds de tu proyecto.
+        </p>
+        <button onclick="playMyInstantsKaching()">Reproducir Ka-Ching Original</button>
     </div>
 
+    <!-- Referencia de audio oculto para cargar el mp3 -->
+    <audio id="kachingAudio" src="/sounds/kaching.mp3" preload="auto"></audio>
+
     <script>
-        const getCtx = () => {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            return new AudioCtx();
-        };
-
-        const createEcho = (ctx, time = 0.1, fbk = 0.2) => {
-            const delay = ctx.createDelay();
-            delay.delayTime.value = time;
-            const feedback = ctx.createGain();
-            feedback.gain.value = fbk;
-            delay.connect(feedback);
-            feedback.connect(delay);
-            return { delayNode: delay, outNode: delay };
-        };
-
-        // Opción A: Confirmación Premium (Apple Pay style - Bloop Bloop)
-        const playPremiumA = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
-            const echo = createEcho(ctx, 0.15, 0.15); // Reverb sutil
-
-            // Dos tonos purísimos: D5 -> F#5 (Tercera mayor ascendente = Felicidad / Éxito)
-            const freqs = [587.33, 739.99];
-            const delays = [0, 0.12];
-
-            freqs.forEach((freq, idx) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-
-                // Mezcla de Sine (puro) y Triangle (cuerpo cálido)
-                osc.type = 'sine';
-
-                osc.frequency.setValueAtTime(freq, start + delays[idx]);
-                // Ligero pitch bend hacia arriba para darle carácter de "aprobado"
-                osc.frequency.exponentialRampToValueAtTime(freq * 1.05, start + delays[idx] + 0.1);
-
-                gain.gain.setValueAtTime(0, start + delays[idx]);
-                gain.gain.linearRampToValueAtTime(0.4, start + delays[idx] + 0.02); // Entra suave
-                gain.gain.exponentialRampToValueAtTime(0.01, start + delays[idx] + 0.2); // Sale limpio
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                if (idx === 1) gain.connect(echo.delayNode); // Solo echo en la última para no embarrar
-
-                osc.start(start + delays[idx]);
-                osc.stop(start + delays[idx] + 0.25);
-            });
-
-            // Mini click al final (Confirmación háptica de UI)
-            const clickTime = start + 0.28;
-            const bufferSize = ctx.sampleRate * 0.02;
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-            const noise = ctx.createBufferSource();
-            noise.buffer = buffer;
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'highpass';
-            filter.frequency.value = 8000;
-
-            const clickGain = ctx.createGain();
-            clickGain.gain.setValueAtTime(0, clickTime);
-            clickGain.gain.linearRampToValueAtTime(0.1, clickTime + 0.005);
-            clickGain.gain.exponentialRampToValueAtTime(0.01, clickTime + 0.02);
-
-            noise.connect(filter); filter.connect(clickGain); clickGain.connect(ctx.destination);
-            noise.start(clickTime);
-        };
-
-        // Opción B: Síntesis Mágica (Swoosh ascendente + Cristal)
-        const playPremiumB = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
-            const echo = createEcho(ctx, 0.2, 0.3);
-
-            // 1. El "Swoosh" de creación (Ruido blanco filtrado que sube rápido)
-            const bufferSize = ctx.sampleRate * 0.2;
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-            const noise = ctx.createBufferSource();
-            noise.buffer = buffer;
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.Q.value = 5;
-
-            // Sube de 500 a 4000Hz (Aspiración rítmica)
-            filter.frequency.setValueAtTime(500, start);
-            filter.frequency.exponentialRampToValueAtTime(4000, start + 0.15);
-
-            const swooshGain = ctx.createGain();
-            swooshGain.gain.setValueAtTime(0, start);
-            swooshGain.gain.linearRampToValueAtTime(0.2, start + 0.1);
-            swooshGain.gain.exponentialRampToValueAtTime(0.01, start + 0.2);
-
-            noise.connect(filter); filter.connect(swooshGain); swooshGain.connect(ctx.destination);
-            noise.start(start);
-
-            // 2. Cristal brillante (Acorde E Major 9 condensado)
-            const bellTime = start + 0.15; // Justo en el pico del swoosh
-            const freqs = [659.25, 987.77, 1244.51]; // E5, B5, D#6
-
-            freqs.forEach((freq, idx) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'triangle'; // Cristalino pero sin ser afilado
-
-                osc.frequency.setValueAtTime(freq, bellTime);
-
-                gain.gain.setValueAtTime(0, bellTime);
-                gain.gain.linearRampToValueAtTime(0.25 / freqs.length, bellTime + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.01, bellTime + 0.8 - (idx * 0.1));
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
-
-                osc.start(bellTime);
-                osc.stop(bellTime + 1.0);
-            });
-        };
-
-        // Opción C: Unboxing Feliz (Pop UI + Acorde corto)
-        const playPremiumC = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
-
-            // 1. El "Pop" profundo (Pitch drop extremo de un oscilador de onda cuadrada)
-            const oscPop = ctx.createOscillator();
-            const gainPop = ctx.createGain();
-            oscPop.type = 'square';
-
-            // Frecuencia que cae en picado de 800 a 50Hz en 30ms = "POP" orgánico
-            oscPop.frequency.setValueAtTime(800, start);
-            oscPop.frequency.exponentialRampToValueAtTime(50, start + 0.03);
-
-            // Filtro para quitar todo el zumbido eléctrico y dejar solo el ataque físico
-            const filterPop = ctx.createBiquadFilter();
-            filterPop.type = 'lowpass';
-            filterPop.frequency.value = 300;
-
-            gainPop.gain.setValueAtTime(0, start);
-            gainPop.gain.linearRampToValueAtTime(0.8, start + 0.01); // Golpetazo suave
-            gainPop.gain.exponentialRampToValueAtTime(0.01, start + 0.06);
-
-            oscPop.connect(filterPop); filterPop.connect(gainPop); gainPop.connect(ctx.destination);
-            oscPop.start(start);
-            oscPop.stop(start + 0.1);
-
-            // 2. La "Luz" del interior de la caja (Acorde rápido alegre: C Major)
-            const chordTime = start + 0.03;
-            const freqs = [523.25, 659.25, 783.99]; // C5, E5, G5
-
-            const echo = createEcho(ctx, 0.1, 0.2);
-
-            freqs.forEach(freq => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-
-                osc.frequency.setValueAtTime(freq, chordTime);
-
-                gain.gain.setValueAtTime(0, chordTime);
-                gain.gain.linearRampToValueAtTime(0.3, chordTime + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.01, chordTime + 0.25); // Muy cortito, alegre
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
-
-                osc.start(chordTime);
-                osc.stop(chordTime + 0.3);
-            });
+        const playMyInstantsKaching = () => {
+            const audio = document.getElementById('kachingAudio');
+            // Resetear el tiempo si ya estaba sonando
+            audio.currentTime = 0;
+            audio.play().catch(e => console.error("Error reproduciendo el audio:", e));
         };
     </script>
 </body>
