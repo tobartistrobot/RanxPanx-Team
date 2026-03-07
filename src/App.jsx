@@ -925,6 +925,7 @@ export default function App() {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
       const start = ctx.currentTime;
 
       // 3 campanitas aleatorias en tono muy agudo (Pentatónica mayor C) / Polvo de Hadas
@@ -1639,9 +1640,7 @@ export default function App() {
 
   const toggleGrocery = async (id, currentStatus) => {
     try {
-      await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'groceries', id), {
-        completed: !currentStatus
-      });
+      // 1. Efectos visuales y de sonido (deben ser síncronos por el AudioContext del navegador)
       if (!currentStatus) {
         playGroceryCheckSound();
         import('canvas-confetti').then((confetti) => {
@@ -1650,6 +1649,11 @@ export default function App() {
       } else {
         playGroceryUncheckSound();
       }
+
+      // 2. Operación asíncrona en base de datos
+      await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'groceries', id), {
+        completed: !currentStatus
+      });
     } catch (error) {
       console.error("Error toggling grocery:", error);
     }
