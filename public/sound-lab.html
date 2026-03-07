@@ -14,8 +14,8 @@
         }
 
         h1 {
-            color: #10b981;
-            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            color: #f59e0b;
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
         }
 
         .grid {
@@ -42,7 +42,7 @@
         }
 
         button {
-            background: #059669;
+            background: #d97706;
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -51,13 +51,13 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+            box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3);
         }
 
         button:hover {
-            background: #10b981;
+            background: #f59e0b;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
         }
 
         button:active {
@@ -68,50 +68,49 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(16, 185, 129, 0.2);
-            color: #6ee7b7;
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
             font-size: 0.7rem;
             padding: 3px 8px;
             border-radius: 10px;
             font-weight: bold;
             text-transform: uppercase;
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(245, 158, 11, 0.3);
         }
     </style>
 </head>
 
 <body>
-    <h1>🛍️ Laboratorio: El "Ka-Ching" Definitivo</h1>
-    <p>He reescrito el sintetizador desde cero. Estas 3 opciones recrean fielmente la mecánica física y la campana
-        inarmónica de bronce de una caja registradora real, controlando las frecuencias de la campana para que sea 100%
-        dopamina pura y pesada sin causar dolor de oídos ("estridencia").</p>
+    <h1>💰 Laboratorio: Monedas en un Saco</h1>
+    <p>Hemos descartado la "Caja Registradora". Ahora buscamos el sonido físico de soltar <b>Monedas de Oro</b> pesadas
+        dentro de un saco de cuero. Satisfactorio, orgánico y con sensación de riqueza conseguida.</p>
 
     <div class="grid">
-        <div class="card" style="border-color: #10b981;">
-            <div class="badge">Vintage</div>
-            <h2>🛍️ Opción A: Ka-Ching Clásico y Realista</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">La recreación más pura. Escuchas el "Cha"
-                (fricción del carrito), seguido del golpe ("Ka") en simultáneo con una campana de bronce de 4 armónicos
-                que se apaga de forma natural.</p>
-            <button onclick="playKachingA()">Cobrar Opción A</button>
+        <div class="card" style="border-color: #f59e0b;">
+            <div class="badge">Pesado</div>
+            <h2>💰 Opción A: Puñado de Oro (Heavy Drop)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Suena a dejar caer de golpe un puñado
+                entero de monedas pesadas dentro de un saco. Corto, denso, con mucha fricción y un "clonk" grave de
+                fondo.</p>
+            <button onclick="playCoinsA()">Cobrar Opción A</button>
         </div>
 
-        <div class="card" style="border-color: #059669;">
-            <div class="badge">Punchy</div>
-            <h2>🛍️ Opción B: Ka-Ching Pesado (Modernizado)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Una caja más "gorda". El chasquido mecánico
-                tiene más graves (suena compacto y pesado) y la campanada es un poco más grave, gruesa y rápida. Da
-                sensación de soltar mucho dinero.</p>
-            <button onclick="playKachingB()">Cobrar Opción B</button>
+        <div class="card" style="border-color: #d97706;">
+            <div class="badge">Detallado</div>
+            <h2>💰 Opción B: Lluvia Rápida (Coin Shower)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Suena a dejar escurrir las monedas por los
+                dedos hacia el saco. Percibes los choques individuales súper rápidos durante unos milisegundos, dándole
+                un brillo muy dopamínico.</p>
+            <button onclick="playCoinsB()">Cobrar Opción B</button>
         </div>
 
-        <div class="card" style="border-color: #047857;">
-            <div class="badge">Jackpot</div>
-            <h2>🛍️ Opción C: Cha-Ching-Ching (Doble Campana)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un solo tirón mecánico pero que acciona la
-                campana dos veces seguidas muy rápido. Típico sonido de haber sacado premio o gastado en un ítem
-                importante.</p>
-            <button onclick="playKachingC()">Cobrar Opción C</button>
+        <div class="card" style="border-color: #b45309;">
+            <div class="badge">Sutil</div>
+            <h2>💰 Opción C: Las 3 Monedas (Three Coins)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">El más minimalista y elegante. Escuchas
+                claramente caer solo dos o tres monedas grandes y gruesas una tras otra (Clink.. Clak..). Menos ruido y
+                más tono metálico puro.</p>
+            <button onclick="playCoinsC()">Cobrar Opción C</button>
         </div>
     </div>
 
@@ -121,18 +120,8 @@
             return new AudioCtx();
         };
 
-        const createEcho = (ctx, time = 0.05, fbk = 0.1) => {
-            const delay = ctx.createDelay();
-            delay.delayTime.value = time; // Eco minúsculo para dar cuerpo al metal
-            const feedback = ctx.createGain();
-            feedback.gain.value = fbk;
-            delay.connect(feedback);
-            feedback.connect(delay);
-            return { delayNode: delay, outNode: delay };
-        };
-
-        // Utilidad común para el "Ruido Mecánico"
-        const playMechanism = (ctx, time, duration, filterType, filterFreq, volume = 0.4) => {
+        // Ruido sordo para simular el cuero del saco o la fricción
+        const playPouchThomp = (ctx, time, duration = 0.1) => {
             const bufferSize = ctx.sampleRate * duration;
             const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
             const data = buffer.getChannelData(0);
@@ -141,13 +130,13 @@
             const noise = ctx.createBufferSource();
             noise.buffer = buffer;
             const filter = ctx.createBiquadFilter();
-            filter.type = filterType;
-            filter.frequency.value = filterFreq;
-            filter.Q.value = 1;
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(400, time); // Saco grave
+            filter.frequency.exponentialRampToValueAtTime(100, time + duration);
 
             const gain = ctx.createGain();
             gain.gain.setValueAtTime(0, time);
-            gain.gain.linearRampToValueAtTime(volume, time + 0.01);
+            gain.gain.linearRampToValueAtTime(0.7, time + 0.01);
             gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
 
             noise.connect(filter);
@@ -156,81 +145,97 @@
             noise.start(time);
         };
 
-        // Generador de Campana de Bronce inarmónica
-        const playBell = (ctx, time, baseFreq, decayMult, volMult) => {
-            const echo = createEcho(ctx);
-            // Inarmónicos para sonar a campana real (no acordes musicales)
-            // Multiplicadores típicos: 1, 1.4, 1.9, 2.3
-            const ratios = [1.0, 1.42, 1.95, 2.3];
-            const decays = [1.2 * decayMult, 0.8 * decayMult, 0.5 * decayMult, 0.3 * decayMult];
-            const vols = [0.4 * volMult, 0.2 * volMult, 0.1 * volMult, 0.05 * volMult];
+        // Generador de 1 moneda única chocando
+        // Las de oro/plata reales tienen frecuencias altas complejas (2kHz - 6kHz) de vida muy corta
+        const dropCoin = (ctx, time, baseFreq, duration = 0.15) => {
+            const ratios = [1.0, 1.45, 1.9, 2.7]; // Inarmónicos de placa metálica
+            const vols = [0.4, 0.25, 0.15, 0.05];
 
             ratios.forEach((ratio, i) => {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
-                osc.type = 'sine'; // Sine es lo más puro y menos estridente
+
+                // Mezcla para rugosidad de moneda gruesa
+                osc.type = i === 0 ? 'sine' : 'triangle';
 
                 const freq = baseFreq * ratio;
                 osc.frequency.setValueAtTime(freq, time);
 
-                // Pitch drop súbito (El golpe del martillo afina el metal milisegundos después de golpearlo)
-                osc.frequency.exponentialRampToValueAtTime(freq * 0.98, time + 0.1);
+                // Drop de masa física
+                osc.frequency.exponentialRampToValueAtTime(freq * 0.95, time + 0.03);
 
                 gain.gain.setValueAtTime(0, time);
-                gain.gain.linearRampToValueAtTime(vols[i], time + 0.01); // Ataque ultra-rápido metálico
-                gain.gain.exponentialRampToValueAtTime(0.001, time + decays[i]);
+                gain.gain.linearRampToValueAtTime(vols[i], time + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + duration * (1 - (i * 0.1))); // Los agudos mueren antes
+
+                // Stereo Panner aleatorio para dar sensación espacial a cada moneda
+                const panner = ctx.createStereoPanner();
+                panner.pan.value = (Math.random() * 1.5) - 0.75;
 
                 osc.connect(gain);
-                gain.connect(ctx.destination);
-                gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
+                gain.connect(panner);
+                panner.connect(ctx.destination);
 
                 osc.start(time);
-                osc.stop(time + decays[i] + 0.1);
+                osc.stop(time + duration + 0.1);
             });
         };
 
-        // Opción A: Realista Clásico
-        const playKachingA = () => {
+        // Opción A: Puñado Denso (Pouch Thomp + Muchísimas monedas hiper juntas en el tiempo)
+        const playCoinsA = () => {
             const ctx = getCtx();
             const start = ctx.currentTime;
 
-            // 1. "Cha" (Arrastre agudo)
-            playMechanism(ctx, start, 0.06, 'bandpass', 1500, 0.3);
-            // 2. "Ka" (Tope grave cuando el cajón se para)
-            playMechanism(ctx, start + 0.07, 0.04, 'lowpass', 500, 0.6);
+            // Fricción y peso del saco cayendo a la mesa
+            playPouchThomp(ctx, start, 0.15);
+            playPouchThomp(ctx, start + 0.05, 0.2); // El eco físico
 
-            // 3. "Ching" (Campana a 1300Hz) empieza a la vez que el "Ka"
-            playBell(ctx, start + 0.07, 1300, 1.0, 1.0);
+            const numCoins = 15;
+            for (let i = 0; i < numCoins; i++) {
+                // Todas caen en una franja de 80ms
+                const dropTime = start + (Math.random() * 0.08);
+                // Oro pesado: 2500Hz - 4500Hz
+                const freq = 2500 + (Math.random() * 2000);
+                // Vida híper corta porque se apagan al chocar unas con otras en el puñado
+                dropCoin(ctx, dropTime, freq, 0.04 + (Math.random() * 0.04));
+            }
         };
 
-        // Opción B: Pesado / Punchy
-        const playKachingB = () => {
+        // Opción B: Lluvia / Deslizamiento (Más espaciadas, se distinguen más los "clinks")
+        const playCoinsB = () => {
             const ctx = getCtx();
             const start = ctx.currentTime;
 
-            // 1. "Cha" (Arrastre más gordo y lento)
-            playMechanism(ctx, start, 0.08, 'lowpass', 900, 0.4);
-            // 2. "Ka" (Tope contundente)
-            playMechanism(ctx, start + 0.09, 0.05, 'lowpass', 300, 0.8);
+            // Saco más suave
+            playPouchThomp(ctx, start, 0.1);
 
-            // 3. "Ching" (Campana a 1100Hz, más grave y decae más rápido)
-            playBell(ctx, start + 0.09, 1100, 0.7, 1.1);
+            const numCoins = 10;
+            for (let i = 0; i < numCoins; i++) {
+                // Rampa logarítmica para simular que caen primero pocas y luego el resto
+                const delay = Math.pow(Math.random(), 2) * 0.25;
+                const dropTime = start + delay;
+
+                // Rango más brillante y ágil (3000Hz - 5000Hz)
+                const freq = 3000 + (Math.random() * 2000);
+                // Duran un poco más (se distinguen)
+                dropCoin(ctx, dropTime, freq, 0.08 + (Math.random() * 0.05));
+            }
         };
 
-        // Opción C: Doble Campana (Jackpot)
-        const playKachingC = () => {
+        // Opción C: Minimalista (2 o 3 monedas grandes exactas)
+        const playCoinsC = () => {
             const ctx = getCtx();
             const start = ctx.currentTime;
 
-            // 1. Un solo tirón al inicio
-            playMechanism(ctx, start, 0.06, 'bandpass', 1200, 0.3);
-            playMechanism(ctx, start + 0.07, 0.04, 'lowpass', 600, 0.5);
+            // Saco más leve
+            playPouchThomp(ctx, start, 0.1);
 
-            // 2. "Ching... Ching"
-            // Campana brillante base (1400Hz)
-            playBell(ctx, start + 0.07, 1400, 0.8, 0.9);
-            // Segunda campana rapidísima igual (0.15s después)
-            playBell(ctx, start + 0.22, 1400, 1.2, 1.0); // La última suena un poco más larga y fuerte
+            // Moneda 1
+            dropCoin(ctx, start + 0.02, 3500, 0.15);
+            // Moneda 2 (Un poco más tarde y tono distinto)
+            dropCoin(ctx, start + 0.09, 2900, 0.12);
+            // Moneda 3 (A veces rebotan, muy cercana a la 2)
+            dropCoin(ctx, start + 0.13, 4200, 0.08);
         };
     </script>
 </body>
