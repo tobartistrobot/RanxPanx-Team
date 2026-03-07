@@ -14,8 +14,8 @@
         }
 
         h1 {
-            color: #10b981;
-            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            color: #8b5cf6;
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
         }
 
         .grid {
@@ -42,7 +42,7 @@
         }
 
         button {
-            background: #059669;
+            background: #7c3aed;
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -51,13 +51,13 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
         }
 
         button:hover {
-            background: #10b981;
+            background: #8b5cf6;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
         }
 
         button:active {
@@ -68,49 +68,49 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(16, 185, 129, 0.2);
-            color: #6ee7b7;
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
             font-size: 0.7rem;
             padding: 3px 8px;
             border-radius: 10px;
             font-weight: bold;
             text-transform: uppercase;
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.3);
         }
     </style>
 </head>
 
 <body>
-    <h1>🏷️ Laboratorio: Canjear Cupón</h1>
-    <p>Momento: el usuario ha elegido gastar su cupón en el Inventario. Según el Roadmap, buscamos un sonido que
-        transmita irreversibilidad y satisfacción: <b>"un fuerte sello mágico o rasgado de ticket premium"</b>.</p>
+    <h1>🛒 Laboratorio: Marcar Artículo de la Compra</h1>
+    <p>Momento: el usuario toca un elemento en "Busca y Captura" para marcarlo como encontrado. Al ser una acción que se
+        repite <b>muchas veces seguidas</b> (tachar 10 cosas de la lista), el sonido debe ser increíblemente rápido,
+        satisfactorio y, lo más importante, <b>no debe cansar</b> el oído.</p>
 
     <div class="grid">
-        <div class="card" style="border-color: #059669;">
-            <div class="badge">Oficial</div>
-            <h2>🏷️ Opción A: Sello Seco Fuerte (Thump)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un impacto sordo, grave y seco. Como si el
-                jefe de aduanas agarrase un sello oficial de goma y lo estampase de un solo golpe sobre la mesa.
-                Transmite autoridad y consumo inmediato.</p>
-            <button onclick="playSealA()">Probar A</button>
+        <div class="card" style="border-color: #f59e0b;">
+            <div class="badge">Orgánico</div>
+            <h2>✏️ Opción A: Trazo de Tiza/Lápiz</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un sonido muy corto de fricción. Como hacer
+                un "check" muy rápido (✓) con un lápiz 2B sobre papel grueso. Da la sensación real de tachar una lista
+                manuscrita.</p>
+            <button onclick="playCheckA()">Probar A</button>
         </div>
 
-        <div class="card" style="border-color: #fbbf24;">
-            <div class="badge">Textura</div>
-            <h2>🏷️ Opción B: Rasgado de Ticket (Tear + Pop)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un sonido crujiente de alta frecuencia
-                (0.15s) que simula papel grueso rasgándose por el troquel, terminando con un pequeño chasquido limpio de
-                satisfacción.</p>
-            <button onclick="playSealB()">Probar B</button>
+        <div class="card" style="border-color: #10b981;">
+            <div class="badge">Gamer</div>
+            <h2>💧 Opción B: Tick Cristalino (Pop de Agua)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un "pop" de agua agudo y rapidísimo. Muy al
+                estilo Nintendo. Es una doble nota (sube 1 octava en milisegundos) que te da micro-dopamina de "tarea
+                completada" sin llegar a cansar.</p>
+            <button onclick="playCheckB()">Probar B</button>
         </div>
 
-        <div class="card" style="border-color: #ec4899;">
-            <div class="badge">Fantasía</div>
-            <h2>🏷️ Opción C: Sello de Fuego Mágico (Magic Stamp)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Mixto: Combina el impacto sordo del sello
-                (Opción A) seguido inmediatamente por un "fsssh" ardiente y un acorde cristalino. Como estampar con cera
-                mágica brillante.</p>
-            <button onclick="playSealC()">Probar C</button>
+        <div class="card" style="border-color: #6366f1;">
+            <div class="badge">Táctil</div>
+            <h2>🖋️ Opción C: Clic de Bolígrafo Premium</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Dos pequeños clics metálicos ultrarrápidos,
+                imitando el sonido de sacar la punta a un bolígrafo BIC caro. Muy ASMR y táctil para los dedos.</p>
+            <button onclick="playCheckC()">Probar C</button>
         </div>
     </div>
 
@@ -120,161 +120,94 @@
             return new AudioCtx();
         };
 
-        // Opción A: Sello Seco Fuerte (Heavy Thump)
-        const playSealA = () => {
+        // Opción A: Trazo de Tiza / Lápiz (Fricción muy corta)
+        const playCheckA = () => {
             const ctx = getCtx();
             const start = ctx.currentTime;
 
-            // Transitorio muy rápido (cuerpo del golpe) - baja rapidísimo desde 150hz a 40hz
+            // Ruido blanco
+            const bufferSize = ctx.sampleRate * 0.08; // Super corto (80ms)
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            // Filtro Bandpass para darle ese carácter de fricción de papel/carbón
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(3000, start); // Empieza raspando arriba
+            filter.frequency.exponentialRampToValueAtTime(800, start + 0.08); // Baja rápidamente (movimiento de mano)
+            filter.Q.value = 1.5;
+
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0, start);
+            gain.gain.linearRampToValueAtTime(0.4, start + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.07);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            noise.start(start);
+        };
+
+        // Opción B: Tick Cristalino (Agua / Nintendo UI)
+        const playCheckB = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(150, start);
-            osc.frequency.exponentialRampToValueAtTime(30, start + 0.08);
+
+            osc.type = 'sine'; // Super limpio
+            // Doble nota ultrarrápida (Arpegio G5 -> C6)
+            osc.frequency.setValueAtTime(783.99, start);
+            osc.frequency.setValueAtTime(1046.50, start + 0.025);
 
             gain.gain.setValueAtTime(0, start);
-            gain.gain.linearRampToValueAtTime(1.5, start + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.15);
+            // Ataque rápido para G5
+            gain.gain.linearRampToValueAtTime(0.3, start + 0.005);
+            gain.gain.exponentialRampToValueAtTime(0.1, start + 0.024);
+            // Ataque rápido para C6
+            gain.gain.linearRampToValueAtTime(0.4, start + 0.026);
+            // Cae
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.08);
 
             osc.connect(gain);
             gain.connect(ctx.destination);
             osc.start(start);
-            osc.stop(start + 0.16);
-
-            // Ruido blanco muy corto (textura de goma contra papel/madera)
-            const bufferSize = ctx.sampleRate * 0.1;
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-            const noise = ctx.createBufferSource();
-            noise.buffer = buffer;
-            const noiseFilter = ctx.createBiquadFilter();
-            noiseFilter.type = 'lowpass';
-            noiseFilter.frequency.setValueAtTime(1000, start);
-
-            const noiseGain = ctx.createGain();
-            noiseGain.gain.setValueAtTime(0, start);
-            noiseGain.gain.linearRampToValueAtTime(0.4, start + 0.01);
-            noiseGain.gain.exponentialRampToValueAtTime(0.001, start + 0.1);
-
-            noise.connect(noiseFilter);
-            noiseFilter.connect(noiseGain);
-            noiseGain.connect(ctx.destination);
-            noise.start(start);
+            osc.stop(start + 0.09);
         };
 
-        // Opción B: Rasgado de Ticket (Tear + Pop)
-        const playSealB = () => {
+        // Opción C: Clic de Bolígrafo Táctil (Mecánico doble)
+        const playCheckC = () => {
             const ctx = getCtx();
             const start = ctx.currentTime;
 
-            // 1. Rasgado (ruido alta frecuencia con pequeñas caídas -> textura)
-            const bufferSize = ctx.sampleRate * 0.15;
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            // Función ayudante para crear cada "clic" metálico corto
+            const createClick = (time, freqStart, freqEnd, vol) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
 
-            const noise = ctx.createBufferSource();
-            noise.buffer = buffer;
+                osc.type = 'triangle'; // Un poco más áspero que el sine
+                osc.frequency.setValueAtTime(freqStart, time);
+                osc.frequency.exponentialRampToValueAtTime(freqEnd, time + 0.015);
 
-            const noiseFilter = ctx.createBiquadFilter();
-            noiseFilter.type = 'bandpass';
-            noiseFilter.frequency.setValueAtTime(3000, start);
-            noiseFilter.frequency.linearRampToValueAtTime(6000, start + 0.15);
-            noiseFilter.Q.value = 1;
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(vol, time + 0.002);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
 
-            const noiseGain = ctx.createGain();
-            noiseGain.gain.setValueAtTime(0, start);
-            // El rasgado tiene tres pequeños picos (troquel)
-            noiseGain.gain.linearRampToValueAtTime(0.2, start + 0.02);
-            noiseGain.gain.linearRampToValueAtTime(0.05, start + 0.06);
-            noiseGain.gain.linearRampToValueAtTime(0.25, start + 0.1);
-            noiseGain.gain.linearRampToValueAtTime(0.001, start + 0.15);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(time);
+                osc.stop(time + 0.03);
+            };
 
-            noise.connect(noiseFilter);
-            noiseFilter.connect(noiseGain);
-            noiseGain.connect(ctx.destination);
-            noise.start(start);
-
-            // 2. Pop final (placer al separarlo)
-            const popTime = start + 0.15;
-            const popOsc = ctx.createOscillator();
-            const popGain = ctx.createGain();
-            popOsc.type = 'sine';
-            popOsc.frequency.setValueAtTime(800, popTime);
-            popOsc.frequency.exponentialRampToValueAtTime(300, popTime + 0.05);
-
-            popGain.gain.setValueAtTime(0, popTime);
-            popGain.gain.linearRampToValueAtTime(0.8, popTime + 0.005);
-            popGain.gain.exponentialRampToValueAtTime(0.001, popTime + 0.06);
-
-            popOsc.connect(popGain);
-            popGain.connect(ctx.destination);
-            popOsc.start(popTime);
-            popOsc.stop(popTime + 0.07);
-        };
-
-        // Opción C: Sello Mágico (Golpe + Combustión + Acorde)
-        const playSealC = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
-
-            // 1. Golpe sordo (Impacto)
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(120, start);
-            osc.frequency.exponentialRampToValueAtTime(40, start + 0.1);
-
-            gain.gain.setValueAtTime(0, start);
-            gain.gain.linearRampToValueAtTime(1, start + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.12);
-
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(start);
-            osc.stop(start + 0.13);
-
-            // 2. Fsssh Mágico (Combustión)
-            const bufferSize = ctx.sampleRate * 0.3;
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-            const noise = ctx.createBufferSource();
-            noise.buffer = buffer;
-            const noiseFilter = ctx.createBiquadFilter();
-            noiseFilter.type = 'highpass';
-            noiseFilter.frequency.setValueAtTime(1000, start + 0.05); // Filtro abre
-
-            const noiseGain = ctx.createGain();
-            noiseGain.gain.setValueAtTime(0, start + 0.05);
-            noiseGain.gain.linearRampToValueAtTime(0.3, start + 0.1);
-            noiseGain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
-
-            noise.connect(noiseFilter);
-            noiseFilter.connect(noiseGain);
-            noiseGain.connect(ctx.destination);
-            noise.start(start + 0.05);
-
-            // 3. Acorde Cristalino (Brillo del sello encendiéndose) 
-            // Acorde triunfal (C mayor invertido)
-            [523.25, 659.25, 1046.50].forEach((freq, idx) => {
-                const sOsc = ctx.createOscillator();
-                const sGain = ctx.createGain();
-                sOsc.type = 'sine'; // Tonos puros para que brille
-                sOsc.frequency.setValueAtTime(freq, start + 0.08); // Suena justo después del golpe
-
-                sGain.gain.setValueAtTime(0, start + 0.08);
-                sGain.gain.linearRampToValueAtTime(0.15, start + 0.1 + (idx * 0.02)); // Abren en cascada
-                sGain.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
-
-                sOsc.connect(sGain);
-                sGain.connect(ctx.destination);
-                sOsc.start(start + 0.08);
-                sOsc.stop(start + 0.55);
-            });
+            // Primer clic (apretar el botón del boli)
+            createClick(start, 2000, 300, 0.15);
+            // Segundo clic a los 30ms (el resorte bloqueándose)
+            createClick(start + 0.03, 2500, 400, 0.2);
         };
     </script>
 </body>
