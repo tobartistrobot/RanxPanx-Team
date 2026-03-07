@@ -82,35 +82,36 @@
 
 <body>
     <h1>🛒 Laboratorio: Marcar Artículo de la Compra</h1>
-    <p>Momento: el usuario toca un elemento en "Busca y Captura" para marcarlo como encontrado. Al ser una acción que se
-        repite <b>muchas veces seguidas</b> (tachar 10 cosas de la lista), el sonido debe ser increíblemente rápido,
-        satisfactorio y, lo más importante, <b>no debe cansar</b> el oído.</p>
+    <p>Momento: el usuario toca un elemento en "Busca y Captura" para marcarlo como encontrado. <b>¡El enfoque es un
+            sonido táctico de escopeta!</b> Hemos preparado 3 variaciones de "Cargar Escopeta" (Pump Action/Reload) muy
+        cortas y mecánicas. Ideal para hacer un barrido táctico por el supermercado.</p>
 
     <div class="grid">
+        <div class="card" style="border-color: #ef4444;">
+            <div class="badge">Pesado</div>
+            <h2>🪖 Opción A: Pump-Action Doble</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">El clásico "Chck-Chck". Dos impactos
+                mecánicos bajos y fuertes separados por 80ms. Da mucha sensación de peso y de "listo para la acción". Es
+                el más contundente.</p>
+            <button onclick="playShotgunA()">Probar A</button>
+        </div>
+
+        <div class="card" style="border-color: #3b82f6;">
+            <div class="badge">Rápido</div>
+            <h2>⚡ Opción B: Recarga Táctica Rápida</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un solo golpe mecánico seguido de un
+                arrastre muy fino de metal deslizándose. Al durar menos tiempo total, es mucho menos agotador al marcar
+                10 cosas rápidas seguidas.</p>
+            <button onclick="playShotgunB()">Probar B</button>
+        </div>
+
         <div class="card" style="border-color: #f59e0b;">
-            <div class="badge">Orgánico</div>
-            <h2>✏️ Opción A: Trazo de Tiza/Lápiz</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un sonido muy corto de fricción. Como hacer
-                un "check" muy rápido (✓) con un lápiz 2B sobre papel grueso. Da la sensación real de tachar una lista
-                manuscrita.</p>
-            <button onclick="playCheckA()">Probar A</button>
-        </div>
-
-        <div class="card" style="border-color: #10b981;">
-            <div class="badge">Gamer</div>
-            <h2>💧 Opción B: Tick Cristalino (Pop de Agua)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un "pop" de agua agudo y rapidísimo. Muy al
-                estilo Nintendo. Es una doble nota (sube 1 octava en milisegundos) que te da micro-dopamina de "tarea
-                completada" sin llegar a cansar.</p>
-            <button onclick="playCheckB()">Probar B</button>
-        </div>
-
-        <div class="card" style="border-color: #6366f1;">
-            <div class="badge">Táctil</div>
-            <h2>🖋️ Opción C: Clic de Bolígrafo Premium</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Dos pequeños clics metálicos ultrarrápidos,
-                imitando el sonido de sacar la punta a un bolígrafo BIC caro. Muy ASMR y táctil para los dedos.</p>
-            <button onclick="playCheckC()">Probar C</button>
+            <div class="badge">Limpiador</div>
+            <h2>🔧 Opción C: Cerrojo Metálico Clic</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un cerrojo tirando hacia atrás con
+                resonancia metálica pura y aguda. Casi no tiene graves para que sea super liviano para los altavoces de
+                móvil, pero mantiene esa sensación asesina de "apuntado".</p>
+            <button onclick="playShotgunC()">Probar C</button>
         </div>
     </div>
 
@@ -120,94 +121,127 @@
             return new AudioCtx();
         };
 
-        // Opción A: Trazo de Tiza / Lápiz (Fricción muy corta)
-        const playCheckA = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
-
-            // Ruido blanco
-            const bufferSize = ctx.sampleRate * 0.08; // Super corto (80ms)
+        // Utilidad para crear ruido blanco
+        const createNoiseBuffer = (ctx, duration) => {
+            const bufferSize = ctx.sampleRate * duration;
             const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
             const data = buffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            return buffer;
+        };
 
+        // Función para crear un "clanc" de metal pesado (graves percusivos + ruido raspado)
+        const createMetalImpact = (ctx, time, isHeavy = true) => {
+            // El impacto grave del metal
+            const bodyOsc = ctx.createOscillator();
+            const bodyGain = ctx.createGain();
+            bodyOsc.type = 'triangle';
+            bodyOsc.frequency.setValueAtTime(isHeavy ? 200 : 300, time);
+            bodyOsc.frequency.exponentialRampToValueAtTime(80, time + 0.05);
+
+            bodyGain.gain.setValueAtTime(0, time);
+            bodyGain.gain.linearRampToValueAtTime(isHeavy ? 0.7 : 0.4, time + 0.005);
+            bodyGain.gain.exponentialRampToValueAtTime(0.01, time + 0.06);
+
+            bodyOsc.connect(bodyGain);
+            bodyGain.connect(ctx.destination);
+            bodyOsc.start(time);
+            bodyOsc.stop(time + 0.07);
+
+            // El roce del metal deslizándose (ruido agudo bandpass)
             const noise = ctx.createBufferSource();
-            noise.buffer = buffer;
+            noise.buffer = createNoiseBuffer(ctx, 0.1);
+            const noiseFilter = ctx.createBiquadFilter();
+            noiseFilter.type = 'bandpass';
+            noiseFilter.frequency.setValueAtTime(1500, time);
+            noiseFilter.frequency.linearRampToValueAtTime(4000, time + 0.05); // deslizamiento rápido de fricción
+            noiseFilter.Q.value = 5;
 
-            // Filtro Bandpass para darle ese carácter de fricción de papel/carbón
+            const noiseGain = ctx.createGain();
+            noiseGain.gain.setValueAtTime(0, time);
+            noiseGain.gain.linearRampToValueAtTime(0.5, time + 0.005);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+
+            noise.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(ctx.destination);
+            noise.start(time);
+        };
+
+        // Opción A: Pump-Action Doble (Chck-Chck)
+        const playShotgunA = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+            // Adelante (Chck)
+            createMetalImpact(ctx, start, true);
+            // Atrás (Chck)
+            createMetalImpact(ctx, start + 0.08, true);
+        };
+
+        // Opción B: Recarga Táctica Rápida (Un golpe y roce)
+        const playShotgunB = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+
+            // Impacto percusivo de meter el cartucho y cerrar (clack)
+            createMetalImpact(ctx, start, true);
+
+            // Ruido residual fino de cierre (metálico y fino)
+            const noise = ctx.createBufferSource();
+            noise.buffer = createNoiseBuffer(ctx, 0.1);
             const filter = ctx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.setValueAtTime(3000, start); // Empieza raspando arriba
-            filter.frequency.exponentialRampToValueAtTime(800, start + 0.08); // Baja rápidamente (movimiento de mano)
-            filter.Q.value = 1.5;
+            filter.type = 'highpass';
+            filter.frequency.setValueAtTime(4000, start + 0.03);
 
             const gain = ctx.createGain();
-            gain.gain.setValueAtTime(0, start);
-            gain.gain.linearRampToValueAtTime(0.4, start + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.07);
+            gain.gain.setValueAtTime(0, start + 0.03);
+            gain.gain.linearRampToValueAtTime(0.2, start + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.08);
 
             noise.connect(filter);
             filter.connect(gain);
             gain.connect(ctx.destination);
+            noise.start(start + 0.03);
+        };
+
+        // Opción C: Cerrojo Metálico Clic (Más agudo y rápido)
+        const playShotgunC = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+
+            // Clac muy corto, metálico puro (oscilador sawtooth agresivo)
+            const clacOsc = ctx.createOscillator();
+            const clacGain = ctx.createGain();
+            clacOsc.type = 'sawtooth';
+            clacOsc.frequency.setValueAtTime(800, start);
+            clacOsc.frequency.exponentialRampToValueAtTime(200, start + 0.03);
+
+            clacGain.gain.setValueAtTime(0, start);
+            clacGain.gain.linearRampToValueAtTime(0.15, start + 0.002);
+            clacGain.gain.exponentialRampToValueAtTime(0.001, start + 0.04);
+
+            clacOsc.connect(clacGain);
+            clacGain.connect(ctx.destination);
+            clacOsc.start(start);
+            clacOsc.stop(start + 0.05);
+
+            // Reverb de cerrojo
+            const noise = ctx.createBufferSource();
+            noise.buffer = createNoiseBuffer(ctx, 0.1);
+            const noiseFilter = ctx.createBiquadFilter();
+            noiseFilter.type = 'bandpass';
+            noiseFilter.frequency.setValueAtTime(3000, start);
+            noiseFilter.Q.value = 10; // Muy resonante, suena as como campana/metal
+
+            const noiseGain = ctx.createGain();
+            noiseGain.gain.setValueAtTime(0, start);
+            noiseGain.gain.linearRampToValueAtTime(0.6, start + 0.005);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, start + 0.05);
+
+            noise.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(ctx.destination);
             noise.start(start);
-        };
-
-        // Opción B: Tick Cristalino (Agua / Nintendo UI)
-        const playCheckB = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
-
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-
-            osc.type = 'sine'; // Super limpio
-            // Doble nota ultrarrápida (Arpegio G5 -> C6)
-            osc.frequency.setValueAtTime(783.99, start);
-            osc.frequency.setValueAtTime(1046.50, start + 0.025);
-
-            gain.gain.setValueAtTime(0, start);
-            // Ataque rápido para G5
-            gain.gain.linearRampToValueAtTime(0.3, start + 0.005);
-            gain.gain.exponentialRampToValueAtTime(0.1, start + 0.024);
-            // Ataque rápido para C6
-            gain.gain.linearRampToValueAtTime(0.4, start + 0.026);
-            // Cae
-            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.08);
-
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(start);
-            osc.stop(start + 0.09);
-        };
-
-        // Opción C: Clic de Bolígrafo Táctil (Mecánico doble)
-        const playCheckC = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
-
-            // Función ayudante para crear cada "clic" metálico corto
-            const createClick = (time, freqStart, freqEnd, vol) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-
-                osc.type = 'triangle'; // Un poco más áspero que el sine
-                osc.frequency.setValueAtTime(freqStart, time);
-                osc.frequency.exponentialRampToValueAtTime(freqEnd, time + 0.015);
-
-                gain.gain.setValueAtTime(0, time);
-                gain.gain.linearRampToValueAtTime(vol, time + 0.002);
-                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(time);
-                osc.stop(time + 0.03);
-            };
-
-            // Primer clic (apretar el botón del boli)
-            createClick(start, 2000, 300, 0.15);
-            // Segundo clic a los 30ms (el resorte bloqueándose)
-            createClick(start + 0.03, 2500, 400, 0.2);
         };
     </script>
 </body>
