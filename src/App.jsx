@@ -1365,6 +1365,28 @@ export default function App() {
     } catch (e) { }
   };
 
+  const playTabSound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      // Micro-pop de burbuja: pitch drop rápidísimo (50ms total) muy suave y sutil
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(900, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.045);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.06);
+    } catch (e) { }
+  };
+
   const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false, targetUser = userName) => {
     if (!targetUser || durationSeconds < 60) return 0; // Menos de 1 min no da RPC
 
@@ -3011,7 +3033,7 @@ export default function App() {
         ].map(item => {
           const Icon = item.icon;
           return (
-            <button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex flex-col items-center gap-1 transition-all ${activeTab === item.id ? 'text-indigo-500 scale-110' : 'text-slate-500'}`}>
+            <button key={item.id} onClick={() => { playTabSound(); setActiveTab(item.id); }} className={`flex flex-col items-center gap-1 transition-all ${activeTab === item.id ? 'text-indigo-500 scale-110' : 'text-slate-500'}`}>
               <Icon size={22} className={activeTab === item.id ? 'fill-indigo-50/10' : ''} />
               <span className="text-[10px] font-bold uppercase tracking-tight">{item.label}</span>
             </button>
