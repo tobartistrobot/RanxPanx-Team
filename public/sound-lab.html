@@ -81,50 +81,126 @@
 </head>
 
 <body>
-    <h1>🛒 Laboratorio: Marcar Artículo de la Compra</h1>
-    <p>Momento: el usuario toca un elemento en "Busca y Captura" para marcarlo como encontrado. <b>¡El enfoque es un
-            sonido táctico de escopeta!</b> Hemos preparado 3 variaciones de "Cargar Escopeta" (Pump Action/Reload) muy
-        cortas y mecánicas. Ideal para hacer un barrido táctico por el supermercado.</p>
+    <h1>✨ Laboratorio: Marcar Artículo de la Compra</h1>
+    <p>Momento: el usuario toca un elemento en "Busca y Captura" para marcarlo como encontrado. Enfoque: <b>"Chiribitas
+            de Purpurina" (Glitter / Fairy Dust)</b>. Sutil, agradable, mágico y cero pesado para poder hacer múltiples
+        toques seguidos sin cansar.</p>
 
     <div class="grid">
-        <div class="card" style="border-color: #ef4444;">
-            <div class="badge">Pesado</div>
-            <h2>🪖 Opción A: Pump-Action Doble</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">El clásico "Chck-Chck". Dos impactos
-                mecánicos bajos y fuertes separados por 80ms. Da mucha sensación de peso y de "listo para la acción". Es
-                el más contundente.</p>
-            <button onclick="playShotgunA()">Probar A</button>
+        <div class="card" style="border-color: #fcd34d;">
+            <div class="badge">Polvo de Hadas</div>
+            <h2>� Opción A: Campanas de Viento Rápidas</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Una ráfaga de 3 notas aleatorias super
+                altas y cristalinas (arpegio de cajita de música) que suenan como polvo de hadas cayendo durante un
+                instante. Muy mágico.</p>
+            <button onclick="playSparkleA()">Probar A</button>
         </div>
 
-        <div class="card" style="border-color: #3b82f6;">
-            <div class="badge">Rápido</div>
-            <h2>⚡ Opción B: Recarga Táctica Rápida</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un solo golpe mecánico seguido de un
-                arrastre muy fino de metal deslizándose. Al durar menos tiempo total, es mucho menos agotador al marcar
-                10 cosas rápidas seguidas.</p>
-            <button onclick="playShotgunB()">Probar B</button>
+        <div class="card" style="border-color: #fb923c;">
+            <div class="badge">Burbuja</div>
+            <h2>🫧 Opción B: Brillo de Pompa de Jabón</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un solo "Bloop" brillante que asciende
+                ridículamente rápido de agudo a más agudo. Suena juguetón, corto y como si una burbuja se rompiera
+                soltando purpurina. Super sutil.</p>
+            <button onclick="playSparkleB()">Probar B</button>
         </div>
 
-        <div class="card" style="border-color: #f59e0b;">
-            <div class="badge">Limpiador</div>
-            <h2>🔧 Opción C: Cerrojo Metálico Clic</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un cerrojo tirando hacia atrás con
-                resonancia metálica pura y aguda. Casi no tiene graves para que sea super liviano para los altavoces de
-                móvil, pero mantiene esa sensación asesina de "apuntado".</p>
-            <button onclick="playShotgunC()">Probar C</button>
+        <div class="card" style="border-color: #d8b4fe;">
+            <div class="badge">Estelar</div>
+            <h2>⭐ Opción C: Tintineo de Estrellita</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Dos notas puras, cristalinas y estáticas
+                (como chocar dos vasos finísimos de cristal). Suena a recoger un fragmento de estrella en Zelda o Mario
+                Galaxy.</p>
+            <button onclick="playSparkleC()">Probar C</button>
         </div>
     </div>
 
     <script>
-        const getAudio = (num) => {
-            const audio = new Audio(`./sounds/shotgun_${num}.mp3`);
-            audio.volume = 1.0;
-            return audio;
+        const getCtx = () => {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            return new AudioCtx();
         };
 
-        const playShotgunA = () => { getAudio(1).play().catch(console.error); };
-        const playShotgunB = () => { getAudio(2).play().catch(console.error); };
-        const playShotgunC = () => { getAudio(3).play().catch(console.error); };
+        // Opción A: Campanas de Viento Rápidas (Polvo de Hadas / Arpegio Random)
+        const playSparkleA = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+
+            // 3 campanitas aleatorias en tono muy agudo (Pentatónica mayor C)
+            const notes = [1046.50, 1174.66, 1318.51, 1567.98, 1760.00, 2093.00, 2349.32];
+
+            for (let i = 0; i < 3; i++) {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                // Elegir nota random
+                const freq = notes[Math.floor(Math.random() * notes.length)];
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, start + (i * 0.03));
+
+                gain.gain.setValueAtTime(0, start + (i * 0.03));
+                gain.gain.linearRampToValueAtTime(0.15, start + (i * 0.03) + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, start + (i * 0.03) + 0.2); // Cola de campana
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(start + (i * 0.03));
+                osc.stop(start + (i * 0.03) + 0.25);
+            }
+        };
+
+        // Opción B: Brillo de Pompa de Jabón (Bloop mágico)
+        const playSparkleB = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            // Empieza agudo y sube MUY rápido (Bloop)
+            osc.frequency.setValueAtTime(1500, start);
+            osc.frequency.exponentialRampToValueAtTime(3500, start + 0.05);
+
+            gain.gain.setValueAtTime(0, start);
+            gain.gain.linearRampToValueAtTime(0.2, start + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.1);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(start);
+            osc.stop(start + 0.11);
+        };
+
+        // Opción C: Tintineo de Estrellita (Zelda / Mario Cristalino)
+        const playSparkleC = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+
+            // Dos notas fijas formando una quinta justa muy aguda (chispazo)
+            const freqs = [1567.98, 2349.32]; // G6 y D7
+
+            freqs.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, start + (i * 0.02)); // La segunda entra 20ms despues
+
+                gain.gain.setValueAtTime(0, start + (i * 0.02));
+                gain.gain.linearRampToValueAtTime(0.15, start + (i * 0.02) + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, start + (i * 0.02) + 0.15);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(start + (i * 0.02));
+                osc.stop(start + (i * 0.02) + 0.2);
+            });
+        };
     </script>
 </body>
 
