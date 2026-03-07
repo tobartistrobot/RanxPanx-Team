@@ -62,20 +62,29 @@
     <div class="card">
         <h2>💰 Play Ka-Ching.mp3</h2>
         <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">
-            Este es el archivo mp3 original reproducido directamente desde la carpeta public/sounds de tu proyecto.
+            Este es el archivo mp3 original reproducido directamente desde la carpeta local (ruta relativa corregida).
         </p>
         <button onclick="playMyInstantsKaching()">Reproducir Ka-Ching Original</button>
     </div>
 
-    <!-- Referencia de audio oculto para cargar el mp3 -->
-    <audio id="kachingAudio" src="/sounds/kaching.mp3" preload="auto"></audio>
+    <!-- Referencia de fallback visual -->
+    <div id="status" style="margin-top:20px; color:#f59e0b;"></div>
 
     <script>
         const playMyInstantsKaching = () => {
-            const audio = document.getElementById('kachingAudio');
-            // Resetear el tiempo si ya estaba sonando
-            audio.currentTime = 0;
-            audio.play().catch(e => console.error("Error reproduciendo el audio:", e));
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText = "Reproduciendo...";
+
+            // Usamos ruta relativa "./sounds/" para que funcione al abrir el HTML en local sin servidor
+            const audio = new Audio('./sounds/kaching.mp3');
+
+            audio.play().then(() => {
+                setTimeout(() => { statusDiv.innerText = ""; }, 1500);
+            }).catch(e => {
+                statusDiv.innerText = "Error: " + e.message;
+                console.error("Error reproduciendo el audio:", e);
+                alert("Asegúrate de que estás abriendo el archivo con acceso a carpetas locales o mediante un servidor como Vite (npm run dev). Detalles del error: " + e.message);
+            });
         };
     </script>
 </body>
