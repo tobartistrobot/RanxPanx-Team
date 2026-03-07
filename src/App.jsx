@@ -925,28 +925,30 @@ export default function App() {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      const start = ctx.currentTime;
 
-      // Alegría A: Coin Collect (Doble salto de nota brillante B5 -> E6)
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(987.77, ctx.currentTime);
-      osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.08);
+      // 3 campanitas aleatorias en tono muy agudo (Pentatónica mayor C) / Polvo de Hadas
+      const notes = [1046.50, 1174.66, 1318.51, 1567.98, 1760.00, 2093.00, 2349.32];
 
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      // Ataque primera nota
-      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.1, ctx.currentTime + 0.08);
+      for (let i = 0; i < 3; i++) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
 
-      // Ataque segunda nota
-      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.09);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        const freq = notes[Math.floor(Math.random() * notes.length)];
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start + (i * 0.03));
 
-      osc.start();
-      osc.stop(ctx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0, start + (i * 0.03));
+        gain.gain.linearRampToValueAtTime(0.15, start + (i * 0.03) + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + (i * 0.03) + 0.2); // Cola corta de campana
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(start + (i * 0.03));
+        osc.stop(start + (i * 0.03) + 0.25);
+      }
     } catch (e) { }
   };
 
