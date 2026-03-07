@@ -1387,6 +1387,49 @@ export default function App() {
     } catch (e) { }
   };
 
+  const playGiftSendSound = () => {
+    try {
+      if (localStorage.getItem('hometeam_mute_sounds') === 'true') return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const start = ctx.currentTime;
+      // Parte 1: El Whoosh (ruido filtrado ascendente)
+      const bufferSize = ctx.sampleRate * 0.25;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.Q.value = 2;
+      filter.frequency.setValueAtTime(300, start);
+      filter.frequency.exponentialRampToValueAtTime(5000, start + 0.22);
+      const gainNoise = ctx.createGain();
+      gainNoise.gain.setValueAtTime(0, start);
+      gainNoise.gain.linearRampToValueAtTime(0.3, start + 0.05);
+      gainNoise.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+      noise.connect(filter); filter.connect(gainNoise); gainNoise.connect(ctx.destination);
+      noise.start(start);
+      // Parte 2: La Estrella final (dos notas agudas)
+      const starTime = start + 0.22;
+      const freqs = [1760, 2637];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gainStar = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, starTime + idx * 0.02);
+        gainStar.gain.setValueAtTime(0, starTime + idx * 0.02);
+        gainStar.gain.linearRampToValueAtTime(0.2, starTime + idx * 0.02 + 0.01);
+        gainStar.gain.exponentialRampToValueAtTime(0.001, starTime + idx * 0.02 + 0.15);
+        osc.connect(gainStar); gainStar.connect(ctx.destination);
+        osc.start(starTime + idx * 0.02);
+        osc.stop(starTime + idx * 0.02 + 0.2);
+      });
+    } catch (e) { }
+  };
+
   const processRPCAndFrenzy = async (taskName, durationSeconds, isManual = false, targetUser = userName) => {
     if (!targetUser || durationSeconds < 60) return 0; // Menos de 1 min no da RPC
 
@@ -1874,6 +1917,7 @@ export default function App() {
         redeemedAt: Date.now()
       });
 
+      playGiftSendSound();
       showToast(`¡Has enviado ${amount} RPC a ${selectedPeer}!`, 'success');
       setShowP2PModal(false);
       setP2pAmount('');
