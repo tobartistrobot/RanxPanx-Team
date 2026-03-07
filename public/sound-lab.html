@@ -14,8 +14,8 @@
         }
 
         h1 {
-            color: #f59e0b;
-            text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            color: #10b981;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
         }
 
         .grid {
@@ -42,7 +42,7 @@
         }
 
         button {
-            background: #d97706;
+            background: #059669;
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -51,13 +51,13 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3);
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
         }
 
         button:hover {
-            background: #f59e0b;
+            background: #10b981;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         }
 
         button:active {
@@ -68,49 +68,50 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(245, 158, 11, 0.2);
-            color: #fcd34d;
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
             font-size: 0.7rem;
             padding: 3px 8px;
             border-radius: 10px;
             font-weight: bold;
             text-transform: uppercase;
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
     </style>
 </head>
 
 <body>
-    <h1>💰 Laboratorio: Monedas en un Saco</h1>
-    <p>Hemos descartado la "Caja Registradora". Ahora buscamos el sonido físico de soltar <b>Monedas de Oro</b> pesadas
-        dentro de un saco de cuero. Satisfactorio, orgánico y con sensación de riqueza conseguida.</p>
+    <h1>🛍️ Laboratorio: El Sonido Premium Definitivo</h1>
+    <p>Olvidemos las cajas registradoras ruidosas y las monedas medievales. RanxPanx Team es una app moderna y elegante.
+        Gastar tus puntos debe sonar como un <b>"Desbloqueo Premium"</b>, una confirmación digital hiper-satisfactoria,
+        limpia y alegre. Aquí tienes tres enfoques de UI Sound Design de alto nivel.</p>
 
     <div class="grid">
-        <div class="card" style="border-color: #f59e0b;">
-            <div class="badge">Pesado</div>
-            <h2>💰 Opción A: Puñado de Oro (Heavy Drop)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Suena a dejar caer de golpe un puñado
-                entero de monedas pesadas dentro de un saco. Corto, denso, con mucha fricción y un "clonk" grave de
-                fondo.</p>
-            <button onclick="playCoinsA()">Cobrar Opción A</button>
+        <div class="card" style="border-color: #10b981;">
+            <div class="badge">Elegante</div>
+            <h2>🛍️ Opción A: Confirmación Apple (Sleek Pay)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Inspirado en los pagos sin contacto de gama
+                alta (Apple Pay). Dos tonos puros y redondos que ascienden suavemente, terminando con un levísimo
+                "click" de validación. Cero estridencias, 100% estatus.</p>
+            <button onclick="playPremiumA()">Comprar Opción A</button>
         </div>
 
-        <div class="card" style="border-color: #d97706;">
-            <div class="badge">Detallado</div>
-            <h2>💰 Opción B: Lluvia Rápida (Coin Shower)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Suena a dejar escurrir las monedas por los
-                dedos hacia el saco. Percibes los choques individuales súper rápidos durante unos milisegundos, dándole
-                un brillo muy dopamínico.</p>
-            <button onclick="playCoinsB()">Cobrar Opción B</button>
+        <div class="card" style="border-color: #059669;">
+            <div class="badge">Mágico</div>
+            <h2>🛍️ Opción B: Síntesis de Recompensa (Crafting)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Suena a "fabricar" un objeto valioso. Un
+                soplido limpio invertido (swoosh) que culmina en una nota gruesa y brillante (campanilla de cristal).
+                Transforma el esfuerzo digital en un premio real.</p>
+            <button onclick="playPremiumB()">Comprar Opción B</button>
         </div>
 
-        <div class="card" style="border-color: #b45309;">
-            <div class="badge">Sutil</div>
-            <h2>💰 Opción C: Las 3 Monedas (Three Coins)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">El más minimalista y elegante. Escuchas
-                claramente caer solo dos o tres monedas grandes y gruesas una tras otra (Clink.. Clak..). Menos ruido y
-                más tono metálico puro.</p>
-            <button onclick="playCoinsC()">Cobrar Opción C</button>
+        <div class="card" style="border-color: #047857;">
+            <div class="badge">Burbuja</div>
+            <h2>🛍️ Opción C: Unboxing Feliz (Happy Pop)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Físico pero moderno. El sonido literal de
+                abrir una gruesa caja de cartón de diseño ("Pop" grave con ataque rápido), seguido de un mini acorde muy
+                cortito y alegre. Como destapar un regalo sorpresa.</p>
+            <button onclick="playPremiumC()">Comprar Opción C</button>
         </div>
     </div>
 
@@ -120,9 +121,52 @@
             return new AudioCtx();
         };
 
-        // Ruido sordo para simular el cuero del saco o la fricción
-        const playPouchThomp = (ctx, time, duration = 0.1) => {
-            const bufferSize = ctx.sampleRate * duration;
+        const createEcho = (ctx, time = 0.1, fbk = 0.2) => {
+            const delay = ctx.createDelay();
+            delay.delayTime.value = time;
+            const feedback = ctx.createGain();
+            feedback.gain.value = fbk;
+            delay.connect(feedback);
+            feedback.connect(delay);
+            return { delayNode: delay, outNode: delay };
+        };
+
+        // Opción A: Confirmación Premium (Apple Pay style - Bloop Bloop)
+        const playPremiumA = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+            const echo = createEcho(ctx, 0.15, 0.15); // Reverb sutil
+
+            // Dos tonos purísimos: D5 -> F#5 (Tercera mayor ascendente = Felicidad / Éxito)
+            const freqs = [587.33, 739.99];
+            const delays = [0, 0.12];
+
+            freqs.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                // Mezcla de Sine (puro) y Triangle (cuerpo cálido)
+                osc.type = 'sine';
+
+                osc.frequency.setValueAtTime(freq, start + delays[idx]);
+                // Ligero pitch bend hacia arriba para darle carácter de "aprobado"
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.05, start + delays[idx] + 0.1);
+
+                gain.gain.setValueAtTime(0, start + delays[idx]);
+                gain.gain.linearRampToValueAtTime(0.4, start + delays[idx] + 0.02); // Entra suave
+                gain.gain.exponentialRampToValueAtTime(0.01, start + delays[idx] + 0.2); // Sale limpio
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                if (idx === 1) gain.connect(echo.delayNode); // Solo echo en la última para no embarrar
+
+                osc.start(start + delays[idx]);
+                osc.stop(start + delays[idx] + 0.25);
+            });
+
+            // Mini click al final (Confirmación háptica de UI)
+            const clickTime = start + 0.28;
+            const bufferSize = ctx.sampleRate * 0.02;
             const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
             const data = buffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
@@ -130,112 +174,123 @@
             const noise = ctx.createBufferSource();
             noise.buffer = buffer;
             const filter = ctx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(400, time); // Saco grave
-            filter.frequency.exponentialRampToValueAtTime(100, time + duration);
+            filter.type = 'highpass';
+            filter.frequency.value = 8000;
 
-            const gain = ctx.createGain();
-            gain.gain.setValueAtTime(0, time);
-            gain.gain.linearRampToValueAtTime(0.7, time + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+            const clickGain = ctx.createGain();
+            clickGain.gain.setValueAtTime(0, clickTime);
+            clickGain.gain.linearRampToValueAtTime(0.1, clickTime + 0.005);
+            clickGain.gain.exponentialRampToValueAtTime(0.01, clickTime + 0.02);
 
-            noise.connect(filter);
-            filter.connect(gain);
-            gain.connect(ctx.destination);
-            noise.start(time);
+            noise.connect(filter); filter.connect(clickGain); clickGain.connect(ctx.destination);
+            noise.start(clickTime);
         };
 
-        // Generador de 1 moneda única chocando
-        // Las de oro/plata reales tienen frecuencias altas complejas (2kHz - 6kHz) de vida muy corta
-        const dropCoin = (ctx, time, baseFreq, duration = 0.15) => {
-            const ratios = [1.0, 1.45, 1.9, 2.7]; // Inarmónicos de placa metálica
-            const vols = [0.4, 0.25, 0.15, 0.05];
+        // Opción B: Síntesis Mágica (Swoosh ascendente + Cristal)
+        const playPremiumB = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+            const echo = createEcho(ctx, 0.2, 0.3);
 
-            ratios.forEach((ratio, i) => {
+            // 1. El "Swoosh" de creación (Ruido blanco filtrado que sube rápido)
+            const bufferSize = ctx.sampleRate * 0.2;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.Q.value = 5;
+
+            // Sube de 500 a 4000Hz (Aspiración rítmica)
+            filter.frequency.setValueAtTime(500, start);
+            filter.frequency.exponentialRampToValueAtTime(4000, start + 0.15);
+
+            const swooshGain = ctx.createGain();
+            swooshGain.gain.setValueAtTime(0, start);
+            swooshGain.gain.linearRampToValueAtTime(0.2, start + 0.1);
+            swooshGain.gain.exponentialRampToValueAtTime(0.01, start + 0.2);
+
+            noise.connect(filter); filter.connect(swooshGain); swooshGain.connect(ctx.destination);
+            noise.start(start);
+
+            // 2. Cristal brillante (Acorde E Major 9 condensado)
+            const bellTime = start + 0.15; // Justo en el pico del swoosh
+            const freqs = [659.25, 987.77, 1244.51]; // E5, B5, D#6
+
+            freqs.forEach((freq, idx) => {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
+                osc.type = 'triangle'; // Cristalino pero sin ser afilado
 
-                // Mezcla para rugosidad de moneda gruesa
-                osc.type = i === 0 ? 'sine' : 'triangle';
+                osc.frequency.setValueAtTime(freq, bellTime);
 
-                const freq = baseFreq * ratio;
-                osc.frequency.setValueAtTime(freq, time);
-
-                // Drop de masa física
-                osc.frequency.exponentialRampToValueAtTime(freq * 0.95, time + 0.03);
-
-                gain.gain.setValueAtTime(0, time);
-                gain.gain.linearRampToValueAtTime(vols[i], time + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + duration * (1 - (i * 0.1))); // Los agudos mueren antes
-
-                // Stereo Panner aleatorio para dar sensación espacial a cada moneda
-                const panner = ctx.createStereoPanner();
-                panner.pan.value = (Math.random() * 1.5) - 0.75;
+                gain.gain.setValueAtTime(0, bellTime);
+                gain.gain.linearRampToValueAtTime(0.25 / freqs.length, bellTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.01, bellTime + 0.8 - (idx * 0.1));
 
                 osc.connect(gain);
-                gain.connect(panner);
-                panner.connect(ctx.destination);
+                gain.connect(ctx.destination);
+                gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
 
-                osc.start(time);
-                osc.stop(time + duration + 0.1);
+                osc.start(bellTime);
+                osc.stop(bellTime + 1.0);
             });
         };
 
-        // Opción A: Puñado Denso (Pouch Thomp + Muchísimas monedas hiper juntas en el tiempo)
-        const playCoinsA = () => {
+        // Opción C: Unboxing Feliz (Pop UI + Acorde corto)
+        const playPremiumC = () => {
             const ctx = getCtx();
             const start = ctx.currentTime;
 
-            // Fricción y peso del saco cayendo a la mesa
-            playPouchThomp(ctx, start, 0.15);
-            playPouchThomp(ctx, start + 0.05, 0.2); // El eco físico
+            // 1. El "Pop" profundo (Pitch drop extremo de un oscilador de onda cuadrada)
+            const oscPop = ctx.createOscillator();
+            const gainPop = ctx.createGain();
+            oscPop.type = 'square';
 
-            const numCoins = 15;
-            for (let i = 0; i < numCoins; i++) {
-                // Todas caen en una franja de 80ms
-                const dropTime = start + (Math.random() * 0.08);
-                // Oro pesado: 2500Hz - 4500Hz
-                const freq = 2500 + (Math.random() * 2000);
-                // Vida híper corta porque se apagan al chocar unas con otras en el puñado
-                dropCoin(ctx, dropTime, freq, 0.04 + (Math.random() * 0.04));
-            }
-        };
+            // Frecuencia que cae en picado de 800 a 50Hz en 30ms = "POP" orgánico
+            oscPop.frequency.setValueAtTime(800, start);
+            oscPop.frequency.exponentialRampToValueAtTime(50, start + 0.03);
 
-        // Opción B: Lluvia / Deslizamiento (Más espaciadas, se distinguen más los "clinks")
-        const playCoinsB = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
+            // Filtro para quitar todo el zumbido eléctrico y dejar solo el ataque físico
+            const filterPop = ctx.createBiquadFilter();
+            filterPop.type = 'lowpass';
+            filterPop.frequency.value = 300;
 
-            // Saco más suave
-            playPouchThomp(ctx, start, 0.1);
+            gainPop.gain.setValueAtTime(0, start);
+            gainPop.gain.linearRampToValueAtTime(0.8, start + 0.01); // Golpetazo suave
+            gainPop.gain.exponentialRampToValueAtTime(0.01, start + 0.06);
 
-            const numCoins = 10;
-            for (let i = 0; i < numCoins; i++) {
-                // Rampa logarítmica para simular que caen primero pocas y luego el resto
-                const delay = Math.pow(Math.random(), 2) * 0.25;
-                const dropTime = start + delay;
+            oscPop.connect(filterPop); filterPop.connect(gainPop); gainPop.connect(ctx.destination);
+            oscPop.start(start);
+            oscPop.stop(start + 0.1);
 
-                // Rango más brillante y ágil (3000Hz - 5000Hz)
-                const freq = 3000 + (Math.random() * 2000);
-                // Duran un poco más (se distinguen)
-                dropCoin(ctx, dropTime, freq, 0.08 + (Math.random() * 0.05));
-            }
-        };
+            // 2. La "Luz" del interior de la caja (Acorde rápido alegre: C Major)
+            const chordTime = start + 0.03;
+            const freqs = [523.25, 659.25, 783.99]; // C5, E5, G5
 
-        // Opción C: Minimalista (2 o 3 monedas grandes exactas)
-        const playCoinsC = () => {
-            const ctx = getCtx();
-            const start = ctx.currentTime;
+            const echo = createEcho(ctx, 0.1, 0.2);
 
-            // Saco más leve
-            playPouchThomp(ctx, start, 0.1);
+            freqs.forEach(freq => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
 
-            // Moneda 1
-            dropCoin(ctx, start + 0.02, 3500, 0.15);
-            // Moneda 2 (Un poco más tarde y tono distinto)
-            dropCoin(ctx, start + 0.09, 2900, 0.12);
-            // Moneda 3 (A veces rebotan, muy cercana a la 2)
-            dropCoin(ctx, start + 0.13, 4200, 0.08);
+                osc.frequency.setValueAtTime(freq, chordTime);
+
+                gain.gain.setValueAtTime(0, chordTime);
+                gain.gain.linearRampToValueAtTime(0.3, chordTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.01, chordTime + 0.25); // Muy cortito, alegre
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
+
+                osc.start(chordTime);
+                osc.stop(chordTime + 0.3);
+            });
         };
     </script>
 </body>
