@@ -81,36 +81,37 @@
 </head>
 
 <body>
-    <h1>🛍️ Laboratorio: Variaciones "Ka-Ching" (Tienda)</h1>
-    <p>Hemos descartado la Option A original por ser demasiado estridente/metálica. Aquí hay 3 versiones de "Caja
-        Registradora" diseñadas para ser amables con el oído pero manteniendo la satisfacción de gastar RPC.</p>
+    <h1>🛍️ Laboratorio: El "Ka-Ching" Definitivo</h1>
+    <p>He reescrito el sintetizador desde cero. Estas 3 opciones recrean fielmente la mecánica física y la campana
+        inarmónica de bronce de una caja registradora real, controlando las frecuencias de la campana para que sea 100%
+        dopamina pura y pesada sin causar dolor de oídos ("estridencia").</p>
 
     <div class="grid">
         <div class="card" style="border-color: #10b981;">
-            <div class="badge">Aterciopelado</div>
-            <h2>🛍️ Opción A: Ka-Ching Mudo (Muffled Register)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un "Ka-Ching" donde el ruido de la campana
-                se logra con frecuencias mucho más bajas y un filtro paso-bajo. Suena como si la caja registradora
-                estuviera dentro de una bolsa o cruzando una puerta.</p>
-            <button onclick="playKachingA()">Probar Versión A</button>
+            <div class="badge">Vintage</div>
+            <h2>🛍️ Opción A: Ka-Ching Clásico y Realista</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">La recreación más pura. Escuchas el "Cha"
+                (fricción del carrito), seguido del golpe ("Ka") en simultáneo con una campana de bronce de 4 armónicos
+                que se apaga de forma natural.</p>
+            <button onclick="playKachingA()">Cobrar Opción A</button>
         </div>
 
         <div class="card" style="border-color: #059669;">
-            <div class="badge">Melódico</div>
-            <h2>🛍️ Opción B: Ka-Ching Tonal (Happy Chime)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Mantenemos el ritmo rápido mecánico
-                "cha-clink", pero la campanada final es un acorde perfecto mayor (Sol Mayor) con ondas triangulares
-                puras. Muy alegre y nada chirriante.</p>
-            <button onclick="playKachingB()">Probar Versión B</button>
+            <div class="badge">Punchy</div>
+            <h2>🛍️ Opción B: Ka-Ching Pesado (Modernizado)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Una caja más "gorda". El chasquido mecánico
+                tiene más graves (suena compacto y pesado) y la campanada es un poco más grave, gruesa y rápida. Da
+                sensación de soltar mucho dinero.</p>
+            <button onclick="playKachingB()">Cobrar Opción B</button>
         </div>
 
         <div class="card" style="border-color: #047857;">
-            <div class="badge">Orgánico</div>
-            <h2>🛍️ Opción C: Cajón de Madera (Wood & Brass)</h2>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">En lugar de metal y resortes agudos, emula
-                el sonido de un cajón pesado de madera abriéndose y unas cuantas monedas gruesas de bronce chocando en
-                un tono bajo.</p>
-            <button onclick="playKachingC()">Probar Versión C</button>
+            <div class="badge">Jackpot</div>
+            <h2>🛍️ Opción C: Cha-Ching-Ching (Doble Campana)</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Un solo tirón mecánico pero que acciona la
+                campana dos veces seguidas muy rápido. Típico sonido de haber sacado premio o gastado en un ítem
+                importante.</p>
+            <button onclick="playKachingC()">Cobrar Opción C</button>
         </div>
     </div>
 
@@ -120,9 +121,9 @@
             return new AudioCtx();
         };
 
-        const createEcho = (ctx, time = 0.15, fbk = 0.25) => {
+        const createEcho = (ctx, time = 0.05, fbk = 0.1) => {
             const delay = ctx.createDelay();
-            delay.delayTime.value = time;
+            delay.delayTime.value = time; // Eco minúsculo para dar cuerpo al metal
             const feedback = ctx.createGain();
             feedback.gain.value = fbk;
             delay.connect(feedback);
@@ -130,8 +131,8 @@
             return { delayNode: delay, outNode: delay };
         };
 
-        // Utilidad para ruido corto ("Cha" o "Ka")
-        const playNoiseClack = (ctx, time, duration, lowPassFreq) => {
+        // Utilidad común para el "Ruido Mecánico"
+        const playMechanism = (ctx, time, duration, filterType, filterFreq, volume = 0.4) => {
             const bufferSize = ctx.sampleRate * duration;
             const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
             const data = buffer.getChannelData(0);
@@ -139,125 +140,97 @@
 
             const noise = ctx.createBufferSource();
             noise.buffer = buffer;
-
             const filter = ctx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.value = lowPassFreq; // Clave para quitar estridencia
+            filter.type = filterType;
+            filter.frequency.value = filterFreq;
+            filter.Q.value = 1;
 
             const gain = ctx.createGain();
             gain.gain.setValueAtTime(0, time);
-            gain.gain.linearRampToValueAtTime(0.5, time + 0.01);
+            gain.gain.linearRampToValueAtTime(volume, time + 0.01);
             gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
 
-            noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
             noise.start(time);
         };
 
-        // Opción A: Ka-Ching Mudo (Filtro cerrado)
-        const playKachingA = () => {
-            const ctx = getCtx();
-            // Ruido "Ka" muy opaco (1500Hz)
-            playNoiseClack(ctx, ctx.currentTime, 0.08, 1500);
+        // Generador de Campana de Bronce inarmónica
+        const playBell = (ctx, time, baseFreq, decayMult, volMult) => {
+            const echo = createEcho(ctx);
+            // Inarmónicos para sonar a campana real (no acordes musicales)
+            // Multiplicadores típicos: 1, 1.4, 1.9, 2.3
+            const ratios = [1.0, 1.42, 1.95, 2.3];
+            const decays = [1.2 * decayMult, 0.8 * decayMult, 0.5 * decayMult, 0.3 * decayMult];
+            const vols = [0.4 * volMult, 0.2 * volMult, 0.1 * volMult, 0.05 * volMult];
 
-            // Campana grave y redonda (Ching)
-            const freqs = [800, 1200, 1600]; // Muy bajas para una campana
-            freqs.forEach(freq => {
+            ratios.forEach((ratio, i) => {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
-                osc.type = 'sine'; // Super suave
-                osc.frequency.setValueAtTime(freq, ctx.currentTime + 0.08);
+                osc.type = 'sine'; // Sine es lo más puro y menos estridente
 
-                gain.gain.setValueAtTime(0, ctx.currentTime + 0.08);
-                gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.09);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                const freq = baseFreq * ratio;
+                osc.frequency.setValueAtTime(freq, time);
 
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(ctx.currentTime + 0.08);
-                osc.stop(ctx.currentTime + 0.5);
-            });
-        };
+                // Pitch drop súbito (El golpe del martillo afina el metal milisegundos después de golpearlo)
+                osc.frequency.exponentialRampToValueAtTime(freq * 0.98, time + 0.1);
 
-        // Opción B: Ka-Ching Tonal Mayor
-        const playKachingB = () => {
-            const ctx = getCtx();
-            const echo = createEcho(ctx, 0.2, 0.2);
-
-            // "Cha-clink" (Dos ruiditos súper rápidos y brillantes pero cortos)
-            playNoiseClack(ctx, ctx.currentTime, 0.04, 3000);
-            playNoiseClack(ctx, ctx.currentTime + 0.06, 0.04, 4000);
-
-            // Campana = Acorde G Major (G5, B5, D6)
-            const chord = [783.99, 987.77, 1174.66];
-            chord.forEach((freq, idx) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-
-                osc.type = 'triangle'; // Suave pero con algo de cuerpo
-                // Ligero arpegio súper rápido para darle textura de "monedas chocando"
-                const startTime = ctx.currentTime + 0.12 + (idx * 0.015);
-
-                osc.frequency.setValueAtTime(freq, startTime);
-
-                gain.gain.setValueAtTime(0, startTime);
-                gain.gain.linearRampToValueAtTime(0.2, startTime + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.7);
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(vols[i], time + 0.01); // Ataque ultra-rápido metálico
+                gain.gain.exponentialRampToValueAtTime(0.001, time + decays[i]);
 
                 osc.connect(gain);
                 gain.connect(ctx.destination);
                 gain.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
 
-                osc.start(startTime);
-                osc.stop(startTime + 0.7);
+                osc.start(time);
+                osc.stop(time + decays[i] + 0.1);
             });
         };
 
-        // Opción C: Madera y Bronce (Grave y Físico)
+        // Opción A: Realista Clásico
+        const playKachingA = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+
+            // 1. "Cha" (Arrastre agudo)
+            playMechanism(ctx, start, 0.06, 'bandpass', 1500, 0.3);
+            // 2. "Ka" (Tope grave cuando el cajón se para)
+            playMechanism(ctx, start + 0.07, 0.04, 'lowpass', 500, 0.6);
+
+            // 3. "Ching" (Campana a 1300Hz) empieza a la vez que el "Ka"
+            playBell(ctx, start + 0.07, 1300, 1.0, 1.0);
+        };
+
+        // Opción B: Pesado / Punchy
+        const playKachingB = () => {
+            const ctx = getCtx();
+            const start = ctx.currentTime;
+
+            // 1. "Cha" (Arrastre más gordo y lento)
+            playMechanism(ctx, start, 0.08, 'lowpass', 900, 0.4);
+            // 2. "Ka" (Tope contundente)
+            playMechanism(ctx, start + 0.09, 0.05, 'lowpass', 300, 0.8);
+
+            // 3. "Ching" (Campana a 1100Hz, más grave y decae más rápido)
+            playBell(ctx, start + 0.09, 1100, 0.7, 1.1);
+        };
+
+        // Opción C: Doble Campana (Jackpot)
         const playKachingC = () => {
             const ctx = getCtx();
-            const echo = createEcho(ctx, 0.1, 0.3); // Habitación pequeña
+            const start = ctx.currentTime;
 
-            // 1. "Clonk" del cajón de madera abriéndose (Grave 200Hz Lowpass)
-            playNoiseClack(ctx, ctx.currentTime, 0.15, 200);
+            // 1. Un solo tirón al inicio
+            playMechanism(ctx, start, 0.06, 'bandpass', 1200, 0.3);
+            playMechanism(ctx, start + 0.07, 0.04, 'lowpass', 600, 0.5);
 
-            const oscWood = ctx.createOscillator();
-            const gainWood = ctx.createGain();
-            oscWood.type = 'square'; // Grueso
-            oscWood.frequency.setValueAtTime(100, ctx.currentTime);
-            oscWood.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.15); // Cae el golpe
-
-            gainWood.gain.setValueAtTime(0, ctx.currentTime);
-            gainWood.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.02);
-            gainWood.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-
-            const filterWood = ctx.createBiquadFilter();
-            filterWood.type = 'lowpass';
-            filterWood.frequency.value = 300;
-
-            oscWood.connect(filterWood); filterWood.connect(gainWood); gainWood.connect(ctx.destination);
-            oscWood.start(ctx.currentTime); oscWood.stop(ctx.currentTime + 0.15);
-
-            // 2. Chocar de bronce (Monedas gordas graves) - Empieza un poco tarde
-            const brassFreqs = [400, 550, 700]; // Frecuencias súper bajas para metal
-            brassFreqs.forEach((freq, idx) => {
-                const oscBrass = ctx.createOscillator();
-                const gainBrass = ctx.createGain();
-
-                // FM synthesis falsa subiendo de vol de golpe
-                oscBrass.type = 'sine';
-                oscBrass.frequency.setValueAtTime(freq, ctx.currentTime + 0.1 + (idx * 0.02));
-
-                gainBrass.gain.setValueAtTime(0, ctx.currentTime + 0.1 + (idx * 0.02));
-                gainBrass.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.12 + (idx * 0.02)); // Ataque metálico blando
-                gainBrass.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
-
-                oscBrass.connect(gainBrass);
-                gainBrass.connect(ctx.destination);
-                gainBrass.connect(echo.delayNode); echo.outNode.connect(ctx.destination);
-
-                oscBrass.start(ctx.currentTime + 0.1 + (idx * 0.02));
-                oscBrass.stop(ctx.currentTime + 0.8);
-            });
+            // 2. "Ching... Ching"
+            // Campana brillante base (1400Hz)
+            playBell(ctx, start + 0.07, 1400, 0.8, 0.9);
+            // Segunda campana rapidísima igual (0.15s después)
+            playBell(ctx, start + 0.22, 1400, 1.2, 1.0); // La última suena un poco más larga y fuerte
         };
     </script>
 </body>
