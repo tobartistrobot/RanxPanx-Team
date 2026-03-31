@@ -374,7 +374,9 @@ export default function App() {
   }, [activeTask]);
   const [groceryInput, setGroceryInput] = useState('');
   const [selectedSupermarket, setSelectedSupermarket] = useState('');
-  const [markedGroceries, setMarkedGroceries] = useState([]);
+  const [markedGroceryId, setMarkedGroceryId] = useState(null);
+  const [markedCartGroceryId, setMarkedCartGroceryId] = useState(null);
+  const [cartSortMode, setCartSortMode] = useState('arrival');
   const [showAdminModal, setShowAdminModal] = useState(false);
 
   const [modalMode, setModalMode] = useState(null);
@@ -1702,8 +1704,11 @@ export default function App() {
 
       // 2. Operación asíncrona en base de datos
       await updateDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'groceries', id), {
-        completed: !currentStatus
+        completed: !currentStatus,
+        ...(!currentStatus && { completedAt: Date.now() })
       });
+      setMarkedGroceryId(null);
+      setMarkedCartGroceryId(null);
     } catch (error) {
       console.error("Error toggling grocery:", error);
     }
@@ -2748,15 +2753,16 @@ export default function App() {
                           {pendingItems.length === 0 ? <p className="text-center text-xs text-slate-400 italic py-6">Lista de la compra vacía.</p> : pendingItems.map((item, index) => (
                             <Draggable key={item.id} draggableId={item.id} index={index}>
                               {(provided) => {
-                                const isMarked = markedGroceries.includes(item.id);
+                                const isMarked = markedGroceryId === item.id;
                                 return (
                                   <div ref={provided.innerRef} {...provided.draggableProps} style={provided.draggableProps.style} className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-4 rounded-2xl border flex items-center justify-between group transition-colors ${isMarked ? (isDarkMode ? 'bg-indigo-900/20 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200') : ''}`}>
                                     <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => {
                                       if (isMarked) {
-                                        setMarkedGroceries(prev => prev.filter(id => id !== item.id));
                                         toggleGrocery(item.id, item.completed);
+                                      } else if (markedGroceryId) {
+                                        setMarkedGroceryId(null);
                                       } else {
-                                        setMarkedGroceries(prev => [...prev, item.id]);
+                                        setMarkedGroceryId(item.id);
                                       }
                                     }}>
                                       <button className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${isMarked ? 'bg-indigo-100 border-indigo-400 dark:bg-indigo-900/30 dark:border-indigo-500/50' : (isDarkMode ? 'border-slate-700' : 'border-slate-300')}`}>
@@ -2795,21 +2801,41 @@ export default function App() {
 
               {groceries.filter(g => g.completed && (!selectedSupermarket || g.supermarket === selectedSupermarket)).length > 0 && (
                 <div>
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 px-2">En el Carrito</h3>
+                  <div className="flex justify-between items-center mb-3 px-2">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">En el Carrito</h3>
+                    <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-1 gap-1">
+                      <button onClick={() => setCartSortMode('arrival')} className={`text-[10px] uppercase font-bold px-2 py-1 rounded transition-colors ${cartSortMode === 'arrival' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-700 dark:text-slate-200' : 'text-slate-400 hover:text-slate-500'}`}>Recientes</button>
+                      <button onClick={() => setCartSortMode('alpha')} className={`text-[10px] uppercase font-bold px-2 py-1 rounded transition-colors ${cartSortMode === 'alpha' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-700 dark:text-slate-200' : 'text-slate-400 hover:text-slate-500'}`}>A-Z</button>
+                    </div>
+                  </div>
                   <div className="space-y-2 opacity-60">
                     {groceries.filter(g => g.completed && (!selectedSupermarket || g.supermarket === selectedSupermarket))
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map(item => (
-                        <div key={item.id} className={`${isDarkMode ? 'bg-slate-900/50 border-slate-800/50' : 'bg-slate-50 border-slate-200'} p-4 rounded-2xl border flex items-center justify-between group`}>
-                          <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleGrocery(item.id, item.completed)}>
-                            <button className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center transition-all">
-                              <Check size={16} strokeWidth={3} />
-                            </button>
-                            <p className="font-bold text-base flex-1 line-through text-slate-400">{item.name}</p>
+                      .sort((a, b) => {
+                        if (cartSortMode === 'alpha') return a.name.localeCompare(b.name);
+                        return (b.completedAt || 0) - (a.completedAt || 0); // newest at the top
+                      })
+                      .map(item => {
+                        const isMarked = markedCartGroceryId === item.id;
+                        return (
+                          <div key={item.id} className={`${isDarkMode ? 'bg-slate-900/50 border-slate-800/50' : 'bg-slate-50 border-slate-200'} p-4 rounded-2xl border flex items-center justify-between group transition-colors ${isMarked ? (isDarkMode ? 'bg-indigo-900/10 border-indigo-500/20' : 'bg-indigo-50/50 border-indigo-200') : ''}`}>
+                            <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => {
+                              if (isMarked) {
+                                toggleGrocery(item.id, item.completed);
+                              } else if (markedCartGroceryId) {
+                                setMarkedCartGroceryId(null);
+                              } else {
+                                setMarkedCartGroceryId(item.id);
+                              }
+                            }}>
+                              <button className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isMarked ? 'bg-indigo-100 border-indigo-400 dark:bg-indigo-900/30 dark:border-indigo-500/50' : 'bg-emerald-500 text-white'}`}>
+                                {isMarked ? <div className="w-3 h-3 rounded-full bg-indigo-500 scale-100 transition-all"></div> : <Check size={16} strokeWidth={3} />}
+                              </button>
+                              <p className={`font-bold text-base flex-1 line-through transition-colors ${isMarked ? 'text-indigo-600 dark:text-indigo-400 opacity-100' : 'text-slate-400'}`}>{item.name}</p>
+                            </div>
+                            <button onClick={() => deleteGrocery(item.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors ml-2"><Trash2 size={16} /></button>
                           </div>
-                          <button onClick={() => deleteGrocery(item.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors ml-2"><Trash2 size={16} /></button>
-                        </div>
-                      ))}
+                        )
+                      })}
                   </div>
                 </div>
               )}
