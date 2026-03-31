@@ -1784,17 +1784,7 @@ export default function App() {
         for (const colName of collectionsToImport) {
           if (!backupData[colName]) continue;
 
-          // Borrar actuales
-          const currentSnap = await getDocs(collection(db, 'artifacts', safeAppId, 'public', 'data', colName));
-          const docsToDelete = [];
-          currentSnap.forEach(snap => docsToDelete.push(snap.ref));
-          const deleteChunks = chunkArray(docsToDelete, 400);
-
-          for (const chunk of deleteChunks) {
-            const batch = writeBatch(db);
-            chunk.forEach(ref => batch.delete(ref));
-            await batch.commit();
-          }
+          // Insertar/Actualizar los datos de la copia asegurando que conviven con los nuevos
 
           // Insertar los nuevos
           const insertChunks = chunkArray(backupData[colName], 400);
