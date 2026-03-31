@@ -365,8 +365,6 @@ export default function App() {
     }
   });
 
-  const [syncedRemote, setSyncedRemote] = useState(false);
-
   useEffect(() => {
     if (activeTask) {
       localStorage.setItem('hometeam_activetask', JSON.stringify(activeTask));
@@ -374,21 +372,6 @@ export default function App() {
       localStorage.removeItem('hometeam_activetask');
     }
   }, [activeTask]);
-
-  useEffect(() => {
-    if (!syncedRemote && userName && Object.keys(usersData).length > 0) {
-      setSyncedRemote(true);
-      if (usersData[userName]) {
-        const serverTimer = usersData[userName].activeTimer;
-        const localTimerStr = localStorage.getItem('hometeam_activetask');
-
-        if (serverTimer && (!localTimerStr || localTimerStr === 'null')) {
-          setActiveTask(serverTimer);
-          setTaskInput(serverTimer.name || '');
-        }
-      }
-    }
-  }, [userName, usersData, syncedRemote]);
   const [groceryInput, setGroceryInput] = useState('');
   const [selectedSupermarket, setSelectedSupermarket] = useState('');
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -408,6 +391,22 @@ export default function App() {
 
   // GAMIFICATION SYSTEM STATE
   const [usersData, setUsersData] = useState({});
+  const [syncedRemote, setSyncedRemote] = useState(false);
+
+  useEffect(() => {
+    if (!syncedRemote && userName && Object.keys(usersData).length > 0) {
+      setSyncedRemote(true);
+      if (usersData[userName]) {
+        const serverTimer = usersData[userName].activeTimer;
+        const localTimerStr = localStorage.getItem('hometeam_activetask');
+
+        if (serverTimer && (!localTimerStr || localTimerStr === 'null')) {
+          setActiveTask(serverTimer);
+          setTaskInput(serverTimer.name || '');
+        }
+      }
+    }
+  }, [userName, usersData, syncedRemote]);
   const [storeItems, setStoreItems] = useState([]);
   const [coupons, setCoupons] = useState([]);
   const [moments, setMoments] = useState([]);
