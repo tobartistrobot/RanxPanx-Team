@@ -378,7 +378,7 @@ export default function App() {
 
   const [modalMode, setModalMode] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  const [manualData, setManualData] = useState({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() });
+  const [manualData, setManualData] = useState({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD(), time: '' });
 
   const [toast, setToast] = useState({ msg: '', visible: false, type: 'success' });
 
@@ -596,6 +596,17 @@ export default function App() {
     const matches = uniqueTasks.filter(t => t.toLowerCase().includes(lowerInput) && t.toLowerCase() !== lowerInput);
     return matches.slice(0, 5);
   }, [taskInput, activeTask, chores]);
+
+  const autocompleteResultsManual = useMemo(() => {
+    const inputName = manualData?.name || '';
+    if (!inputName) return [];
+    const lowerInput = inputName.toLowerCase().trim();
+    if (!lowerInput) return [];
+    const validChores = chores.filter(c => !c.isGift);
+    const uniqueTasks = [...new Set(validChores.map(c => c.taskName))];
+    const matches = uniqueTasks.filter(t => t.toLowerCase().includes(lowerInput) && t.toLowerCase() !== lowerInput);
+    return matches.slice(0, 5);
+  }, [manualData?.name, chores]);
 
   const hotTasks = useMemo(() => {
     const validChores = chores.filter(c => !c.isGift);
@@ -2120,11 +2131,17 @@ export default function App() {
     const authorUserConfig = Object.values(USER_COLORS).find(c => c.id === usersData[authorName]?.color) || USER_COLORS[0];
     const authorColor = authorUserConfig.id;
 
+    const baseDate = new Date(manualData.date + 'T00:00:00');
+    if (manualData.time) {
+      const [hh, mm] = manualData.time.split(':').map(Number);
+      baseDate.setHours(hh, mm, 0, 0);
+    }
+
     const payload = {
       taskName: manualData.name,
       durationSeconds: totalSeconds,
       dateString: manualData.date,
-      timestamp: new Date(manualData.date).getTime(),
+      timestamp: baseDate.getTime(),
       userName: authorName,
       userColor: authorColor,
       userId: user?.uid || 'anonymous' // Para multicuenta, valdría con el de auth u omitirlo
@@ -2212,11 +2229,16 @@ export default function App() {
 
   const openEdit = (chore) => {
     setEditingItem(chore);
+    let timeStr = '';
+    if (chore.timestamp) {
+      timeStr = new Date(chore.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
     setManualData({
       name: chore.taskName,
       hours: Math.floor(chore.durationSeconds / 3600),
       minutes: Math.floor((chore.durationSeconds % 3600) / 60),
       date: chore.dateString,
+      time: timeStr,
       author: chore.userName
     });
     setModalMode('edit');
@@ -2384,7 +2406,7 @@ export default function App() {
 
               <div className="flex justify-between items-center mb-6">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Timer Pro</span>
-                <button onClick={() => { setModalMode('manual'); setManualData({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD() }); }} className="text-indigo-500 text-[10px] uppercase font-bold flex items-center gap-1 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-1.5 rounded-full transition-colors">
+                <button onClick={() => { setModalMode('manual'); setManualData({ name: '', hours: 0, minutes: 0, date: getLocalYYYYMMDD(), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }); }} className="text-indigo-500 text-[10px] uppercase font-bold flex items-center gap-1 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-1.5 rounded-full transition-colors">
                   <Plus size={12} strokeWidth={3} /> Registro manual
                 </button>
               </div>
@@ -3213,9 +3235,24 @@ export default function App() {
                 <button onClick={() => setModalMode(null)} className="p-2 text-slate-400"><X size={20} /></button>
               </div>
               <div className="space-y-4">
-                <div>
+                <div className="relative z-30">
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tarea</label>
                   <input type="text" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all`} value={manualData.name} onChange={(e) => setManualData({ ...manualData, name: e.target.value })} />
+
+                  {autocompleteResultsManual.length > 0 && (
+                    <div className={`absolute top-[4.5rem] left-0 right-0 p-2 rounded-2xl border shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200 overflow-hidden ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                      {autocompleteResultsManual.map((res) => (
+                        <button
+                          key={res}
+                          onClick={() => setManualData({ ...manualData, name: res })}
+                          className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-between group ${isDarkMode ? 'hover:bg-slate-700 text-slate-300 hover:text-white' : 'hover:bg-slate-50 text-slate-600 hover:text-indigo-600'}`}
+                        >
+                          {res}
+                          <Plus size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {suggestions.length > 0 && (
                     <div className="mt-3">
@@ -3231,13 +3268,16 @@ export default function App() {
                   <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Minutos</label><input type="number" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.minutes} onChange={(e) => setManualData({ ...manualData, minutes: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="col-span-2">
                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Realizado por:</label>
                     <select className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all`} value={manualData.author || userName} onChange={(e) => setManualData({ ...manualData, author: e.target.value })}>
                       {Object.keys(usersData).map(u => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Fecha</label><input type="date" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.date} onChange={(e) => setManualData({ ...manualData, date: e.target.value })} /></div>
+                  <div><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Hora</label><input type="time" className={`w-full p-3 rounded-xl border mt-1 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={manualData.time || ''} onChange={(e) => setManualData({ ...manualData, time: e.target.value })} /></div>
                 </div>
                 <div className="flex gap-2 w-full mt-4">
                   {modalMode === 'edit' && editingItem && (
