@@ -347,9 +347,48 @@ export default function App() {
   const [userColor, setUserColor] = useState(() => localStorage.getItem('hometeam_usercolor') || 'indigo');
   const [showProfileModal, setShowProfileModal] = useState(!localStorage.getItem('hometeam_username'));
 
-  const [activeTask, setActiveTask] = useState(null);
+  const [activeTask, setActiveTask] = useState(() => {
+    try {
+      const saved = localStorage.getItem('hometeam_activetask');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [elapsed, setElapsed] = useState(0);
-  const [taskInput, setTaskInput] = useState('');
+  const [taskInput, setTaskInput] = useState(() => {
+    try {
+      const saved = localStorage.getItem('hometeam_activetask');
+      return saved ? (JSON.parse(saved).name || '') : '';
+    } catch (e) {
+      return '';
+    }
+  });
+
+  const [syncedRemote, setSyncedRemote] = useState(false);
+
+  useEffect(() => {
+    if (activeTask) {
+      localStorage.setItem('hometeam_activetask', JSON.stringify(activeTask));
+    } else {
+      localStorage.removeItem('hometeam_activetask');
+    }
+  }, [activeTask]);
+
+  useEffect(() => {
+    if (!syncedRemote && userName && Object.keys(usersData).length > 0) {
+      setSyncedRemote(true);
+      if (usersData[userName]) {
+        const serverTimer = usersData[userName].activeTimer;
+        const localTimerStr = localStorage.getItem('hometeam_activetask');
+
+        if (serverTimer && (!localTimerStr || localTimerStr === 'null')) {
+          setActiveTask(serverTimer);
+          setTaskInput(serverTimer.name || '');
+        }
+      }
+    }
+  }, [userName, usersData, syncedRemote]);
   const [groceryInput, setGroceryInput] = useState('');
   const [selectedSupermarket, setSelectedSupermarket] = useState('');
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -2235,7 +2274,31 @@ export default function App() {
     return { users, usersTasks, total: monthChores.reduce((s, c) => s + c.durationSeconds, 0) };
   }, [chores, selectedDate]);
 
-  const currentRadiographyStats = radiographyView === 'day' ? selectedDayStats : (radiographyView === 'week' ? selectedWeekStats : selectedMonthStats);
+  const selectedYearStats = useMemo(() => {
+    const yearStr = `${selectedDate.getFullYear()}`;
+    const yearChores = chores.filter(c => c.dateString.startsWith(yearStr));
+    const users = {};
+    const usersTasks = {};
+    yearChores.forEach(c => {
+      users[c.userName] = (users[c.userName] || 0) + c.durationSeconds;
+      if (!usersTasks[c.userName]) usersTasks[c.userName] = {};
+      usersTasks[c.userName][c.taskName] = (usersTasks[c.userName][c.taskName] || 0) + c.durationSeconds;
+    });
+    return { users, usersTasks, total: yearChores.reduce((s, c) => s + c.durationSeconds, 0) };
+  }, [chores, selectedDate]);
+
+  const totalStats = useMemo(() => {
+    const users = {};
+    const usersTasks = {};
+    chores.forEach(c => {
+      users[c.userName] = (users[c.userName] || 0) + c.durationSeconds;
+      if (!usersTasks[c.userName]) usersTasks[c.userName] = {};
+      usersTasks[c.userName][c.taskName] = (usersTasks[c.userName][c.taskName] || 0) + c.durationSeconds;
+    });
+    return { users, usersTasks, total: chores.reduce((s, c) => s + c.durationSeconds, 0) };
+  }, [chores]);
+
+  const currentRadiographyStats = radiographyView === 'day' ? selectedDayStats : (radiographyView === 'week' ? selectedWeekStats : (radiographyView === 'month' ? selectedMonthStats : (radiographyView === 'year' ? selectedYearStats : totalStats)));
 
   const getDailyQuote = (tabId) => {
     const quotesArray = DAILY_QUOTES[tabId] || DAILY_QUOTES['timer'];
@@ -2537,10 +2600,10 @@ export default function App() {
             <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-5 rounded-3xl border shadow-sm`}>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2"><TrendingUp size={14} /> Radiografía</h3>
-                <div className={`flex rounded-lg p-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  {['day', 'week', 'month'].map(view => (
+                <div className={`flex flex-wrap rounded-lg p-1 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                  {['day', 'week', 'month', 'year', 'total'].map(view => (
                     <button key={view} onClick={() => setRadiographyView(view)} className={`text-[10px] font-bold px-2.5 py-1.5 rounded-md transition-all ${radiographyView === view ? (isDarkMode ? 'bg-slate-700 text-indigo-400' : 'bg-white text-indigo-600 shadow-sm') : 'text-slate-500'}`}>
-                      {view === 'day' ? 'Día' : view === 'week' ? 'Semana' : 'Mes'}
+                      {view === 'day' ? 'Día' : view === 'week' ? 'Semana' : view === 'month' ? 'Mes' : view === 'year' ? 'Año' : 'Total'}
                     </button>
                   ))}
                 </div>
