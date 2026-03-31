@@ -7,7 +7,7 @@ import {
   ChevronRight, ChevronDown, Award, TrendingUp, WifiOff,
   Sparkles, Coffee, Briefcase, Activity, CheckSquare, Pause, ShoppingCart,
   GripVertical, Store, Gift, Flame, Zap, Star, Tag, ShoppingBag, Settings, Shield, Swords,
-  Target, Crosshair, HeartHandshake
+  Target, Crosshair, HeartHandshake, Download, UploadCloud
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { initializeApp } from 'firebase/app';
@@ -377,6 +377,7 @@ export default function App() {
   const [markedGroceryId, setMarkedGroceryId] = useState(null);
   const [markedCartGroceryId, setMarkedCartGroceryId] = useState(null);
   const [cartSortMode, setCartSortMode] = useState('arrival');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
 
   const [modalMode, setModalMode] = useState(null);
@@ -1722,6 +1723,103 @@ export default function App() {
     }
   };
 
+  const chunkArray = (arr, size) => {
+    const chunkedArr = [];
+    let index = 0;
+    while (index < arr.length) {
+      chunkedArr.push(arr.slice(index, size + index));
+      index += size;
+    }
+    return chunkedArr;
+  };
+
+  const handleExportBackup = async () => {
+    try {
+      showToast('Preparando copia de seguridad...', 'info');
+      const collections = ['chores', 'groceries', 'supermarkets', 'moments', 'users'];
+      const backupData = {};
+      for (const colName of collections) {
+        const querySnapshot = await getDocs(collection(db, 'artifacts', safeAppId, 'public', 'data', colName));
+        const docs = [];
+        querySnapshot.forEach(d => {
+          docs.push({ id: d.id, ...d.data() });
+        });
+        backupData[colName] = docs;
+      }
+
+      const jsonString = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const tempLink = document.createElement('a');
+      tempLink.href = url;
+      tempLink.setAttribute('download', `ranxpanx-backup-${getLocalYYYYMMDD()}.json`);
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+      URL.revokeObjectURL(url);
+
+      showToast('Copia exportada con éxito', 'success');
+      setShowSettingsModal(false);
+    } catch (e) {
+      console.error(e);
+      showToast('Error al exportar', 'error');
+    }
+  };
+
+  const handleImportBackup = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm("¡CUIDADO! Esto borrará absolutamente todos los datos actuales y los reemplazará por los de esta copia. ¿Seguro que quieres continuar?")) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const backupData = JSON.parse(e.target.result);
+        const collectionsToImport = ['chores', 'groceries', 'supermarkets', 'moments', 'users'];
+
+        showToast('Restaurando datos, por favor espera...', 'info');
+        setShowSettingsModal(false);
+
+        for (const colName of collectionsToImport) {
+          if (!backupData[colName]) continue;
+
+          // Borrar actuales
+          const currentSnap = await getDocs(collection(db, 'artifacts', safeAppId, 'public', 'data', colName));
+          const docsToDelete = [];
+          currentSnap.forEach(snap => docsToDelete.push(snap.ref));
+          const deleteChunks = chunkArray(docsToDelete, 400);
+
+          for (const chunk of deleteChunks) {
+            const batch = writeBatch(db);
+            chunk.forEach(ref => batch.delete(ref));
+            await batch.commit();
+          }
+
+          // Insertar los nuevos
+          const insertChunks = chunkArray(backupData[colName], 400);
+          for (const chunk of insertChunks) {
+            const batch = writeBatch(db);
+            chunk.forEach(docData => {
+              const { id, ...data } = docData;
+              const ref = doc(db, 'artifacts', safeAppId, 'public', 'data', colName, id);
+              batch.set(ref, data);
+            });
+            await batch.commit();
+          }
+        }
+        window.alert("¡Restauración completada con éxito! La aplicación se va a recargar ahora mismo para aplicar los cambios.");
+        window.location.reload();
+      } catch (err) {
+        console.error("Parse/Import error:", err);
+        showToast("Archivo corrupto o error al importar", 'error');
+      }
+    };
+    reader.readAsText(file);
+    // Limpiar input file
+    event.target.value = '';
+  };
+
   const addSupermarket = async () => {
     const name = window.prompt("Nombre del nuevo supermercado o tienda:");
     if (!name || !name.trim()) return;
@@ -2391,8 +2489,8 @@ export default function App() {
           <h1 className="text-xl font-bold tracking-tight">RanxPanx Team</h1>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full ${isDarkMode ? 'bg-slate-800 text-yellow-400' : 'bg-slate-100 text-slate-600'}`}>
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+          <button onClick={() => setShowSettingsModal(true)} className={`p-2 rounded-full ${isDarkMode ? 'bg-slate-800 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-400 hover:text-slate-600'} transition-colors`}>
+            <Settings size={18} />
           </button>
           <button onClick={() => setShowProfileModal(true)} className={`text-xs font-bold px-3 py-1.5 rounded-full border ${isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-50'}`}>
             {userName || 'Identifícate'}
@@ -3812,6 +3910,54 @@ export default function App() {
             </div>
           </div>,
           document.body
+        )
+      }
+
+      {/* SETTINGS MODAL */}
+      {
+        showSettingsModal && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[60] flex items-center justify-center p-6 animate-in fade-in duration-200">
+            <div className={`${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl relative border`}>
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl font-black uppercase tracking-tighter">Ajustes</h2>
+                  <p className={`text-[10px] uppercase font-bold tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>RanxPanx Team Config</p>
+                </div>
+                <button onClick={() => setShowSettingsModal(false)} className="p-2 text-slate-400 hover:text-slate-600 transition-colors"><X size={20} /></button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Apariencia</h3>
+                  <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-full py-4 px-5 rounded-2xl border flex items-center justify-between font-bold transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 text-yellow-400' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}>
+                    <span className="flex items-center gap-3">
+                      {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                      Modo {isDarkMode ? 'Claro' : 'Oscuro'}
+                    </span>
+                  </button>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Gestión de Datos</h3>
+                  <div className="space-y-3">
+                    <button onClick={handleExportBackup} className={`w-full py-4 px-5 rounded-2xl border flex items-center justify-between font-bold transition-all ${isDarkMode ? 'bg-indigo-900/20 border-indigo-500/30 text-indigo-400 hover:bg-indigo-900/40' : 'bg-indigo-50/50 border-indigo-200 text-indigo-600 hover:bg-indigo-100/50'}`}>
+                      <span className="flex items-center gap-3">
+                        <Download size={20} />
+                        Descargar Copia
+                      </span>
+                    </button>
+                    <label className={`w-full py-4 px-5 rounded-2xl border flex items-center justify-between font-bold cursor-pointer transition-all ${isDarkMode ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/40' : 'bg-emerald-50/50 border-emerald-200 text-emerald-600 hover:bg-emerald-100/50'}`}>
+                      <span className="flex items-center gap-3">
+                        <UploadCloud size={20} />
+                        Restaurar Copia
+                      </span>
+                      <input type="file" accept=".json" className="hidden" onChange={handleImportBackup} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )
       }
 
