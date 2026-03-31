@@ -1827,6 +1827,27 @@ export default function App() {
     event.target.value = '';
   };
 
+  const handleSaveProfile = async () => {
+    if (!userName) return;
+    try {
+      localStorage.setItem('hometeam_username', userName);
+      localStorage.setItem('hometeam_usercolor', userColor);
+
+      const userRef = doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName);
+      await setDoc(userRef, {
+        name: userName,
+        colorId: userColor,
+        lastActive: Date.now()
+      }, { merge: true });
+
+      setShowProfileModal(false);
+      showToast(`¡Bienvenid@, ${userName}!`, 'success');
+    } catch (err) {
+      console.error("Error saving profile:", err);
+      showToast("Error al guardar perfil", "error");
+    }
+  };
+
   const addSupermarket = async () => {
     const name = window.prompt("Nombre del nuevo supermercado o tienda:");
     if (!name || !name.trim()) return;
@@ -2706,10 +2727,8 @@ export default function App() {
                   const dateChores = getChoresForDate(dateObj);
                   const hasChores = dateChores.length > 0;
 
-                  // Compute the top user by seconds for this day
-                  const HEX_PALETTE = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#06b6d4'];
-                  // Sort known users alphabetically so index is always stable
-                  const knownUsers = Object.keys(usersData).sort();
+                  // Compute the top user by seconds for this day and look up their chosen color
+                  const HEX_PALETTE = { indigo: '#6366f1', rose: '#f43f5e', emerald: '#10b981', amber: '#f59e0b', cyan: '#06b6d4' };
                   let dotColor = '#6366f1';
                   if (hasChores) {
                     const secondsByUser = {};
@@ -2718,8 +2737,8 @@ export default function App() {
                     });
                     const topUser = Object.entries(secondsByUser).sort((a, b) => b[1] - a[1])[0]?.[0];
                     if (topUser) {
-                      const userIdx = knownUsers.indexOf(topUser);
-                      dotColor = HEX_PALETTE[userIdx >= 0 ? userIdx % HEX_PALETTE.length : 0];
+                      const colorId = usersData[topUser]?.colorId || 'indigo';
+                      dotColor = HEX_PALETTE[colorId] || '#6366f1';
                     }
                   }
 
@@ -3779,7 +3798,7 @@ export default function App() {
               <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter">Bienvenid@s</h2>
               <p className={`text-sm mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Sincroniza el RanxPanx Team con tu maravillosa esposa. ¿Quién eres?</p>
               <div className="space-y-4">
-                <input type="text" placeholder="Tu nombre..." className={`w-full text-xl font-bold p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={userName} onChange={(e) => setUserName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && userName) { localStorage.setItem('hometeam_username', userName); localStorage.setItem('hometeam_usercolor', userColor); setShowProfileModal(false); } }} />
+                <input type="text" placeholder="Tu nombre..." className={`w-full text-xl font-bold p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`} value={userName} onChange={(e) => setUserName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && userName) handleSaveProfile(); }} />
 
                 <div>
                   <p className="text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1">Elige un color visual</p>
@@ -3790,7 +3809,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <button onClick={() => { if (userName) { localStorage.setItem('hometeam_username', userName); localStorage.setItem('hometeam_usercolor', userColor); setShowProfileModal(false); } }} className={`w-full text-white font-bold py-4 rounded-2xl mt-4 transition-all ${userName ? USER_COLORS.find(c => c.id === userColor)?.bg + ' hover:opacity-90 active:scale-95' : 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed text-slate-400'}`}>
+                <button onClick={handleSaveProfile} className={`w-full text-white font-bold py-4 rounded-2xl mt-4 transition-all ${userName ? USER_COLORS.find(c => c.id === userColor)?.bg + ' hover:opacity-90 active:scale-95' : 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed text-slate-400'}`}>
                   Entrar al Equipo
                 </button>
               </div>
