@@ -2707,7 +2707,10 @@ export default function App() {
                   const hasChores = dateChores.length > 0;
 
                   // Compute the top user by seconds for this day
-                  let dotColor = '#6366f1'; // default indigo
+                  const HEX_PALETTE = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#06b6d4'];
+                  // Sort known users alphabetically so index is always stable
+                  const knownUsers = Object.keys(usersData).sort();
+                  let dotColor = '#6366f1';
                   if (hasChores) {
                     const secondsByUser = {};
                     dateChores.forEach(c => {
@@ -2715,13 +2718,8 @@ export default function App() {
                     });
                     const topUser = Object.entries(secondsByUser).sort((a, b) => b[1] - a[1])[0]?.[0];
                     if (topUser) {
-                      // Derive a stable color from the username using a hash
-                      const HEX_PALETTE = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#06b6d4'];
-                      let hash = 0;
-                      for (let ci = 0; ci < topUser.length; ci++) {
-                        hash = topUser.charCodeAt(ci) + ((hash << 5) - hash);
-                      }
-                      dotColor = HEX_PALETTE[Math.abs(hash) % HEX_PALETTE.length];
+                      const userIdx = knownUsers.indexOf(topUser);
+                      dotColor = HEX_PALETTE[userIdx >= 0 ? userIdx % HEX_PALETTE.length : 0];
                     }
                   }
 
