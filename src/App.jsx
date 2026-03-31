@@ -1781,13 +1781,30 @@ export default function App() {
         showToast('Restaurando datos, por favor espera...', 'info');
         setShowSettingsModal(false);
 
+        let countDeleted = 0;
+        let countInserted = 0;
+
         for (const colName of collectionsToImport) {
           if (!backupData[colName]) continue;
 
-          // Insertar/Actualizar los datos de la copia asegurando que conviven con los nuevos
+          // Borrar actuales para hacer un Restore limpio (Modo Destrucción + Recreación)
+          const currentSnap = await getDocs(collection(db, 'artifacts', safeAppId, 'public', 'data', colName));
+          const docsToDelete = [];
+          currentSnap.forEach(snap => docsToDelete.push(snap.ref));
+          countDeleted += docsToDelete.length;
 
-          // Insertar los nuevos
-          const insertChunks = chunkArray(backupData[colName], 400);
+          const deleteChunks = chunkArray(docsToDelete, 400);
+          for (const chunk of deleteChunks) {
+            const batch = writeBatch(db);
+            chunk.forEach(ref => batch.delete(ref));
+            await batch.commit();
+          }
+
+          // Insertar los nuevos desde la copia de seguridad
+          const elementsToInsert = backupData[colName];
+          countInserted += elementsToInsert.length;
+
+          const insertChunks = chunkArray(elementsToInsert, 400);
           for (const chunk of insertChunks) {
             const batch = writeBatch(db);
             chunk.forEach(docData => {
@@ -1798,8 +1815,8 @@ export default function App() {
             await batch.commit();
           }
         }
-        window.alert("¡Restauración completada con éxito! La aplicación se va a recargar ahora mismo para aplicar los cambios.");
-        window.location.reload();
+        window.alert(`¡Restauración completada con éxito!\n\nTotal archivos reemplazados: ${countDeleted}\nTotal restaurados desde copia: ${countInserted}\n\nLa aplicación se recargará ahora.`);
+        window.location.reload(true);
       } catch (err) {
         console.error("Parse/Import error:", err);
         showToast("Archivo corrupto o error al importar", 'error');
