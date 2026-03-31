@@ -2706,10 +2706,29 @@ export default function App() {
                   const dateChores = getChoresForDate(dateObj);
                   const hasChores = dateChores.length > 0;
 
+                  // Compute the top user by seconds for this day
+                  let dotColor = '#6366f1'; // default indigo
+                  if (hasChores) {
+                    const secondsByUser = {};
+                    dateChores.forEach(c => {
+                      secondsByUser[c.userName] = (secondsByUser[c.userName] || 0) + (c.durationSeconds || 0);
+                    });
+                    const topUser = Object.entries(secondsByUser).sort((a, b) => b[1] - a[1])[0]?.[0];
+                    if (topUser) {
+                      // Derive a stable color from the username using a hash
+                      const HEX_PALETTE = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#06b6d4'];
+                      let hash = 0;
+                      for (let ci = 0; ci < topUser.length; ci++) {
+                        hash = topUser.charCodeAt(ci) + ((hash << 5) - hash);
+                      }
+                      dotColor = HEX_PALETTE[Math.abs(hash) % HEX_PALETTE.length];
+                    }
+                  }
+
                   return (
                     <button key={`day-${day}`} onClick={() => setSelectedDate(dateObj)} className={`aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all ${isSelected ? 'bg-indigo-600 text-white font-bold' : hasChores ? (isDarkMode ? 'bg-slate-800 text-indigo-400' : 'bg-indigo-50 text-indigo-600') : 'hover:bg-slate-100'}`}>
                       {day}
-                      {hasChores && !isSelected && <div className="w-1 h-1 bg-indigo-500 rounded-full mt-1"></div>}
+                      {hasChores && !isSelected && <div className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ backgroundColor: dotColor }}></div>}
                     </button>
                   );
                 })}
