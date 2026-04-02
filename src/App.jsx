@@ -12,7 +12,7 @@ import {
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, setDoc, getDocs, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, query, deleteDoc, doc, updateDoc, setDoc, getDocs, writeBatch, increment } from 'firebase/firestore';
 
 // --- CONFIGURACIÓN DE FIREBASE ---
 const firebaseConfig = {
@@ -2118,9 +2118,8 @@ export default function App() {
     }
 
     try {
-      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName), { rpcBalance: myBalance - amount }, { merge: true });
-      const peerBalance = usersData[selectedPeer]?.rpcBalance || 0;
-      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', selectedPeer), { rpcBalance: peerBalance + amount }, { merge: true });
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', userName), { rpcBalance: increment(-amount) }, { merge: true });
+      await setDoc(doc(db, 'artifacts', safeAppId, 'public', 'data', 'users', selectedPeer), { rpcBalance: increment(amount) }, { merge: true });
 
       await addDoc(collection(db, 'artifacts', safeAppId, 'public', 'data', 'p2p_notifications'), {
         type: 'transfer',
