@@ -1736,7 +1736,7 @@ export default function App() {
   const handleExportBackup = async () => {
     try {
       showToast('Preparando copia de seguridad...', 'info');
-      const collections = ['chores', 'groceries', 'supermarkets', 'moments', 'users'];
+      const collections = ['chores', 'groceries', 'supermarkets', 'moments', 'users', 'store_items', 'coupons', 'wagers', 'p2p_notifications'];
       const backupData = {};
       for (const colName of collections) {
         const querySnapshot = await getDocs(collection(db, 'artifacts', safeAppId, 'public', 'data', colName));
@@ -1776,7 +1776,7 @@ export default function App() {
     reader.onload = async (e) => {
       try {
         const backupData = JSON.parse(e.target.result);
-        const collectionsToImport = ['chores', 'groceries', 'supermarkets', 'moments', 'users'];
+        const collectionsToImport = ['chores', 'groceries', 'supermarkets', 'moments', 'users', 'store_items', 'coupons', 'wagers', 'p2p_notifications'];
 
         showToast('Restaurando datos, por favor espera...', 'info');
         setShowSettingsModal(false);
