@@ -612,6 +612,9 @@ export default function App() {
     return matches.slice(0, 5);
   }, [manualData?.name, chores]);
 
+  /** Máximo multiplicador base: x10 (normal) / x20 (frenesí, se aplica en display) */
+  const BOUNTY_MAX_MULTIPLIER = 10;
+
   const hotTasks = useMemo(() => {
     const validChores = chores.filter(c => !c.isGift);
     const uniqueTasks = [...new Set(validChores.map(c => c.taskName))];
@@ -620,7 +623,8 @@ export default function App() {
       return taskChores.sort((a, b) => b.timestamp - a.timestamp)[0];
     }).filter(c => c && c.timestamp < Date.now() - 60000).map(c => {
       const daysSince = (Date.now() - c.timestamp) / (1000 * 3600 * 24);
-      return { name: c.taskName, multiplier: Math.pow(1.10, daysSince) };
+      const rawMultiplier = Math.pow(1.10, daysSince);
+      return { name: c.taskName, multiplier: Math.min(rawMultiplier, BOUNTY_MAX_MULTIPLIER) };
     }).filter(t => t.multiplier >= 1.01).sort((a, b) => b.multiplier - a.multiplier).slice(0, 3);
   }, [chores]);
 
@@ -1548,7 +1552,8 @@ export default function App() {
 
     if (targetChore) {
       const daysSince = (Date.now() - targetChore.timestamp) / (1000 * 3600 * 24);
-      rpcEarned = rpcEarned * Math.pow(1.10, daysSince);
+      const bountyMultiplier = Math.min(Math.pow(1.10, daysSince), BOUNTY_MAX_MULTIPLIER);
+      rpcEarned = rpcEarned * bountyMultiplier;
     }
 
     // 3. Revisar Frenesí Diario (>= 3600 segundos agregados hoy)
